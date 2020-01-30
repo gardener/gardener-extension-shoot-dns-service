@@ -1,0 +1,56 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: extensions.gardener.cloud:extension-{{ .Values.serviceName }}:{{ .Values.serviceName }}
+rules:
+- apiGroups:
+  - ""
+  - extensions
+  resources:
+  - services
+  - ingresses
+  verbs:
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - dns.gardener.cloud
+  resources:
+  - dnsentries
+  - dnsentries/status
+  verbs:
+  - get
+  - list
+  - update
+  - watch
+  - create
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - get
+  - list
+  - update
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: extensions.gardener.cloud:extension-{{ .Values.serviceName }}:{{ .Values.serviceName }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: extensions.gardener.cloud:extension-{{ .Values.serviceName }}:{{ .Values.serviceName }}
+subjects:
+- kind: User
+  name: {{ .Values.userName }}

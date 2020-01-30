@@ -1,0 +1,6 @@
+# Default values for dns-service in shoot.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+userName: dummy
+serviceName: dummy

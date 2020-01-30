@@ -1,0 +1,8 @@
+---
+apiVersion: extensions.gardener.cloud/v1alpha1
+kind: Extension
+metadata:
+  name: shoot-dns-service
+  namespace: shoot--foo--bar
+spec:
+  type: shoot-dns-service

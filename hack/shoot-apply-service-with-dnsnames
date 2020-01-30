@@ -1,0 +1,20 @@
+#!/bin/bash
+
+DIR="$(dirname "$0")"/..
+
+trapHandler()
+{
+  if [[ -n "$PID_KUBECTL_PROXY" ]]; then
+    kill $PID_KUBECTL_PROXY
+  fi
+}
+
+trap trapHandler SIGINT SIGTERM EXIT
+
+kubectl proxy &
+PID_KUBECTL_PROXY=$!
+
+sleep 1
+
+spiff merge --json "$DIR"/example/40-source-service-shoot.yaml | curl -H "Content-Type: application/json" -X POST -d @- http://localhost:8001/api/v1/namespaces/default/services
+spiff merge --json "$DIR"/example/40-source-service-shoot.yaml | curl -H "Content-Type: application/json" -X PUT -d @- http://localhost:8001/api/v1/namespaces/default/services/dummy-service/status

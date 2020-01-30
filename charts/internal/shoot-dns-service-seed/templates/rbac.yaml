@@ -1,0 +1,70 @@
+apiVersion: {{ include "rbacversion" . }}
+kind: Role
+metadata:
+  name: {{ template "service.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "service.name" . }}
+    chart: {{ template "service.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+rules:
+- apiGroups:
+  - "dns.gardener.cloud"
+  resources:
+  - "dnsentries"
+  verbs:
+  - "*"
+- apiGroups:
+  - ""
+  resources:
+  - "events"
+  verbs:
+  - "get"
+  - "create"
+  - "update"
+  - "list"
+  - "watch"
+- apiGroups:
+  - ""
+  resources:
+  - "configmaps"
+  verbs:
+  - "*"
+---
+apiVersion: {{ include "rbacversion" . }}
+kind: RoleBinding
+metadata:
+  name: {{ template "service.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "service.name" . }}
+    chart: {{ template "service.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ template "service.name" . }}
+subjects:
+  - name: {{ template "service.name" . }}
+    namespace: {{ .Release.Namespace }}
+    kind: ServiceAccount
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: extensions.gardener.cloud:{{ .Values.serviceName }}:shoot-services:{{ .Release.Namespace }}
+  labels:
+    app: {{ template "service.name" . }}
+    chart: {{ template "service.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: extensions.gardener.cloud:{{ .Values.serviceName }}:shoot-services
+subjects:
+  - name: {{ template "service.name" . }}
+    namespace: {{ .Release.Namespace }}
+    kind: ServiceAccount

@@ -1,0 +1,33 @@
+image:
+  repository: eu.gcr.io/gardener-project/gardener/extensions/shoot-dns-service
+  tag: latest
+  pullPolicy: IfNotPresent
+
+serviceName: shoot-dns-service
+dnsClass: garden
+
+gardener:
+  garden:
+    identity: ""
+  seed:
+    identity: ""
+
+
+resources:
+  requests:
+   cpu: "50m"
+   memory: "64Mi"
+  limits:
+   cpu: "50m"
+   memory: "128Mi"
+
+controllers:
+  concurrentSyncs: 5
+  ignoreOperationAnnotation: false
+
+# imageVectorOverwrite: |
+#   images:
+#   - name: dns-controller-manager
+#     sourceRepository: github.com/gardener/external-dns-management
+#     repository: eu.gcr.io/gardener-project/dns-controller-manager
+#     tag: "0.7.1"

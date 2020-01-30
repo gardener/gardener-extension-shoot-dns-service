@@ -1,0 +1,61 @@
+apiVersion: {{ include "deploymentversion" . }}
+kind: Deployment
+metadata:
+  name: {{ template "service.name" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app: {{ template "service.name" . }}
+    chart: {{ template "service.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  revisionHistoryLimit: 0
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ template "service.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      {{- if .Values.podAnnotations }}
+      annotations:
+{{ toYaml .Values.podAnnotations | indent 8 }}
+      {{- end }}
+      labels:
+        app: {{ template "service.name" . }}
+        release: {{ .Release.Name }}
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-shoot-apiserver: allowed
+        networking.gardener.cloud/to-seed-apiserver: allowed
+        networking.gardener.cloud/from-prometheus: allowed
+    spec:
+      serviceAccountName: {{ template "service.name" . }}
+      containers:
+        - name: {{ template "service.name" . }}
+          image: {{ index .Values.images "dns-controller-manager" }}
+          volumeMounts:
+          - name: source-cluster
+            mountPath: "/etc/source-cluster"
+            readOnly: true
+          args:
+          - --kubeconfig=/etc/source-cluster/kubeconfig
+          - --kubeconfig.id={{ .Values.shootId }}
+          - --kubeconfig.disable-deploy-crds
+          - --target=
+          - --target-realms={{ .Release.Namespace }}
+          - --target.id={{ .Values.seedId }}
+          - --target.disable-deploy-crds
+          - --controllers=dnssources,dnsentry-source
+          - --namespace={{ .Release.Namespace }}
+          - --target-namespace={{ .Release.Namespace }}
+          - --target-creator-label-name={{ .Values.shootId }}
+          - --target-creator-label-value=true
+          - --target-set-ignore-owners
+          - --dns-target-class=gardendns
+          - --dns-class={{ .Values.dnsClass }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+      volumes:
+      - name: source-cluster
+        secret:
+          secretName: {{ .Values.targetClusterSecret }}

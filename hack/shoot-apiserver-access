@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "starting local apiserver forwarding for fake shoot on port 8443"
+kubectl -n shoot--foo--bar port-forward service/kube-apiserver 8443:443

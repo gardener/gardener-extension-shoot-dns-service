@@ -1,0 +1,22 @@
+# Default values for dns-service in seed.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicas: 1
+
+images:
+  dns-controller-manager: any-repo:any-tag
+
+targetClusterSecret: "target-cluster"
+shootId: "4711"
+seedId: "3141"
+podAnnotations: {}
+dnsClass: ""
+
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "20m"
+  limits:
+    memory: "128Mi"
+    cpu: "50m"
