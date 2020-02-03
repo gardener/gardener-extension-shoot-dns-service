@@ -37,4 +37,4 @@ const (
 )
 
 // ChartsPath is the path to the charts
-var ChartsPath = filepath.Join("controllers", ExtensionServiceName, "charts", "internal")
+var ChartsPath = filepath.Join("charts", "internal")
