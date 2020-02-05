@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/gardener/external-dns-management v0.7.5 // indirect
 	github.com/gardener/gardener v0.35.1-0.20200128130120-5b69a02f511a
-	github.com/gardener/gardener-extensions v1.3.0
+	github.com/gardener/gardener-extensions v1.3.1-0.20200205125211-46fd5fe5fbb0
 	github.com/go-logr/logr v0.1.0
 	github.com/gobuffalo/packr/v2 v2.1.0
 	github.com/golang/mock v1.3.1

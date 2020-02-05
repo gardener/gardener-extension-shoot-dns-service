@@ -90,7 +90,7 @@ github.com/gardener/gardener/test/framework
 github.com/gardener/gardener/test/framework/config
 github.com/gardener/gardener/test/framework/reporter
 github.com/gardener/gardener/test/integration/framework
-# github.com/gardener/gardener-extensions v1.3.0
+# github.com/gardener/gardener-extensions v1.3.1-0.20200205125211-46fd5fe5fbb0
 github.com/gardener/gardener-extensions/hack
 github.com/gardener/gardener-extensions/hack/.ci
 github.com/gardener/gardener-extensions/pkg/controller

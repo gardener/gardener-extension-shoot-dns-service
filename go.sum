@@ -105,8 +105,8 @@ github.com/gardener/external-dns-management v0.7.5 h1:35NZQBDcqB/ISBgjorcLUu34dW
 github.com/gardener/external-dns-management v0.7.5/go.mod h1:Y3om11E865x4aQ7cmcHjknb8RMgCO153huRb/SvP+9o=
 github.com/gardener/gardener v0.35.1-0.20200128130120-5b69a02f511a h1:rLj4qh4PWFtlGo4PWjC4Mbovp9tQZjcHDoRrNcSdHK4=
 github.com/gardener/gardener v0.35.1-0.20200128130120-5b69a02f511a/go.mod h1:cu4WkHhpM9JLvqx76qSViagsPO4UH9Qx5i0h3AEIdiE=
-github.com/gardener/gardener-extensions v1.3.0 h1:cq8/4lnvO+rA2pC42Zetb/4q4IsU1/ZEdsc5sW9jWio=
-github.com/gardener/gardener-extensions v1.3.0/go.mod h1:FoPT/v8gUT8BdufAAzGSMzJiiQvqr7+DMmippm1Mc9w=
+github.com/gardener/gardener-extensions v1.3.1-0.20200205125211-46fd5fe5fbb0 h1:814hlvuM3/fg+XC+TrAQ8KuL9SwKeBvIqHO0pjDYhTU=
+github.com/gardener/gardener-extensions v1.3.1-0.20200205125211-46fd5fe5fbb0/go.mod h1:FoPT/v8gUT8BdufAAzGSMzJiiQvqr7+DMmippm1Mc9w=
 github.com/gardener/gardener-resource-manager v0.9.1-0.20200124091350-6ea41bbae81f h1:kaJJ2j6/uHTt6tDQiDO25HOq6Uit6Hu31hu47HfY/Lw=
 github.com/gardener/gardener-resource-manager v0.9.1-0.20200124091350-6ea41bbae81f/go.mod h1:0pKTHOhvU91eQB0EYr/6Ymd7lXc/5Hi8P8tF/gpV0VQ=
 github.com/gardener/hvpa-controller v0.0.0-20191014062307-fad3bdf06a25 h1:nOFITmV7vt4fcYPEXgj66Qs83FdDEMvL/LQcR0diRRE=
