@@ -20,6 +20,9 @@ import (
 	"path/filepath"
 	"time"
 
+	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
+
 	controllerconfig "github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/imagevector"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
@@ -102,6 +105,14 @@ func (a *actuator) Reconcile(ctx context.Context, ex *extensionsv1alpha1.Extensi
 	cluster, err := controller.GetCluster(ctx, a.client, ex.Namespace)
 	if err != nil {
 		return err
+	}
+
+	// Shoots that don't specify a DNS domain or that are scheduled to a seed that is tainted with "DNS disabled"
+	// don't get an DNS service
+	if gardencorev1beta1helper.TaintsHave(cluster.Seed.Spec.Taints, gardencorev1beta1.SeedTaintDisableDNS) ||
+		cluster.Shoot.Spec.DNS == nil {
+		a.logger.Info("DNS domain is not specified or the seed is tainted with 'disable-dns', therefore no shoot dns service is installed", "shoot", ex.Namespace)
+		return a.Delete(ctx, ex)
 	}
 
 	if err := a.createShootResources(ctx, cluster, ex.Namespace); err != nil {
