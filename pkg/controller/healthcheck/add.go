@@ -15,8 +15,8 @@
 package healthcheck
 
 import (
-	dnscontroller "github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/lifecycle"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"

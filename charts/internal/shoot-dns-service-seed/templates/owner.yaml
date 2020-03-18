@@ -1,0 +1,12 @@
+apiVersion: dns.gardener.cloud/v1alpha1
+kind: DNSOwner
+metadata:
+  name: {{ .Values.dnsOwner }}
+  labels:
+    app: {{ template "service.name" . }}
+    chart: {{ template "service.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  ownerId: {{ .Values.shootId }}
+  active: {{ .Values.shootActive }}

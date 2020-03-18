@@ -18,9 +18,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/healthcheck"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/lifecycle"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/replication"
 
 	"github.com/gardener/gardener/extensions/pkg/controller/cmd"
 	extensionshealthcheckcontroller "github.com/gardener/gardener/extensions/pkg/controller/healthcheck"
@@ -107,7 +108,8 @@ func (c *HealthConfig) ApplyHealthCheckConfig(config *config.HealthCheckConfig) 
 // SwitchOptions are the cmd.SwitchOptions for the provider controllers.
 func ControllerSwitches() *cmd.SwitchOptions {
 	return cmd.NewSwitchOptions(
-		cmd.Switch(controller.Name, controller.AddToManager),
+		cmd.Switch(lifecycle.Name, lifecycle.AddToManager),
+		cmd.Switch(replication.Name, replication.AddToManager),
 		cmd.Switch(extensionshealthcheckcontroller.ControllerName, healthcheck.RegisterHealthChecks),
 	)
 }

@@ -16,5 +16,5 @@ PID_KUBECTL_PROXY=$!
 
 sleep 1
 
-spiff merge --json "$DIR"/example/40-source-service-shoot.yaml | curl -H "Content-Type: application/json" -X POST -d @- http://localhost:8001/api/v1/namespaces/default/services
-spiff merge --json "$DIR"/example/40-source-service-shoot.yaml | curl -H "Content-Type: application/json" -X PUT -d @- http://localhost:8001/api/v1/namespaces/default/services/dummy-service/status
+spiff merge --json "$DIR"/example/40-shoot-source-service.yaml | curl -H "Content-Type: application/json" -X POST -d @- http://localhost:8001/api/v1/namespaces/default/services
+spiff merge --json "$DIR"/example/40-shoot-source-service.yaml | curl -H "Content-Type: application/json" -X PUT -d @- http://localhost:8001/api/v1/namespaces/default/services/dummy-service/status

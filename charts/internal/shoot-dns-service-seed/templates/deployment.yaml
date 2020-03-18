@@ -45,6 +45,7 @@ spec:
           - --target-realms={{ .Release.Namespace }}
           - --target.id={{ .Values.seedId }}
           - --target.disable-deploy-crds
+          - --target-owner-id={{ .Values.shootId }}
           - --controllers=dnssources,dnsentry-source
           - --namespace={{ .Release.Namespace }}
           - --target-namespace={{ .Release.Namespace }}
