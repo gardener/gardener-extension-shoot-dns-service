@@ -19,6 +19,7 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 
+	extensionscontroller "github.com/gardener/gardener-extensions/pkg/controller"
 	"github.com/gardener/gardener-extensions/pkg/controller/healthcheck"
 	healthcheckconfig "github.com/gardener/gardener-extensions/pkg/controller/healthcheck/config"
 	"github.com/gardener/gardener-extensions/pkg/controller/healthcheck/general"
@@ -31,6 +32,10 @@ import (
 // RegisterHealthChecks registers health checks for each extension resource
 // HealthChecks are grouped by extension (e.g worker), extension.type (e.g aws) and  Health Check Type (e.g SystemComponentsHealthy)
 func RegisterHealthChecks(mgr manager.Manager) error {
+	preCheckFunc := func(_ runtime.Object, cluster *extensionscontroller.Cluster) bool {
+		return cluster.Shoot.Spec.DNS != nil && cluster.Shoot.Spec.DNS.Domain != nil
+	}
+
 	opts := healthcheck.DefaultAddArgs{
 		Controller:        config.HealthConfig.ControllerOptions,
 		HealthCheckConfig: healthcheckconfig.HealthCheckConfig{SyncPeriod: config.HealthConfig.Health.HealthCheckSyncPeriod},
@@ -43,8 +48,17 @@ func RegisterHealthChecks(mgr manager.Manager) error {
 		mgr,
 		opts,
 		nil,
-		map[healthcheck.HealthCheck]string{
-			general.CheckManagedResource(dnscontroller.ShootResourcesName): string(gardencorev1beta1.ShootSystemComponentsHealthy),
-			general.CheckManagedResource(dnscontroller.SeedResourcesName):  string(gardencorev1beta1.ShootControlPlaneHealthy),
-		})
+		[]healthcheck.ConditionTypeToHealthCheck{
+			{
+				ConditionType: string(gardencorev1beta1.ShootControlPlaneHealthy),
+				HealthCheck:   general.CheckManagedResource(dnscontroller.SeedResourcesName),
+				PreCheckFunc:  preCheckFunc,
+			},
+			{
+				ConditionType: string(gardencorev1beta1.ShootSystemComponentsHealthy),
+				HealthCheck:   general.CheckManagedResource(dnscontroller.ShootResourcesName),
+				PreCheckFunc:  preCheckFunc,
+			},
+		},
+	)
 }
