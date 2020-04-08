@@ -22,8 +22,8 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/healthcheck"
 
-	"github.com/gardener/gardener-extensions/pkg/controller/cmd"
-	extensionshealthcheckcontroller "github.com/gardener/gardener-extensions/pkg/controller/healthcheck"
+	"github.com/gardener/gardener/extensions/pkg/controller/cmd"
+	extensionshealthcheckcontroller "github.com/gardener/gardener/extensions/pkg/controller/healthcheck"
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

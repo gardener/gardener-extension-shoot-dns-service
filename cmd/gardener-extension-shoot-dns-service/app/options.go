@@ -20,7 +20,7 @@ import (
 	dnsservicecmd "github.com/gardener/gardener-extension-shoot-dns-service/pkg/cmd"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 
-	controllercmd "github.com/gardener/gardener-extensions/pkg/controller/cmd"
+	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
 )
 
 // ExtensionName is the name of the extension.

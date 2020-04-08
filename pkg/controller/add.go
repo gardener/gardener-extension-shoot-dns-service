@@ -20,7 +20,7 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 
-	"github.com/gardener/gardener-extensions/pkg/controller/extension"
+	"github.com/gardener/gardener/extensions/pkg/controller/extension"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 

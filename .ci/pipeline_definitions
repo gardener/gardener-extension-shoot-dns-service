@@ -12,7 +12,6 @@ gardener-extension-shoot-dns-service:
             image: 'eu.gcr.io/gardener-project/gardener/extensions/shoot-dns-service'
             dockerfile: 'Dockerfile'
             target: gardener-extension-shoot-dns-service
-    steps: ~
   jobs:
     head-update:
       traits:
