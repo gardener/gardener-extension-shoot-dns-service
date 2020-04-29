@@ -1,6 +1,6 @@
 module github.com/gardener/gardener-extension-shoot-dns-service
 
-go 1.13
+go 1.14
 
 require (
 	github.com/gardener/gardener v1.2.1-0.20200408030154-40b97d31d7f7
