@@ -3,7 +3,7 @@ module github.com/gardener/gardener-extension-shoot-dns-service
 go 1.14
 
 require (
-	github.com/gardener/gardener v1.3.1-0.20200505064036-175b017d8c5b
+	github.com/gardener/gardener v1.4.1
 	github.com/go-logr/logr v0.1.0
 	github.com/gobuffalo/packr/v2 v2.8.0
 	github.com/golang/mock v1.4.3
