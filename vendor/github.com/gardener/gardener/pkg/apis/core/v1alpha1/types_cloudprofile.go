@@ -17,6 +17,7 @@ package v1alpha1
 import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // +genclient
@@ -64,7 +65,7 @@ type CloudProfileSpec struct {
 	MachineTypes []MachineType `json:"machineTypes" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,4,rep,name=machineTypes"`
 	// ProviderConfig contains provider-specific configuration for the profile.
 	// +optional
-	ProviderConfig *ProviderConfig `json:"providerConfig,omitempty" protobuf:"bytes,5,opt,name=providerConfig"`
+	ProviderConfig *runtime.RawExtension `json:"providerConfig,omitempty" protobuf:"bytes,5,opt,name=providerConfig"`
 	// Regions contains constraints regarding allowed values for regions and zones.
 	// +patchMergeKey=name
 	// +patchStrategy=merge
@@ -151,6 +152,11 @@ type Region struct {
 	// +patchStrategy=merge
 	// +optional
 	Zones []AvailabilityZone `json:"zones,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,2,rep,name=zones"`
+	// Labels is an optional set of key-value pairs that contain certain administrator-controlled labels for this region.
+	// It can be used by Gardener administrators/operators to provide additional information about a region, e.g. wrt
+	// quality, reliability, access restrictions, etc.
+	// +optional
+	Labels map[string]string `json:"labels,omitempty" protobuf:"bytes,3,rep,name=labels"`
 }
 
 // AvailabilityZone is an availability zone.

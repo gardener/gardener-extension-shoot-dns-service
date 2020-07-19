@@ -19,8 +19,6 @@ import (
 	"net/http"
 	"time"
 
-	"k8s.io/apimachinery/pkg/runtime"
-
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
 	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
@@ -31,6 +29,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/rest"
 )
@@ -291,16 +290,16 @@ func CheckBackupBucket(bb runtime.Object) error {
 // * No lastError is in the status
 // * A last operation is state succeeded is present
 func checkExtensionObject(generation int64, observedGeneration int64, annotations map[string]string, lastError *gardencorev1beta1.LastError, lastOperation *gardencorev1beta1.LastOperation) error {
+	if lastError != nil {
+		return gardencorev1beta1helper.NewErrorWithCodes(fmt.Sprintf("extension encountered error during reconciliation: %s", lastError.Description), lastError.Codes...)
+	}
+
 	if observedGeneration != generation {
 		return fmt.Errorf("observed generation outdated (%d/%d)", observedGeneration, generation)
 	}
 
 	if op, ok := annotations[v1beta1constants.GardenerOperation]; ok {
 		return fmt.Errorf("gardener operation %q is not yet picked up by controller", op)
-	}
-
-	if lastError != nil {
-		return gardencorev1beta1helper.NewErrorWithCodes(fmt.Sprintf("extension encountered error during reconciliation: %s", lastError.Description), lastError.Codes...)
 	}
 
 	if lastOperation == nil {

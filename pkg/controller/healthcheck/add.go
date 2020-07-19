@@ -45,7 +45,7 @@ func RegisterHealthChecks(mgr manager.Manager) error {
 		service.ExtensionType,
 		extensionsv1alpha1.SchemeGroupVersion.WithKind(extensionsv1alpha1.ExtensionResource),
 		func() runtime.Object { return &extensionsv1alpha1.ExtensionList{} },
-		func() runtime.Object { return &extensionsv1alpha1.Extension{} },
+		func() extensionsv1alpha1.Object { return &extensionsv1alpha1.Extension{} },
 		mgr,
 		opts,
 		nil,
