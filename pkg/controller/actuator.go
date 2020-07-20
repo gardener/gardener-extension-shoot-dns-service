@@ -20,9 +20,6 @@ import (
 	"path/filepath"
 	"time"
 
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
-
 	controllerconfig "github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/imagevector"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
@@ -30,10 +27,13 @@ import (
 	"github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
 	"github.com/gardener/gardener/extensions/pkg/util"
+	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"github.com/gardener/gardener/pkg/chartrenderer"
 	"github.com/gardener/gardener/pkg/client/kubernetes"
 	"github.com/gardener/gardener/pkg/utils/chart"
+	managedresources "github.com/gardener/gardener/pkg/utils/managedresources"
 	"github.com/gardener/gardener/pkg/utils/secrets"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -109,9 +109,12 @@ func (a *actuator) Reconcile(ctx context.Context, ex *extensionsv1alpha1.Extensi
 
 	// Shoots that don't specify a DNS domain or that are scheduled to a seed that is tainted with "DNS disabled"
 	// don't get an DNS service
-	if gardencorev1beta1helper.TaintsHave(cluster.Seed.Spec.Taints, gardencorev1beta1.SeedTaintDisableDNS) ||
+
+	// TODO: remove the deprecated taint check in a future version
+	if !seedSettingShootDNSEnabled(cluster.Seed.Spec.Settings) ||
+		gardencorev1beta1helper.TaintsHave(cluster.Seed.Spec.Taints, gardencorev1beta1.DeprecatedSeedTaintDisableDNS) ||
 		cluster.Shoot.Spec.DNS == nil {
-		a.logger.Info("DNS domain is not specified or the seed is tainted with 'disable-dns', therefore no shoot dns service is installed", "shoot", ex.Namespace)
+		a.logger.Info("DNS domain is not specified, the seed .spec.settings.shootDNS.enabled=false or the seed is tainted with 'disable-dns', therefore no shoot dns service is installed", "shoot", ex.Namespace)
 		return a.Delete(ctx, ex)
 	}
 
@@ -127,6 +130,16 @@ func (a *actuator) Delete(ctx context.Context, ex *extensionsv1alpha1.Extension)
 		return err
 	}
 	return a.deleteShootResources(ctx, ex.Namespace)
+}
+
+// Restore the Extension resource.
+func (a *actuator) Restore(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
+	return a.Reconcile(ctx, ex)
+}
+
+// Migrate the Extension resource.
+func (a *actuator) Migrate(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
+	return a.Delete(ctx, ex)
 }
 
 func (a *actuator) shootId(namespace string) string {
@@ -164,13 +177,13 @@ func (a *actuator) createSeedResources(ctx context.Context, cluster *controller.
 func (a *actuator) deleteSeedResources(ctx context.Context, namespace string) error {
 	a.logger.Info("Component is being deleted", "component", service.ExtensionServiceName, "namespace", namespace)
 
-	if err := controller.DeleteManagedResource(ctx, a.client, namespace, SeedResourcesName); err != nil {
+	if err := managedresources.DeleteManagedResource(ctx, a.client, namespace, SeedResourcesName); err != nil {
 		return err
 	}
 
 	timeoutCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
-	if err := controller.WaitUntilManagedResourceDeleted(timeoutCtx, a.client, namespace, SeedResourcesName); err != nil {
+	if err := managedresources.WaitUntilManagedResourceDeleted(timeoutCtx, a.client, namespace, SeedResourcesName); err != nil {
 		return err
 	}
 
@@ -208,7 +221,7 @@ func (a *actuator) createShootResources(ctx context.Context, cluster *controller
 	crd.SetUID("")
 	crd.SetCreationTimestamp(metav1.Time{})
 	crd.SetGeneration(0)
-	if err := controller.CreateManagedResourceFromUnstructured(ctx, a.client, namespace, KeptShootResourcesName, "", []*unstructured.Unstructured{crd}, true, nil); err != nil {
+	if err := managedresources.CreateManagedResourceFromUnstructured(ctx, a.client, namespace, KeptShootResourcesName, "", []*unstructured.Unstructured{crd}, true, nil); err != nil {
 		return errors.Wrapf(err, "could not create managed resource %s", KeptShootResourcesName)
 	}
 
@@ -227,22 +240,22 @@ func (a *actuator) createShootResources(ctx context.Context, cluster *controller
 }
 
 func (a *actuator) deleteShootResources(ctx context.Context, namespace string) error {
-	if err := controller.DeleteManagedResource(ctx, a.client, namespace, ShootResourcesName); err != nil {
+	if err := managedresources.DeleteManagedResource(ctx, a.client, namespace, ShootResourcesName); err != nil {
 		return err
 	}
-	if err := controller.DeleteManagedResource(ctx, a.client, namespace, KeptShootResourcesName); err != nil {
+	if err := managedresources.DeleteManagedResource(ctx, a.client, namespace, KeptShootResourcesName); err != nil {
 		return err
 	}
 
 	timeoutCtx1, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
-	if err := controller.WaitUntilManagedResourceDeleted(timeoutCtx1, a.client, namespace, ShootResourcesName); err != nil {
+	if err := managedresources.WaitUntilManagedResourceDeleted(timeoutCtx1, a.client, namespace, ShootResourcesName); err != nil {
 		return err
 	}
 
 	timeoutCtx2, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
-	return controller.WaitUntilManagedResourceDeleted(timeoutCtx2, a.client, namespace, KeptShootResourcesName)
+	return managedresources.WaitUntilManagedResourceDeleted(timeoutCtx2, a.client, namespace, KeptShootResourcesName)
 }
 
 func (a *actuator) createKubeconfig(ctx context.Context, namespace string) (*corev1.Secret, error) {
@@ -254,9 +267,16 @@ func (a *actuator) createKubeconfig(ctx context.Context, namespace string) (*cor
 }
 
 func (a *actuator) createManagedResource(ctx context.Context, namespace, name, class string, renderer chartrenderer.Interface, chartName string, chartValues map[string]interface{}, injectedLabels map[string]string) error {
-	return controller.CreateManagedResourceFromFileChart(
-		ctx, a.client, namespace, name, class,
-		renderer, filepath.Join(service.ChartsPath, chartName), chartName,
-		chartValues, injectedLabels,
-	)
+	chartPath := filepath.Join(service.ChartsPath, chartName)
+	chart, err := renderer.Render(chartPath, chartName, namespace, chartValues)
+	if err != nil {
+		return err
+	}
+
+	return managedresources.CreateManagedResource(ctx, a.client, namespace, name, class, chartName, chart.Manifest(), false, injectedLabels, false)
+}
+
+// seedSettingShootDNSEnabled returns true if the 'shoot dns' setting is enabled.
+func seedSettingShootDNSEnabled(settings *gardencorev1beta1.SeedSettings) bool {
+	return settings == nil || settings.ShootDNS == nil || settings.ShootDNS.Enabled
 }

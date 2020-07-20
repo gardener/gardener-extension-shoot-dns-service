@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/gardener/gardener/pkg/api/extensions"
+	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"github.com/gardener/gardener/pkg/utils/flow"
@@ -30,9 +31,83 @@ import (
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
+
+// SyncClusterResourceToSeed creates or updates the `extensions.gardener.cloud/v1alpha1.Cluster` resource in the seed
+// cluster by adding the shoot, seed, and cloudprofile specification.
+func SyncClusterResourceToSeed(ctx context.Context, client client.Client, clusterName string, shoot *gardencorev1beta1.Shoot, cloudProfile *gardencorev1beta1.CloudProfile, seed *gardencorev1beta1.Seed) error {
+	if shoot.Spec.SeedName == nil {
+		return nil
+	}
+
+	var (
+		cluster = &extensionsv1alpha1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: clusterName,
+			},
+		}
+
+		cloudProfileObj *gardencorev1beta1.CloudProfile
+		seedObj         *gardencorev1beta1.Seed
+		shootObj        *gardencorev1beta1.Shoot
+	)
+
+	if cloudProfile != nil {
+		cloudProfileObj = cloudProfile.DeepCopy()
+		cloudProfileObj.TypeMeta = metav1.TypeMeta{
+			APIVersion: gardencorev1beta1.SchemeGroupVersion.String(),
+			Kind:       "CloudProfile",
+		}
+	}
+
+	if seed != nil {
+		seedObj = seed.DeepCopy()
+		seedObj.TypeMeta = metav1.TypeMeta{
+			APIVersion: gardencorev1beta1.SchemeGroupVersion.String(),
+			Kind:       "Seed",
+		}
+	}
+
+	if shoot != nil {
+		shootObj = shoot.DeepCopy()
+		shootObj.TypeMeta = metav1.TypeMeta{
+			APIVersion: gardencorev1beta1.SchemeGroupVersion.String(),
+			Kind:       "Shoot",
+		}
+
+		// TODO: Workaround for the issue that was fixed with https://github.com/gardener/gardener/pull/2265. It adds a
+		//       fake "observed generation" and a fake "last operation" and in case it is not set yet. This prevents the
+		//       ShootNotFailed predicate in the extensions library from reacting false negatively. This fake status is only
+		//       internally and will not be reported in the Shoot object in the garden cluster.
+		//       This code can be removed in a future version after giving extension controllers enough time to revendor
+		//       Gardener's extensions library.
+		shootObj.Status.ObservedGeneration = shootObj.Generation
+		if shootObj.Status.LastOperation == nil {
+			shootObj.Status.LastOperation = &gardencorev1beta1.LastOperation{
+				Type:  gardencorev1beta1.LastOperationTypeCreate,
+				State: gardencorev1beta1.LastOperationStateSucceeded,
+			}
+		}
+	}
+
+	_, err := controllerutil.CreateOrUpdate(ctx, client, cluster, func() error {
+		if cloudProfileObj != nil {
+			cluster.Spec.CloudProfile = runtime.RawExtension{Object: cloudProfileObj}
+		}
+		if seedObj != nil {
+			cluster.Spec.Seed = runtime.RawExtension{Object: seedObj}
+		}
+		if shootObj != nil {
+			cluster.Spec.Shoot = runtime.RawExtension{Object: shootObj}
+		}
+		return nil
+	})
+	return err
+}
 
 // WaitUntilExtensionCRReady waits until the given extension resource has become ready.
 func WaitUntilExtensionCRReady(
@@ -44,6 +119,7 @@ func WaitUntilExtensionCRReady(
 	namespace string,
 	name string,
 	interval time.Duration,
+	severeThreshold time.Duration,
 	timeout time.Duration,
 	postReadyFunc func(runtime.Object) error,
 ) error {
@@ -57,6 +133,7 @@ func WaitUntilExtensionCRReady(
 		namespace,
 		name,
 		interval,
+		severeThreshold,
 		timeout,
 		postReadyFunc,
 	)
@@ -74,20 +151,33 @@ func WaitUntilObjectReadyWithHealthFunction(
 	namespace string,
 	name string,
 	interval time.Duration,
+	severeThreshold time.Duration,
 	timeout time.Duration,
 	postReadyFunc func(runtime.Object) error,
 ) error {
-	var lastObservedError error
+	var (
+		errorWithCode         *gardencorev1beta1helper.ErrorWithCodes
+		lastObservedError     error
+		retryCountUntilSevere int
+	)
 
 	if err := retry.UntilTimeout(ctx, interval, timeout, func(ctx context.Context) (bool, error) {
+		retryCountUntilSevere++
+
 		obj := newObjFunc()
 		if err := c.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, obj); err != nil {
+			if apierrors.IsNotFound(err) {
+				return retry.MinorError(err)
+			}
 			return retry.SevereError(err)
 		}
 
 		if err := healthFunc(obj); err != nil {
-			logger.WithError(err).Errorf("%s did not get ready yet", extensionKey(kind, namespace, name))
 			lastObservedError = err
+			logger.WithError(err).Errorf("%s did not get ready yet", extensionKey(kind, namespace, name))
+			if errors.As(err, &errorWithCode) {
+				return retry.MinorOrSevereError(retryCountUntilSevere, int(severeThreshold.Nanoseconds()/interval.Nanoseconds()), err)
+			}
 			return retry.MinorError(err)
 		}
 
@@ -126,7 +216,11 @@ func DeleteExtensionCR(
 		return err
 	}
 
-	return client.IgnoreNotFound(c.Delete(ctx, obj, deleteOpts...))
+	if err := client.IgnoreNotFound(c.Delete(ctx, obj, deleteOpts...)); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // DeleteExtensionCRs lists all extension resources and loops over them. It executes the given <predicateFunc> for each
