@@ -52,12 +52,12 @@ func RegisterHealthChecks(mgr manager.Manager) error {
 		[]healthcheck.ConditionTypeToHealthCheck{
 			{
 				ConditionType: string(gardencorev1beta1.ShootControlPlaneHealthy),
-				HealthCheck:   general.CheckManagedResource(dnscontroller.SeedResourcesName),
+				HealthCheck:   general.CheckManagedResource(lifecycle.SeedResourcesName),
 				PreCheckFunc:  preCheckFunc,
 			},
 			{
 				ConditionType: string(gardencorev1beta1.ShootSystemComponentsHealthy),
-				HealthCheck:   general.CheckManagedResource(dnscontroller.ShootResourcesName),
+				HealthCheck:   general.CheckManagedResource(lifecycle.ShootResourcesName),
 				PreCheckFunc:  preCheckFunc,
 			},
 		},

@@ -52,7 +52,7 @@ func (r *reconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 	if common.IsMigrating(ext) {
 		return result, nil
 	}
-	statehandler, err := common.NewStateHandler(r.Env, ext, false)
+	statehandler, err := common.NewStateHandler(r.Context(), r.Env, ext, false)
 	if err != nil {
 		return result, err
 	}

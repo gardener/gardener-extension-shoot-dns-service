@@ -79,13 +79,9 @@ func (e *Env) ListObjects(list runtime.Object, opts ...client.ListOption) error 
 	return e.client.List(e.ctx, list, opts...)
 }
 
-// EntryLabelPrefix calculated the label prefix for dns entries managed for shoots of this garden
-func (e *Env) EntryLabelPrefix() string {
-	return fmt.Sprintf("%s.gardener.cloud/", e.config.GardenID)
-}
-
-func (e *Env) ShootId(namespace string) string {
-	return fmt.Sprintf("%s%s", e.EntryLabelPrefix(), namespace)
+// EntryLabel returns the label key for DNS entries managed for shoots
+func (e *Env) EntryLabel() string {
+	return "gardener.cloud/shoot-id"
 }
 
 // InjectFunc enables dependency injection into the actuator.

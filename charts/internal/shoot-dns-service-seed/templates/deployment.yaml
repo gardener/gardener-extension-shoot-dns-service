@@ -45,12 +45,12 @@ spec:
           - --target-realms={{ .Release.Namespace }}
           - --target.id={{ .Values.seedId }}
           - --target.disable-deploy-crds
-          - --target-owner-id={{ .Values.shootId }}
+          - --target-owner-id={{ .Values.shootId }}-shootdns
           - --controllers=dnssources,dnsentry-source
-          - --namespace={{ .Release.Namespace }}
+          - --namespace=kube-system
           - --target-namespace={{ .Release.Namespace }}
-          - --target-creator-label-name={{ .Values.shootId }}
-          - --target-creator-label-value=true
+          - --target-creator-label-name=gardener.cloud/shoot-id
+          - --target-creator-label-value={{ .Values.creatorLabelValue }}
           - --target-set-ignore-owners
           - --dns-target-class=gardendns
           - --dns-class={{ .Values.dnsClass }}

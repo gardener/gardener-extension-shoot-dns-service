@@ -106,7 +106,7 @@ func (a *actuator) Reconcile(ctx context.Context, ex *extensionsv1alpha1.Extensi
 
 	resurrection := false
 	if ex.Status.State != nil && !common.IsMigrating(ex) {
-		resurrection, err = a.ResurrectFrom(ex)
+		resurrection, err = a.ResurrectFrom(ex, cluster)
 		if err != nil {
 			return err
 		}
@@ -129,7 +129,7 @@ func (a *actuator) Reconcile(ctx context.Context, ex *extensionsv1alpha1.Extensi
 	return a.createSeedResources(ctx, cluster, ex, !resurrection)
 }
 
-func (a *actuator) ResurrectFrom(ex *extensionsv1alpha1.Extension) (bool, error) {
+func (a *actuator) ResurrectFrom(ex *extensionsv1alpha1.Extension, cluster *controller.Cluster) (bool, error) {
 	owner := &v1alpha1.DNSOwner{}
 
 	err := a.GetObject(client.ObjectKey{Name: a.OwnerName(ex.Namespace)}, owner)
@@ -139,7 +139,7 @@ func (a *actuator) ResurrectFrom(ex *extensionsv1alpha1.Extension) (bool, error)
 	// Ok, Owner object lost. This might have several reasons, we have to try to
 	// exclude a human error before initiating a resurrection
 
-	handler, err := common.NewStateHandler(a.Env, ex, false)
+	handler, err := common.NewStateHandler(a.Context(), a.Env, ex, false)
 	if err != nil {
 		return false, err
 	}
@@ -152,7 +152,7 @@ func (a *actuator) ResurrectFrom(ex *extensionsv1alpha1.Extension) (bool, error)
 
 	handler.Infof("resources object not found, also -> trying to resurrect DNS entries before setting up new owner")
 
-	found, err := handler.List()
+	found, err := handler.List(cluster)
 	if err != nil {
 		return true, err
 	}
@@ -160,6 +160,7 @@ func (a *actuator) ResurrectFrom(ex *extensionsv1alpha1.Extension) (bool, error)
 	for _, item := range found {
 		names.Insert(item.Name)
 	}
+	var lasterr error
 	for _, item := range handler.Items() {
 		if names.Has(item.Name) {
 			continue
@@ -175,13 +176,13 @@ func (a *actuator) ResurrectFrom(ex *extensionsv1alpha1.Extension) (bool, error)
 		}
 		err := a.CreateObject(obj)
 		if err != nil && !k8serr.IsAlreadyExists(err) {
-			return true, err
+			lasterr = err
 		}
 	}
 
 	// the new onwer will be reconciled by resource manger after re-/creating
 	// the seed resource object later on
-	return true, nil
+	return true, lasterr
 }
 
 // Delete the Extension resource.
@@ -202,10 +203,6 @@ func (a *actuator) Migrate(ctx context.Context, ex *extensionsv1alpha1.Extension
 	return a.Delete(ctx, ex)
 }
 
-func (a *actuator) shootId(namespace string) string {
-	return fmt.Sprintf("%s.gardener.cloud/%s", a.Config().GardenID, namespace)
-}
-
 func (a *actuator) createSeedResources(ctx context.Context, cluster *controller.Cluster, ex *extensionsv1alpha1.Extension, refresh bool) error {
 	namespace := ex.Namespace
 	shootKubeconfig, err := a.createKubeconfig(ctx, namespace)
@@ -213,7 +210,7 @@ func (a *actuator) createSeedResources(ctx context.Context, cluster *controller.
 		return err
 	}
 
-	handler, err := common.NewStateHandler(a.Env, ex, refresh)
+	handler, err := common.NewStateHandler(ctx, a.Env, ex, refresh)
 	if err != nil {
 		return err
 	}
@@ -222,13 +219,34 @@ func (a *actuator) createSeedResources(ctx context.Context, cluster *controller.
 		return err
 	}
 
+	shootID, creatorLabelValue, err := handler.ShootID(cluster)
+	if err != nil {
+		return err
+	}
+
+	seedID := a.Config().SeedID
+	if seedID == "" {
+		// load seed cluster-identity from kube-system namespace
+		cm := &corev1.ConfigMap{}
+		err = a.Client().Get(context.TODO(), client.ObjectKey{Namespace: "kube-system", Name: "cluster-identity"}, cm)
+		if err != nil {
+			return errors.Wrap(err, "cannot get seed identity from configmap 'kube-system/cluster-identity'")
+		}
+		var ok bool
+		seedID, ok = cm.Data["cluster-identity"]
+		if !ok {
+			return fmt.Errorf("'cluster-identity' not found in configmap 'kube-system/cluster-identity'")
+		}
+		a.Config().SeedID = seedID
+	}
+
 	chartValues := map[string]interface{}{
 		"serviceName":         service.ServiceName,
 		"replicas":            controller.GetReplicas(cluster, 1),
 		"targetClusterSecret": shootKubeconfig.GetName(),
-		"gardenId":            a.Config().GardenID,
-		"shootId":             a.ShootId(namespace),
-		"seedId":              a.Config().SeedID,
+		"creatorLabelValue":   creatorLabelValue,
+		"shootId":             shootID,
+		"seedId":              seedID,
 		"dnsClass":            a.Config().DNSClass,
 		"dnsOwner":            a.OwnerName(namespace),
 		"shootActive":         !common.IsMigrating(ex),
@@ -267,7 +285,7 @@ func (a *actuator) deleteSeedResources(ctx context.Context, ex *extensionsv1alph
 		return err
 	}
 
-	handler, err := common.NewStateHandler(a.Env, ex, true)
+	handler, err := common.NewStateHandler(ctx, a.Env, ex, true)
 	if err != nil {
 		return err
 	}

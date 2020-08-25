@@ -15,7 +15,6 @@
 package cmd
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
@@ -31,7 +30,6 @@ import (
 
 // DNSServiceOptions holds options related to the dns service.
 type DNSServiceOptions struct {
-	GardenID string
 	SeedID   string
 	DNSClass string
 	config   *DNSServiceConfig
@@ -44,7 +42,6 @@ type HealthOptions struct {
 
 // AddFlags implements Flagger.AddFlags.
 func (o *DNSServiceOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&o.GardenID, "garden-id", "", "ID of the current garden installation")
 	fs.StringVar(&o.SeedID, "seed-id", "", "ID of the current cluster")
 	fs.StringVar(&o.DNSClass, "dns-class", "garden", "DNS class used to filter DNS source resources in shoot clusters")
 }
@@ -56,13 +53,7 @@ func (o *HealthOptions) AddFlags(fs *pflag.FlagSet) {
 
 // Complete implements Completer.Complete.
 func (o *DNSServiceOptions) Complete() error {
-	if o.GardenID == "" {
-		return fmt.Errorf("garden id must be specified")
-	}
-	if o.SeedID == "" {
-		return fmt.Errorf("seed id must be specified")
-	}
-	o.config = &DNSServiceConfig{o.GardenID, o.SeedID, o.DNSClass}
+	o.config = &DNSServiceConfig{o.SeedID, o.DNSClass}
 	return nil
 }
 
@@ -84,14 +75,12 @@ func (o *HealthOptions) Completed() *HealthConfig {
 
 // DNSServiceConfig contains configuration information about the dns service.
 type DNSServiceConfig struct {
-	GardenID string
 	SeedID   string
 	DNSClass string
 }
 
 // Apply applies the DNSServiceOptions to the passed ControllerOptions instance.
 func (c *DNSServiceConfig) Apply(cfg *config.Config) {
-	cfg.DNSServiceConfig.GardenID = c.GardenID
 	cfg.DNSServiceConfig.SeedID = c.SeedID
 	cfg.DNSServiceConfig.DNSClass = c.DNSClass
 }

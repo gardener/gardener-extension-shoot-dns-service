@@ -18,6 +18,9 @@ package common
 
 import (
 	"context"
+	"fmt"
+	"hash/fnv"
+	"strconv"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1alpha1/constants"
 	extapi "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
@@ -74,4 +77,21 @@ func IsRestoring(ex *extensionsv1alpha1.Extension) bool {
 		return false
 	}
 	return ex.Annotations[ANNOTATION_OPERATION] == ANNOTATION_OPERATION_RESTORE
+}
+
+// ShortenID shortens an identifier longer than maxlen characters by cutting the string
+// and adding a hash suffix so that total length is maxlen. Identifiers are preserved
+// if length < maxlen.
+func ShortenID(id string, maxlen int) string {
+	if maxlen < 16 {
+		panic("maxlen < 16 for shortenID")
+	}
+	if len(id) <= maxlen {
+		return id
+	}
+
+	hash := fnv.New64()
+	_, _ = hash.Write([]byte(id))
+	hashstr := strconv.FormatUint(hash.Sum64(), 36)
+	return fmt.Sprintf("%s-%s", id[:62-len(hashstr)], hashstr)
 }

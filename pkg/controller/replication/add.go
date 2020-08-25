@@ -17,8 +17,6 @@
 package replication
 
 import (
-	"strings"
-
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -39,13 +37,10 @@ const (
 )
 
 // ForService returns a predicate that matches the given name of a resource.
-func ForService(prefix string) predicate.Predicate {
+func ForService(labelKey string) predicate.Predicate {
 	return predutils.FromMapper(predutils.MapperFunc(func(e event.GenericEvent) bool {
-		for l, v := range e.Meta.GetLabels() {
-			if v != "true" {
-				continue
-			}
-			if strings.HasPrefix(l, prefix) {
+		for k := range e.Meta.GetLabels() {
+			if k == labelKey {
 				return true
 			}
 		}
@@ -64,6 +59,6 @@ func AddToManager(mgr manager.Manager) error {
 	if err != nil {
 		return err
 	}
-	predicate := ForService(reconciler.EntryLabelPrefix())
+	predicate := ForService(reconciler.EntryLabel())
 	return ctrl.Watch(&source.Kind{Type: &dnsapi.DNSEntry{}}, &handler.EnqueueRequestForObject{}, predicate)
 }

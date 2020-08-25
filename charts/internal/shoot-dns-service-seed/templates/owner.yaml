@@ -8,5 +8,5 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-  ownerId: {{ .Values.shootId }}
+  ownerId: {{ .Values.shootId }}-shootdns
   active: {{ .Values.shootActive }}

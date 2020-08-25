@@ -17,10 +17,12 @@
 package common
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
 
+	"github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -48,7 +50,7 @@ type StateHandler struct {
 	elem     *unstructured.Unstructured
 }
 
-func NewStateHandler(env *Env, ext *v1alpha1.Extension, refresh bool) (*StateHandler, error) {
+func NewStateHandler(ctx context.Context, env *Env, ext *v1alpha1.Extension, refresh bool) (*StateHandler, error) {
 	var err error
 
 	elem := &unstructured.Unstructured{}
@@ -69,7 +71,11 @@ func NewStateHandler(env *Env, ext *v1alpha1.Extension, refresh bool) (*StateHan
 		} else {
 			handler.Infof("refreshing state for %s", ext.Name)
 		}
-		_, err = handler.Refresh()
+		cluster, err := controller.GetCluster(ctx, env.Client(), ext.Namespace)
+		if err != nil {
+			return nil, err
+		}
+		_, err = handler.Refresh(cluster)
 		if err != nil {
 			handler.Infof("cannot setup state for %s -> refreshing: %s", ext.Name, err)
 			return nil, err
@@ -82,13 +88,20 @@ func (s *StateHandler) Infof(msg string, args ...interface{}) {
 	s.Info(fmt.Sprintf(msg, args...), "component", service.ServiceName, "namespace", s.ext.Namespace)
 }
 
-func (s *StateHandler) ShootId() string {
-	return fmt.Sprintf("%s%s", s.EntryLabelPrefix(), s.ext.Namespace)
+func (s *StateHandler) ShootID(cluster *controller.Cluster) (string, string, error) {
+	if cluster.Shoot.Status.ClusterIdentity == nil {
+		return "", "", fmt.Errorf("missing shoot cluster identity")
+	}
+	return *cluster.Shoot.Status.ClusterIdentity, ShortenID(*cluster.Shoot.Status.ClusterIdentity, 63), nil
 }
 
-func (s *StateHandler) List() ([]dnsapi.DNSEntry, error) {
+func (s *StateHandler) List(cluster *controller.Cluster) ([]dnsapi.DNSEntry, error) {
+	_, labelValue, err := s.ShootID(cluster)
+	if err != nil {
+		return nil, err
+	}
 	list := &dnsapi.DNSEntryList{}
-	err := s.ListObjects(list, client.InNamespace(s.ext.Namespace), client.MatchingLabels(map[string]string{s.ShootId(): "true"}))
+	err = s.ListObjects(list, client.InNamespace(s.ext.Namespace), client.MatchingLabels(map[string]string{s.EntryLabel(): labelValue}))
 	if err != nil && !errors.IsNotFound(err) {
 		return nil, err
 	}
@@ -96,7 +109,7 @@ func (s *StateHandler) List() ([]dnsapi.DNSEntry, error) {
 }
 
 func (s *StateHandler) Delete(name string) error {
-	s.elem.SetName(s.ext.Name)
+	s.elem.SetName(name)
 	if err := s.client.Delete(s.ctx, s.elem); client.IgnoreNotFound(err) != nil {
 		return err
 	}
@@ -107,8 +120,8 @@ func (s *StateHandler) Items() []*apis.DNSEntry {
 	return s.state.Entries
 }
 
-func (s *StateHandler) Refresh() (bool, error) {
-	list, err := s.List()
+func (s *StateHandler) Refresh(cluster *controller.Cluster) (bool, error) {
+	list, err := s.List(cluster)
 	if err != nil {
 		return false, err
 	}
@@ -160,7 +173,7 @@ func (s *StateHandler) EnsureEntryFor(entry *dnsapi.DNSEntry) bool {
 	for _, e := range s.state.Entries {
 		if e.Name == entry.Name {
 			mod := false
-			if !reflect.DeepEqual(&e.Spec, &entry.Spec) {
+			if !reflect.DeepEqual(e.Spec, &entry.Spec) {
 				mod = true
 				e.Spec = entry.Spec.DeepCopy()
 			}

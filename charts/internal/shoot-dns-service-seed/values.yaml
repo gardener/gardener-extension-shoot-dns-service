@@ -8,6 +8,7 @@ images:
   dns-controller-manager: any-repo:any-tag
 
 targetClusterSecret: "target-cluster"
+creatorLabelValue: "4711-abc"
 shootId: "4711"
 seedId: "3141"
 podAnnotations: {}
