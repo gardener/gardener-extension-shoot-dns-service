@@ -116,7 +116,7 @@ func (s *StateHandler) Delete(name string) error {
 	return nil
 }
 
-func (s *StateHandler) Items() []*apis.DNSEntry {
+func (s *StateHandler) StateItems() []*apis.DNSEntry {
 	return s.state.Entries
 }
 

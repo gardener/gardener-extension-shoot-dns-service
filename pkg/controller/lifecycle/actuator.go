@@ -161,7 +161,7 @@ func (a *actuator) ResurrectFrom(ex *extensionsv1alpha1.Extension, cluster *cont
 		names.Insert(item.Name)
 	}
 	var lasterr error
-	for _, item := range handler.Items() {
+	for _, item := range handler.StateItems() {
 		if names.Has(item.Name) {
 			continue
 		}
@@ -289,7 +289,7 @@ func (a *actuator) deleteSeedResources(ctx context.Context, ex *extensionsv1alph
 	if err != nil {
 		return err
 	}
-	for _, item := range handler.Items() {
+	for _, item := range handler.StateItems() {
 		if err := handler.Delete(item.Name); err != nil {
 			return err
 		}
