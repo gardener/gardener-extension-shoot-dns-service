@@ -216,6 +216,10 @@ func (s *StateHandler) Update() error {
 			s.ext.Status.State = &runtime.RawExtension{}
 		}
 		s.ext.Status.State.Raw, err = json.Marshal(wire)
+		if err != nil {
+			s.Infof("marshalling failed: %s", err)
+			return err
+		}
 		s.ext.Status.State.Object = nil
 		err = s.client.Status().Update(s.ctx, s.ext)
 		if err != nil {

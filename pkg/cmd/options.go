@@ -30,6 +30,7 @@ import (
 
 // DNSServiceOptions holds options related to the dns service.
 type DNSServiceOptions struct {
+	GardenID string // only used for migration of old shoot id
 	SeedID   string
 	DNSClass string
 	config   *DNSServiceConfig
@@ -42,6 +43,7 @@ type HealthOptions struct {
 
 // AddFlags implements Flagger.AddFlags.
 func (o *DNSServiceOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.GardenID, "garden-id", "", "ID of the current garden installation (only used for migration of old shoot id)")
 	fs.StringVar(&o.SeedID, "seed-id", "", "ID of the current cluster")
 	fs.StringVar(&o.DNSClass, "dns-class", "garden", "DNS class used to filter DNS source resources in shoot clusters")
 }
@@ -53,7 +55,7 @@ func (o *HealthOptions) AddFlags(fs *pflag.FlagSet) {
 
 // Complete implements Completer.Complete.
 func (o *DNSServiceOptions) Complete() error {
-	o.config = &DNSServiceConfig{o.SeedID, o.DNSClass}
+	o.config = &DNSServiceConfig{o.GardenID, o.SeedID, o.DNSClass}
 	return nil
 }
 
@@ -75,12 +77,14 @@ func (o *HealthOptions) Completed() *HealthConfig {
 
 // DNSServiceConfig contains configuration information about the dns service.
 type DNSServiceConfig struct {
+	GardenID string
 	SeedID   string
 	DNSClass string
 }
 
 // Apply applies the DNSServiceOptions to the passed ControllerOptions instance.
 func (c *DNSServiceConfig) Apply(cfg *config.Config) {
+	cfg.DNSServiceConfig.GardenID = c.GardenID // only used for migration from old shoot id
 	cfg.DNSServiceConfig.SeedID = c.SeedID
 	cfg.DNSServiceConfig.DNSClass = c.DNSClass
 }

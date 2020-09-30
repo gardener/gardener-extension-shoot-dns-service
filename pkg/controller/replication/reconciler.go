@@ -64,12 +64,13 @@ func (r *reconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) 
 		if !errors.IsNotFound(err) {
 			return result, err
 		}
-		mod = r.delete(statehandler, req)
-	}
-	if entry.DeletionTimestamp != nil {
-		mod = r.delete(statehandler, req)
+		mod = r.delete(statehandler, req) || mod
 	} else {
-		mod = r.reconcile(statehandler, entry)
+		if entry.DeletionTimestamp != nil {
+			mod = r.delete(statehandler, req) || mod
+		} else {
+			mod = r.reconcile(statehandler, entry) || mod
+		}
 	}
 	if mod {
 		return result, statehandler.Update()

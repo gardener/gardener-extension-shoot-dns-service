@@ -22,6 +22,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
@@ -31,10 +32,11 @@ import (
 )
 
 type Env struct {
-	name   string
-	client client.Client
-	ctx    context.Context
-	config config.DNSServiceConfig
+	name       string
+	restConfig *rest.Config
+	client     client.Client
+	ctx        context.Context
+	config     config.DNSServiceConfig
 	logr.Logger
 }
 
@@ -53,6 +55,10 @@ func (e *Env) Infof(msg string, args ...interface{}) {
 
 func (e *Env) Context() context.Context {
 	return e.ctx
+}
+
+func (e *Env) RestConfig() *rest.Config {
+	return e.restConfig
 }
 
 func (e *Env) Client() client.Client {
@@ -89,14 +95,15 @@ func (e *Env) InjectFunc(f inject.Func) error {
 	return nil
 }
 
-// InjectClient injects the controller runtime client into the reconciler.
-func (e *Env) InjectClient(client client.Client) error {
-	e.client = client
-	return nil
-}
-
 // InjectLogger injects the controller runtime client into the reconciler.
 func (e *Env) InjectLogger(l logr.Logger) error {
 	e.Logger = l.WithName(e.name)
 	return nil
+}
+
+func (e *Env) InjectConfig(config *rest.Config) error {
+	e.restConfig = config
+	var err error
+	e.client, err = client.New(config, client.Options{})
+	return err
 }

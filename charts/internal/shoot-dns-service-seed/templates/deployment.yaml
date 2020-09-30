@@ -40,8 +40,11 @@ spec:
           args:
           - --kubeconfig=/etc/source-cluster/kubeconfig
           - --kubeconfig.id={{ .Values.shootId }}
+{{- if .Values.shootMigrationId }}
+          - --kubeconfig.migration-ids={{ .Values.shootMigrationId }}
+{{- end }}
           - --kubeconfig.disable-deploy-crds
-          - --target=
+          - --target=IN-CLUSTER
           - --target-realms={{ .Release.Namespace }}
           - --target.id={{ .Values.seedId }}
           - --target.disable-deploy-crds

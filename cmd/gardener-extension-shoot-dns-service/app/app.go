@@ -63,7 +63,9 @@ func (o *Options) run(ctx context.Context) {
 		controllercmd.LogErrAndExit(err, "Could not instantiate controller-manager")
 	}
 
-	dnsapi.AddToScheme(mgr.GetScheme())
+	if err := dnsapi.AddToScheme(mgr.GetScheme()); err != nil {
+		controllercmd.LogErrAndExit(err, "Could not update manager scheme (dnsapi)")
+	}
 
 	if err := extensionscontroller.AddToScheme(mgr.GetScheme()); err != nil {
 		controllercmd.LogErrAndExit(err, "Could not update manager scheme")

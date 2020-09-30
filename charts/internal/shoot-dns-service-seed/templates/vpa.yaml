@@ -2,7 +2,7 @@
 apiVersion: "autoscaling.k8s.io/v1beta2"
 kind: VerticalPodAutoscaler
 metadata:
-  name: gardener-extension-shoot-dns-service-vpa
+  name: {{ template "service.name" . }}-vpa
   namespace: {{ .Release.Namespace }}
 spec:
   resourcePolicy:
@@ -14,7 +14,7 @@ spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: gardener-extension-shoot-dns-service
+    name: {{ template "service.name" . }}
   updatePolicy:
     updateMode: {{ .Values.vpa.updatePolicy.updateMode }}
 {{- end }}

@@ -73,22 +73,24 @@ func NewActuator(config controllerconfig.DNSServiceConfig) extension.Actuator {
 
 type actuator struct {
 	*common.Env
-	applier    kubernetes.ChartApplier
-	renderer   chartrenderer.Interface
-	restConfig *rest.Config
+	applier  kubernetes.ChartApplier
+	renderer chartrenderer.Interface
 }
 
 // InjectConfig injects the rest config to this actuator.
 func (a *actuator) InjectConfig(config *rest.Config) error {
-	a.restConfig = config
+	err := a.Env.InjectConfig(config)
+	if err != nil {
+		return err
+	}
 
-	applier, err := kubernetes.NewChartApplierForConfig(a.restConfig)
+	applier, err := kubernetes.NewChartApplierForConfig(config)
 	if err != nil {
 		return fmt.Errorf("failed to create chart applier: %v", err)
 	}
 	a.applier = applier
 
-	renderer, err := chartrenderer.NewForConfig(a.restConfig)
+	renderer, err := chartrenderer.NewForConfig(config)
 	if err != nil {
 		return fmt.Errorf("failed to create chart renderer: %v", err)
 	}
@@ -246,6 +248,7 @@ func (a *actuator) createSeedResources(ctx context.Context, cluster *controller.
 		"targetClusterSecret": shootKubeconfig.GetName(),
 		"creatorLabelValue":   creatorLabelValue,
 		"shootId":             shootID,
+		"shootMigrationId":    a.oldShootId(namespace),
 		"seedId":              seedID,
 		"dnsClass":            a.Config().DNSClass,
 		"dnsOwner":            a.OwnerName(namespace),
@@ -370,4 +373,8 @@ func seedSettingShootDNSEnabled(settings *gardencorev1beta1.SeedSettings) bool {
 
 func (a *actuator) OwnerName(namespace string) string {
 	return fmt.Sprintf("%s-%s", OwnerName, namespace)
+}
+
+func (a *actuator) oldShootId(namespace string) string {
+	return fmt.Sprintf("%s.gardener.cloud/%s", a.Config().GardenID, namespace)
 }

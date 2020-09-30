@@ -9,6 +9,7 @@ images:
 
 targetClusterSecret: "target-cluster"
 creatorLabelValue: "4711-abc"
+#shootMigrationId: "4700"
 shootId: "4711"
 seedId: "3141"
 podAnnotations: {}
@@ -21,3 +22,11 @@ resources:
   limits:
     memory: "128Mi"
     cpu: "50m"
+
+vpa:
+  enabled: true
+  minAllowed:
+    cpu: 5m
+    memory: 25Mi
+  updatePolicy:
+    updateMode: "Auto"
