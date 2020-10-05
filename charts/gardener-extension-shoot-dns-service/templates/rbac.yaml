@@ -61,8 +61,18 @@ rules:
   resources:
   - "dnsentries"
   verbs:
+  - create
+  - get
   - list
+  - watch
   - delete
+- apiGroups:
+    - "dns.gardener.cloud"
+  resources:
+    - "dnsowners"
+  verbs:
+    - get
+    - list
 - apiGroups:
   - ""
   resources:

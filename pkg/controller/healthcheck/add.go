@@ -15,8 +15,8 @@
 package healthcheck
 
 import (
-	dnscontroller "github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/lifecycle"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
@@ -52,12 +52,12 @@ func RegisterHealthChecks(mgr manager.Manager) error {
 		[]healthcheck.ConditionTypeToHealthCheck{
 			{
 				ConditionType: string(gardencorev1beta1.ShootControlPlaneHealthy),
-				HealthCheck:   general.CheckManagedResource(dnscontroller.SeedResourcesName),
+				HealthCheck:   general.CheckManagedResource(lifecycle.SeedResourcesName),
 				PreCheckFunc:  preCheckFunc,
 			},
 			{
 				ConditionType: string(gardencorev1beta1.ShootSystemComponentsHealthy),
-				HealthCheck:   general.CheckManagedResource(dnscontroller.ShootResourcesName),
+				HealthCheck:   general.CheckManagedResource(lifecycle.ShootResourcesName),
 				PreCheckFunc:  preCheckFunc,
 			},
 		},

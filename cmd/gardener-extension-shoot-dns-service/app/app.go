@@ -17,6 +17,8 @@ package app
 import (
 	"context"
 
+	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
+
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 
@@ -59,6 +61,10 @@ func (o *Options) run(ctx context.Context) {
 	mgr, err := manager.New(o.restOptions.Completed().Config, o.managerOptions.Completed().Options())
 	if err != nil {
 		controllercmd.LogErrAndExit(err, "Could not instantiate controller-manager")
+	}
+
+	if err := dnsapi.AddToScheme(mgr.GetScheme()); err != nil {
+		controllercmd.LogErrAndExit(err, "Could not update manager scheme (dnsapi)")
 	}
 
 	if err := extensionscontroller.AddToScheme(mgr.GetScheme()); err != nil {

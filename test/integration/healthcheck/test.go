@@ -35,7 +35,7 @@ import (
 	"fmt"
 	"time"
 
-	dnscontroller "github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/lifecycle"
 
 	healthcheckoperation "github.com/gardener/gardener/extensions/test/integration/healthcheck"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -52,15 +52,15 @@ var _ = ginkgo.Describe("Extension-shoot-dns-service integration test: health ch
 
 	ginkgo.Context("Extension", func() {
 		ginkgo.Context("Condition type: ShootControlPlaneHealthy", func() {
-			f.Serial().Release().CIt(fmt.Sprintf("Extension CRD should contain unhealthy condition due to ManagedResource '%s' is unhealthy", dnscontroller.SeedResourcesName), func(ctx context.Context) {
-				err := healthcheckoperation.ExtensionHealthCheckWithManagedResource(ctx, timeout, f, "shoot-dns-service", dnscontroller.SeedResourcesName, gardencorev1beta1.ShootControlPlaneHealthy)
+			f.Serial().Release().CIt(fmt.Sprintf("Extension CRD should contain unhealthy condition due to ManagedResource '%s' is unhealthy", lifecycle.SeedResourcesName), func(ctx context.Context) {
+				err := healthcheckoperation.ExtensionHealthCheckWithManagedResource(ctx, timeout, f, "shoot-dns-service", lifecycle.SeedResourcesName, gardencorev1beta1.ShootControlPlaneHealthy)
 				framework.ExpectNoError(err)
 			}, timeout)
 		})
 
 		ginkgo.Context("Condition type: ShootSystemComponentsHealthy", func() {
-			f.Serial().Release().CIt(fmt.Sprintf("Extension CRD should contain unhealthy condition due to ManagedResource '%s' is unhealthy", dnscontroller.ShootResourcesName), func(ctx context.Context) {
-				err := healthcheckoperation.ExtensionHealthCheckWithManagedResource(ctx, timeout, f, "shoot-dns-service", dnscontroller.ShootResourcesName, gardencorev1beta1.ShootSystemComponentsHealthy)
+			f.Serial().Release().CIt(fmt.Sprintf("Extension CRD should contain unhealthy condition due to ManagedResource '%s' is unhealthy", lifecycle.ShootResourcesName), func(ctx context.Context) {
+				err := healthcheckoperation.ExtensionHealthCheckWithManagedResource(ctx, timeout, f, "shoot-dns-service", lifecycle.ShootResourcesName, gardencorev1beta1.ShootSystemComponentsHealthy)
 				framework.ExpectNoError(err)
 			}, timeout)
 		})

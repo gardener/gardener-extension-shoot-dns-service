@@ -1,0 +1,41 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: managedresources.resources.gardener.cloud
+spec:
+  additionalPrinterColumns:
+    - JSONPath: .spec.class
+      description: The class identifies which resource manager is responsible for this
+        ManagedResource.
+      name: Class
+      type: string
+    - JSONPath: .status.conditions[?(@.type=="ResourcesApplied")].status
+      description: Indicates whether all resources have been applied.
+      name: Applied
+      type: string
+    - JSONPath: .status.conditions[?(@.type=="ResourcesHealthy")].status
+      description: Indicates whether all resources are healthy.
+      name: Healthy
+      type: string
+    - JSONPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+  conversion:
+    strategy: None
+  group: resources.gardener.cloud
+  names:
+    kind: ManagedResource
+    listKind: ManagedResourceList
+    plural: managedresources
+    shortNames:
+      - mr
+    singular: managedresource
+  preserveUnknownFields: true
+  scope: Namespaced
+  subresources:
+    status: {}
+  version: v1alpha1
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true

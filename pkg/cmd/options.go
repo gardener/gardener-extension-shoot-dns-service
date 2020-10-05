@@ -15,12 +15,12 @@
 package cmd
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/healthcheck"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/lifecycle"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/replication"
 
 	"github.com/gardener/gardener/extensions/pkg/controller/cmd"
 	extensionshealthcheckcontroller "github.com/gardener/gardener/extensions/pkg/controller/healthcheck"
@@ -30,7 +30,7 @@ import (
 
 // DNSServiceOptions holds options related to the dns service.
 type DNSServiceOptions struct {
-	GardenID string
+	GardenID string // only used for migration of old shoot id
 	SeedID   string
 	DNSClass string
 	config   *DNSServiceConfig
@@ -43,7 +43,7 @@ type HealthOptions struct {
 
 // AddFlags implements Flagger.AddFlags.
 func (o *DNSServiceOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&o.GardenID, "garden-id", "", "ID of the current garden installation")
+	fs.StringVar(&o.GardenID, "garden-id", "", "ID of the current garden installation (only used for migration of old shoot id)")
 	fs.StringVar(&o.SeedID, "seed-id", "", "ID of the current cluster")
 	fs.StringVar(&o.DNSClass, "dns-class", "garden", "DNS class used to filter DNS source resources in shoot clusters")
 }
@@ -55,12 +55,6 @@ func (o *HealthOptions) AddFlags(fs *pflag.FlagSet) {
 
 // Complete implements Completer.Complete.
 func (o *DNSServiceOptions) Complete() error {
-	if o.GardenID == "" {
-		return fmt.Errorf("garden id must be specified")
-	}
-	if o.SeedID == "" {
-		return fmt.Errorf("seed id must be specified")
-	}
 	o.config = &DNSServiceConfig{o.GardenID, o.SeedID, o.DNSClass}
 	return nil
 }
@@ -90,7 +84,7 @@ type DNSServiceConfig struct {
 
 // Apply applies the DNSServiceOptions to the passed ControllerOptions instance.
 func (c *DNSServiceConfig) Apply(cfg *config.Config) {
-	cfg.DNSServiceConfig.GardenID = c.GardenID
+	cfg.DNSServiceConfig.GardenID = c.GardenID // only used for migration from old shoot id
 	cfg.DNSServiceConfig.SeedID = c.SeedID
 	cfg.DNSServiceConfig.DNSClass = c.DNSClass
 }
@@ -107,7 +101,8 @@ func (c *HealthConfig) ApplyHealthCheckConfig(config *config.HealthCheckConfig) 
 // SwitchOptions are the cmd.SwitchOptions for the provider controllers.
 func ControllerSwitches() *cmd.SwitchOptions {
 	return cmd.NewSwitchOptions(
-		cmd.Switch(controller.Name, controller.AddToManager),
+		cmd.Switch(lifecycle.Name, lifecycle.AddToManager),
+		cmd.Switch(replication.Name, replication.AddToManager),
 		cmd.Switch(extensionshealthcheckcontroller.ControllerName, healthcheck.RegisterHealthChecks),
 	)
 }
