@@ -20,15 +20,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
+
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
-
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 )
 
 type Env struct {

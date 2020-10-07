@@ -24,6 +24,7 @@ import (
 
 	"github.com/gardener/gardener/extensions/pkg/controller/cmd"
 	extensionshealthcheckcontroller "github.com/gardener/gardener/extensions/pkg/controller/healthcheck"
+	healthcheckconfig "github.com/gardener/gardener/extensions/pkg/controller/healthcheck/config"
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -36,6 +37,7 @@ type DNSServiceOptions struct {
 	config   *DNSServiceConfig
 }
 
+// HealthOptions holds options for health checks.
 type HealthOptions struct {
 	HealthCheckSyncPeriod time.Duration
 	config                *HealthConfig
@@ -83,10 +85,10 @@ type DNSServiceConfig struct {
 }
 
 // Apply applies the DNSServiceOptions to the passed ControllerOptions instance.
-func (c *DNSServiceConfig) Apply(cfg *config.Config) {
-	cfg.DNSServiceConfig.GardenID = c.GardenID // only used for migration from old shoot id
-	cfg.DNSServiceConfig.SeedID = c.SeedID
-	cfg.DNSServiceConfig.DNSClass = c.DNSClass
+func (c *DNSServiceConfig) Apply(cfg *config.DNSServiceConfig) {
+	cfg.GardenID = c.GardenID // only used for migration from old shoot id
+	cfg.SeedID = c.SeedID
+	cfg.DNSClass = c.DNSClass
 }
 
 // HealthConfig contains configuration information about the health check controller.
@@ -94,11 +96,12 @@ type HealthConfig struct {
 	HealthCheckSyncPeriod metav1.Duration
 }
 
-func (c *HealthConfig) ApplyHealthCheckConfig(config *config.HealthCheckConfig) {
-	config.Health.HealthCheckSyncPeriod = c.HealthCheckSyncPeriod
+// ApplyHealthCheckConfig applies the `HealthConfig` to the passed health configurtaion.
+func (c *HealthConfig) ApplyHealthCheckConfig(config *healthcheckconfig.HealthCheckConfig) {
+	config.SyncPeriod = c.HealthCheckSyncPeriod
 }
 
-// SwitchOptions are the cmd.SwitchOptions for the provider controllers.
+// ControllerSwitches are the cmd.ControllerSwitches for the provider controllers.
 func ControllerSwitches() *cmd.SwitchOptions {
 	return cmd.NewSwitchOptions(
 		cmd.Switch(lifecycle.Name, lifecycle.AddToManager),

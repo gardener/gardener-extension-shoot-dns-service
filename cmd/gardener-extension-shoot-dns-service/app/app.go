@@ -17,11 +17,14 @@ package app
 import (
 	"context"
 
-	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/replication"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/healthcheck"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/lifecycle"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 
+	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
 	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
 	"github.com/gardener/gardener/extensions/pkg/util"
@@ -71,11 +74,12 @@ func (o *Options) run(ctx context.Context) {
 		controllercmd.LogErrAndExit(err, "Could not update manager scheme")
 	}
 
-	o.serviceOptions.Completed().Apply(&config.ServiceConfig)
-	o.healthOptions.Completed().ApplyHealthCheckConfig(&config.HealthConfig)
-	o.controllerOptions.Completed().Apply(&config.ServiceConfig.ControllerOptions)
-	o.reconcileOptions.Completed().Apply(&config.ServiceConfig.IgnoreOperationAnnotation)
-	o.healthControllerOptions.Completed().Apply(&config.HealthConfig.ControllerOptions)
+	o.serviceOptions.Completed().Apply(&config.DNSService)
+	o.healthOptions.Completed().ApplyHealthCheckConfig(&healthcheck.DefaultAddOptions.HealthCheckConfig)
+	o.healthControllerOptions.Completed().Apply(&healthcheck.DefaultAddOptions.Controller)
+	o.lifecycleControllerOptions.Completed().Apply(&lifecycle.DefaultAddOptions.Controller)
+	o.replicationControllerOptions.Completed().Apply(&replication.DefaultAddOptions.Controller)
+	o.reconcileOptions.Completed().Apply(&lifecycle.DefaultAddOptions.IgnoreOperationAnnotation)
 
 	if err := o.controllerSwitches.Completed().AddToManager(mgr); err != nil {
 		controllercmd.LogErrAndExit(err, "Could not add controllers to manager")

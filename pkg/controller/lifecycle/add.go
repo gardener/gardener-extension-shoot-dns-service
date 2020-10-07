@@ -21,6 +21,7 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -31,15 +32,26 @@ const (
 	FinalizerSuffix = service.ExtensionServiceName
 )
 
+// DefaultAddOptions contains configuration for the dns service.
+var DefaultAddOptions = AddOptions{}
+
+// AddOptions are options to apply when adding the dns service controller to the manager.
+type AddOptions struct {
+	// Controller contains options for the controller.
+	Controller controller.Options
+	// IgnoreOperationAnnotation specifies whether to ignore the operation annotation or not.
+	IgnoreOperationAnnotation bool
+}
+
 // AddToManager adds a DNS Service Lifecycle controller to the given Controller Manager.
 func AddToManager(mgr manager.Manager) error {
 	return extension.Add(mgr, extension.AddArgs{
-		Actuator:          NewActuator(config.ServiceConfig.DNSServiceConfig),
-		ControllerOptions: config.ServiceConfig.ControllerOptions,
+		Actuator:          NewActuator(config.DNSService),
+		ControllerOptions: DefaultAddOptions.Controller,
 		Name:              Name,
 		FinalizerSuffix:   FinalizerSuffix,
 		Resync:            60 * time.Minute,
-		Predicates:        extension.DefaultPredicates(config.ServiceConfig.IgnoreOperationAnnotation),
+		Predicates:        extension.DefaultPredicates(DefaultAddOptions.IgnoreOperationAnnotation),
 		Type:              service.ExtensionType,
 	})
 }

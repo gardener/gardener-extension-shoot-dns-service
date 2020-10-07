@@ -23,14 +23,20 @@ resources:
 
 vpa:
   enabled: true
-  minAllowed:
-    cpu: 25m
-    memory: 50Mi
+  resourcePolicy:
+    minAllowed:
+      cpu: 25m
+      memory: 50Mi
   updatePolicy:
     updateMode: "Auto"
 
 controllers:
-  concurrentSyncs: 5
+  lifecycle:
+    concurrentSyncs: 5
+  healthcheck:
+    concurrentSyncs: 5
+  replication:
+    concurrentSyncs: 5
   ignoreOperationAnnotation: false
 
 # imageVectorOverwrite: |
