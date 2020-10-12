@@ -17,23 +17,22 @@
 package replication
 
 import (
-	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
-
-	extapi "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/common"
-	controllerconfig "github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
+
+	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
+	extapi "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 type reconciler struct {
 	*common.Env
 }
 
-// NewReconciler creates a new reconcile.Reconciler that reconciles
+// newReconciler creates a new reconcile.Reconciler that reconciles
 // Extension resources of Gardener's `extensions.gardener.cloud` API group.
-func NewReconciler(name string, controllerConfig controllerconfig.DNSServiceConfig) *reconciler {
+func newReconciler(name string, controllerConfig config.DNSServiceConfig) *reconciler {
 	return &reconciler{
 		Env: common.NewEnv(name, controllerConfig),
 	}

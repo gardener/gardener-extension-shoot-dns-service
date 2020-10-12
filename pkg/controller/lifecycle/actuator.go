@@ -20,7 +20,26 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/common"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/imagevector"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
+
+	"github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
+	resourceapi "github.com/gardener/gardener-resource-manager/pkg/apis/resources/v1alpha1"
+	"github.com/gardener/gardener/extensions/pkg/controller"
+	"github.com/gardener/gardener/extensions/pkg/controller/extension"
+	"github.com/gardener/gardener/extensions/pkg/util"
+	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
+	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
+	"github.com/gardener/gardener/pkg/chartrenderer"
+	"github.com/gardener/gardener/pkg/client/kubernetes"
 	"github.com/gardener/gardener/pkg/utils"
+	"github.com/gardener/gardener/pkg/utils/chart"
+	managedresources "github.com/gardener/gardener/pkg/utils/managedresources"
+	"github.com/gardener/gardener/pkg/utils/secrets"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,27 +47,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
-	resourceapi "github.com/gardener/gardener-resource-manager/pkg/apis/resources/v1alpha1"
-	"github.com/gardener/gardener/extensions/pkg/controller"
-	"github.com/gardener/gardener/extensions/pkg/controller/extension"
-	"github.com/gardener/gardener/extensions/pkg/util"
-
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
-	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
-	"github.com/gardener/gardener/pkg/chartrenderer"
-	"github.com/gardener/gardener/pkg/client/kubernetes"
-	"github.com/gardener/gardener/pkg/utils/chart"
-	managedresources "github.com/gardener/gardener/pkg/utils/managedresources"
-	"github.com/gardener/gardener/pkg/utils/secrets"
-	"github.com/pkg/errors"
-
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/common"
-	controllerconfig "github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/imagevector"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 )
 
 const (
@@ -65,7 +63,7 @@ const (
 )
 
 // NewActuator returns an actuator responsible for Extension resources.
-func NewActuator(config controllerconfig.DNSServiceConfig) extension.Actuator {
+func NewActuator(config config.DNSServiceConfig) extension.Actuator {
 	return &actuator{
 		Env: common.NewEnv(ActuatorName, config),
 	}

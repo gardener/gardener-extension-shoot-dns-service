@@ -9,8 +9,8 @@ spec:
     containerPolicies:
       - containerName: '*'
         minAllowed:
-          cpu: {{ .Values.vpa.minAllowed.cpu }}
-          memory: {{ .Values.vpa.minAllowed.memory }}
+          cpu: {{ .Values.vpa.resourcePolicy.minAllowed.cpu }}
+          memory: {{ .Values.vpa.resourcePolicy.minAllowed.memory }}
   targetRef:
     apiVersion: apps/v1
     kind: Deployment

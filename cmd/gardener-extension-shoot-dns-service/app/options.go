@@ -28,15 +28,16 @@ const ExtensionName = service.ExtensionServiceName
 
 // Options holds configuration passed to the DNS Service controller.
 type Options struct {
-	serviceOptions          *dnsservicecmd.DNSServiceOptions
-	healthOptions           *dnsservicecmd.HealthOptions
-	restOptions             *controllercmd.RESTOptions
-	managerOptions          *controllercmd.ManagerOptions
-	controllerOptions       *controllercmd.ControllerOptions
-	healthControllerOptions *controllercmd.ControllerOptions
-	controllerSwitches      *controllercmd.SwitchOptions
-	reconcileOptions        *controllercmd.ReconcilerOptions
-	optionAggregator        controllercmd.OptionAggregator
+	serviceOptions               *dnsservicecmd.DNSServiceOptions
+	healthOptions                *dnsservicecmd.HealthOptions
+	restOptions                  *controllercmd.RESTOptions
+	managerOptions               *controllercmd.ManagerOptions
+	lifecycleControllerOptions   *controllercmd.ControllerOptions
+	healthControllerOptions      *controllercmd.ControllerOptions
+	replicationControllerOptions *controllercmd.ControllerOptions
+	controllerSwitches           *controllercmd.SwitchOptions
+	reconcileOptions             *controllercmd.ReconcilerOptions
+	optionAggregator             controllercmd.OptionAggregator
 }
 
 // NewOptions creates a new Options instance.
@@ -51,11 +52,15 @@ func NewOptions() *Options {
 			LeaderElectionID:        controllercmd.LeaderElectionNameID(ExtensionName),
 			LeaderElectionNamespace: os.Getenv("LEADER_ELECTION_NAMESPACE"),
 		},
-		controllerOptions: &controllercmd.ControllerOptions{
+		lifecycleControllerOptions: &controllercmd.ControllerOptions{
 			// This is a default value.
 			MaxConcurrentReconciles: 5,
 		},
 		healthControllerOptions: &controllercmd.ControllerOptions{
+			// This is a default value.
+			MaxConcurrentReconciles: 5,
+		},
+		replicationControllerOptions: &controllercmd.ControllerOptions{
 			// This is a default value.
 			MaxConcurrentReconciles: 5,
 		},
@@ -68,8 +73,9 @@ func NewOptions() *Options {
 		options.healthOptions,
 		options.restOptions,
 		options.managerOptions,
-		options.controllerOptions,
+		controllercmd.PrefixOption("lifecycle-", options.lifecycleControllerOptions),
 		controllercmd.PrefixOption("healthcheck-", options.healthControllerOptions),
+		controllercmd.PrefixOption("replication-", options.replicationControllerOptions),
 		options.controllerSwitches,
 		options.reconcileOptions,
 	)

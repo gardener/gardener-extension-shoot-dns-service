@@ -17,24 +17,31 @@
 package replication
 
 import (
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
+
+	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
+	predutils "github.com/gardener/gardener/extensions/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
-
-	predutils "github.com/gardener/gardener/extensions/pkg/predicate"
-
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 )
 
 const (
 	// Name is the name of the replication controller.
 	Name = "shoot_dns_service_replication_controller"
 )
+
+// DefaultAddOptions contains configuration for the replication controller.
+var DefaultAddOptions = AddOptions{}
+
+// AddOptions are options to apply when adding the dns replication controller to the manager.
+type AddOptions struct {
+	// Controller contains options for the controller.
+	Controller controller.Options
+}
 
 // ForService returns a predicate that matches the given name of a resource.
 func ForService(labelKey string) predicate.Predicate {
@@ -50,11 +57,10 @@ func ForService(labelKey string) predicate.Predicate {
 
 // AddToManager adds a DNS Service replication controller to the given Controller Manager.
 func AddToManager(mgr manager.Manager) error {
-	reconciler := NewReconciler(Name, config.ServiceConfig.DNSServiceConfig)
-	opts := controller.Options{}
-	opts.Reconciler = reconciler
+	reconciler := newReconciler(Name, config.DNSService)
+	DefaultAddOptions.Controller.Reconciler = reconciler
 
-	ctrl, err := controller.New(Name, mgr, opts)
+	ctrl, err := controller.New(Name, mgr, DefaultAddOptions.Controller)
 
 	if err != nil {
 		return err
