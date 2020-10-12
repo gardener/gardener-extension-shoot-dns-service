@@ -15,16 +15,12 @@
 package kubernetes
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"context"
+
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-// Object is wrapper interface combining runtime.Object and metav1.Object interfaces together.
-type Object interface {
-	runtime.Object
-	metav1.Object
-}
 
 // ObjectName returns the name of the given object in the format <namespace>/<name>
 func ObjectName(obj runtime.Object) string {
@@ -33,4 +29,22 @@ func ObjectName(obj runtime.Object) string {
 		return "/"
 	}
 	return k.String()
+}
+
+// DeleteObjects deletes a list of Kubernetes objects.
+func DeleteObjects(ctx context.Context, c client.Client, objects ...runtime.Object) error {
+	for _, obj := range objects {
+		if err := DeleteObject(ctx, c, obj); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// DeleteObject deletes a Kubernetes object. It ignores 'not found' and 'no match' errors.
+func DeleteObject(ctx context.Context, c client.Client, object runtime.Object) error {
+	if err := c.Delete(ctx, object); client.IgnoreNotFound(err) != nil && !meta.IsNoMatchError(err) {
+		return err
+	}
+	return nil
 }

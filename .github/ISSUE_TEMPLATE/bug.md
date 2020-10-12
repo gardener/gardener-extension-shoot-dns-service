@@ -32,7 +32,8 @@ If multiple identifiers make sense you can also state the commands multiple time
 
 **Environment**:
 
-- Gardener version (if relevant):n- Extension version:
+- Gardener version (if relevant):
+- Extension version:
 - Kubernetes version (use `kubectl version`):
 - Cloud provider or hardware configuration:
 - Others:

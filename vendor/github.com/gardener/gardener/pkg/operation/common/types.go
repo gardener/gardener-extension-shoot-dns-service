@@ -198,9 +198,6 @@ const (
 	// KonnectivityServerCertName is the name of the api-proxy konnectivity-server
 	KonnectivityServerCertName = "konnectivity-server"
 
-	// KubeSchedulerServerName is the name of the kube-scheduler server.
-	KubeSchedulerServerName = "kube-scheduler-server"
-
 	// CoreDNSDeploymentName is the name of the coredns deployment.
 	CoreDNSDeploymentName = "coredns"
 
@@ -243,6 +240,9 @@ const (
 	// StaticTokenSecretName is the name of the secret containing static tokens for the kube-apiserver.
 	StaticTokenSecretName = "static-token"
 
+	// VPASecretName is the name of the secret used by VPA
+	VPASecretName = "vpa-tls-certs"
+
 	// ProjectPrefix is the prefix of namespaces representing projects.
 	ProjectPrefix = "garden-"
 
@@ -273,10 +273,6 @@ const (
 	// Note that this annotation is alpha and can be removed anytime without further notice. Only use it if you know
 	// what you do.
 	ShootAlphaScalingAPIServerClass = "alpha.kube-apiserver.scaling.shoot.gardener.cloud/class"
-
-	// ShootExperimentalAddonKyma is a constant for an annotation on the shoot stating that Kyma shall be installed.
-	// TODO: Just a temporary solution. Remove this in a future version once Kyma is moved out again.
-	ShootExperimentalAddonKyma = "experimental.addons.shoot.gardener.cloud/kyma"
 
 	// ShootExpirationTimestamp is an annotation on a Shoot resource whose value represents the time when the Shoot lifetime
 	// is expired. The lifetime can be extended, but at most by the minimal value of the 'clusterLifetimeDays' property
@@ -350,9 +346,6 @@ const (
 
 	// ManagedResourceAddonsName is the name of the addons managed resource.
 	ManagedResourceAddonsName = "addons"
-
-	// ManagedResourceKymaName is the name of the Kyma managed resource.
-	ManagedResourceKymaName = "addons-kyma"
 
 	// GardenerResourceManagerImageName is the name of the GardenerResourceManager image.
 	GardenerResourceManagerImageName = "gardener-resource-manager"
@@ -555,7 +548,6 @@ var (
 	RequiredMonitoringSeedDeployments = sets.NewString(
 		v1beta1constants.DeploymentNameGrafanaOperators,
 		v1beta1constants.DeploymentNameGrafanaUsers,
-		v1beta1constants.DeploymentNameKubeStateMetricsSeed,
 		v1beta1constants.DeploymentNameKubeStateMetricsShoot,
 	)
 
@@ -569,6 +561,5 @@ var (
 		ManagedResourceCoreNamespaceName,
 		ManagedResourceShootCoreName,
 		ManagedResourceAddonsName,
-		ManagedResourceKymaName,
 	)
 )

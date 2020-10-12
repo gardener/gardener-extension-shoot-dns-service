@@ -17,18 +17,24 @@ package app
 import (
 	"context"
 
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/replication"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/healthcheck"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/lifecycle"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/replication"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 
-	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
 	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
 	"github.com/gardener/gardener/extensions/pkg/util"
+	"github.com/gardener/gardener/pkg/client/kubernetes/utils"
+
+	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
+
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 	componentbaseconfig "k8s.io/component-base/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -61,17 +67,27 @@ func (o *Options) run(ctx context.Context) {
 		Burst: 130,
 	}, o.restOptions.Completed().Config)
 
-	mgr, err := manager.New(o.restOptions.Completed().Config, o.managerOptions.Completed().Options())
-	if err != nil {
-		controllercmd.LogErrAndExit(err, "Could not instantiate controller-manager")
+	mgrScheme := runtime.NewScheme()
+	if err := scheme.AddToScheme(mgrScheme); err != nil {
+		controllercmd.LogErrAndExit(err, "Could not update manager scheme (kubernetes)")
 	}
-
-	if err := dnsapi.AddToScheme(mgr.GetScheme()); err != nil {
+	if err := dnsapi.AddToScheme(mgrScheme); err != nil {
 		controllercmd.LogErrAndExit(err, "Could not update manager scheme (dnsapi)")
 	}
-
-	if err := extensionscontroller.AddToScheme(mgr.GetScheme()); err != nil {
+	if err := extensionscontroller.AddToScheme(mgrScheme); err != nil {
 		controllercmd.LogErrAndExit(err, "Could not update manager scheme")
+	}
+
+	mgrOpts := o.managerOptions.Completed().Options()
+	mgrOpts.Scheme = mgrScheme
+	mgrOpts.NewClient = utils.NewClientFuncWithDisabledCacheFor(
+		&corev1.Secret{},    // applied for ManagedResources
+		&corev1.ConfigMap{}, // applied for monitoring config
+		&dnsapi.DNSOwner{},  // avoid watching DNSOwner
+	)
+	mgr, err := manager.New(o.restOptions.Completed().Config, mgrOpts)
+	if err != nil {
+		controllercmd.LogErrAndExit(err, "Could not instantiate controller-manager")
 	}
 
 	o.serviceOptions.Completed().Apply(&config.DNSService)

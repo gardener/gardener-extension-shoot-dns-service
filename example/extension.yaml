@@ -130,7 +130,7 @@ spec:
         command:
         - /gardener-extension-hyper
         - shoot-dns-service-extension-controller-manager
-        - --max-concurrent-reconciles=1
+        - --healthcheck-max-concurrent-reconciles=1
         - --ignore-operation-annotation=true
         - --garden-id=4711
         - --seed-id=0815

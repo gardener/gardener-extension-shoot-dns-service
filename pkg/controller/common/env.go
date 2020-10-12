@@ -101,9 +101,14 @@ func (e *Env) InjectLogger(l logr.Logger) error {
 	return nil
 }
 
+// InjectConfig injects the rest configuration into the reconciler.
 func (e *Env) InjectConfig(config *rest.Config) error {
 	e.restConfig = config
-	var err error
-	e.client, err = client.New(config, client.Options{})
-	return err
+	return nil
+}
+
+// InjectConfig injects the caching client into the reconciler.
+func (e *Env) InjectClient(client client.Client) error {
+	e.client = client
+	return nil
 }
