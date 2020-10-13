@@ -26,6 +26,14 @@ const (
 	DataKeyKubeconfig = "kubeconfig"
 )
 
+// ControlPlaneSecretDataKeyCertificatePEM returns the data key inside a Secret of type ControlPlane whose value
+// contains the certificate PEM.
+func ControlPlaneSecretDataKeyCertificatePEM(name string) string { return fmt.Sprintf("%s.crt", name) }
+
+// ControlPlaneSecretDataKeyPrivateKey returns the data key inside a Secret of type ControlPlane whose value
+// contains the private key PEM.
+func ControlPlaneSecretDataKeyPrivateKey(name string) string { return fmt.Sprintf("%s.key", name) }
+
 // ControlPlaneSecretConfig is a struct which inherits from CertificateSecretConfig and is extended with a couple of additional
 // properties. A control plane secret will always contain a server/client certificate and optionally a kubeconfig.
 type ControlPlaneSecretConfig struct {
@@ -71,7 +79,7 @@ func (s *ControlPlaneSecretConfig) GenerateInfoData() (infodata.InfoData, error)
 	}
 
 	if len(cert.PrivateKeyPEM) == 0 && len(cert.CertificatePEM) == 0 {
-		return nil, nil
+		return infodata.EmptyInfoData, nil
 	}
 
 	return NewCertificateInfoData(cert.PrivateKeyPEM, cert.CertificatePEM), nil
@@ -113,8 +121,12 @@ func (s *ControlPlaneSecretConfig) GenerateFromInfoData(infoData infodata.InfoDa
 
 // LoadFromSecretData implements infodata.Loader
 func (s *ControlPlaneSecretConfig) LoadFromSecretData(secretData map[string][]byte) (infodata.InfoData, error) {
-	privateKeyPEM := secretData[fmt.Sprintf("%s.key", s.Name)]
-	certificatePEM := secretData[fmt.Sprintf("%s.crt", s.Name)]
+	privateKeyPEM := secretData[ControlPlaneSecretDataKeyPrivateKey(s.Name)]
+	certificatePEM := secretData[ControlPlaneSecretDataKeyCertificatePEM(s.Name)]
+
+	if len(privateKeyPEM) == 0 && len(certificatePEM) == 0 {
+		return infodata.EmptyInfoData, nil
+	}
 
 	return NewCertificateInfoData(privateKeyPEM, certificatePEM), nil
 }
@@ -153,8 +165,8 @@ func (c *ControlPlane) SecretData() map[string][]byte {
 	}
 
 	if c.Certificate.CertificatePEM != nil && c.Certificate.PrivateKeyPEM != nil {
-		data[fmt.Sprintf("%s.key", c.Name)] = c.Certificate.PrivateKeyPEM
-		data[fmt.Sprintf("%s.crt", c.Name)] = c.Certificate.CertificatePEM
+		data[ControlPlaneSecretDataKeyPrivateKey(c.Name)] = c.Certificate.PrivateKeyPEM
+		data[ControlPlaneSecretDataKeyCertificatePEM(c.Name)] = c.Certificate.CertificatePEM
 	}
 
 	if c.BasicAuth != nil {
