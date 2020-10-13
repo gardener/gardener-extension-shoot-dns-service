@@ -143,14 +143,15 @@ func (s *StateHandler) EnsureEntries(entries []dnsapi.DNSEntry) bool {
 	mod := false
 	names := sets.String{}
 	for _, entry := range entries {
-		mod = s.EnsureEntryFor(&entry)
+		mod = s.EnsureEntryFor(&entry) || mod
 		names.Insert(entry.Name)
 	}
 	if len(entries) != len(s.state.Entries) {
-		for i, e := range s.state.Entries {
+		for i := len(s.state.Entries) - 1; i >= 0; i-- {
+			e := s.state.Entries[i]
 			if !names.Has(e.Name) {
-				mod = true
 				s.state.Entries = append(s.state.Entries[:i], s.state.Entries[i+1:]...)
+				mod = true
 			}
 		}
 	}
