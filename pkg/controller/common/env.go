@@ -81,15 +81,6 @@ func (e *Env) UpdateObject(obj runtime.Object, opts ...client.UpdateOption) erro
 	return e.client.Update(e.ctx, obj, opts...)
 }
 
-func (e *Env) ListObjects(list runtime.Object, opts ...client.ListOption) error {
-	return e.client.List(e.ctx, list, opts...)
-}
-
-// EntryLabel returns the label key for DNS entries managed for shoots
-func (e *Env) EntryLabel() string {
-	return "gardener.cloud/shoot-id"
-}
-
 // InjectFunc enables dependency injection into the actuator.
 func (e *Env) InjectFunc(f inject.Func) error {
 	return nil

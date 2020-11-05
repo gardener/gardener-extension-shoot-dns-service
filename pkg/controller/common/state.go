@@ -22,9 +22,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -48,6 +46,7 @@ type StateHandler struct {
 	state    *apis.DNSState
 	modified bool
 	elem     *unstructured.Unstructured
+	helper   *ShootDNSEntriesHelper
 }
 
 func NewStateHandler(ctx context.Context, env *Env, ext *v1alpha1.Extension, refresh bool) (*StateHandler, error) {
@@ -59,9 +58,10 @@ func NewStateHandler(ctx context.Context, env *Env, ext *v1alpha1.Extension, ref
 	elem.SetNamespace(ext.Namespace)
 
 	handler := &StateHandler{
-		Env:  env,
-		ext:  ext,
-		elem: elem,
+		Env:    env,
+		ext:    ext,
+		elem:   elem,
+		helper: NewShootDNSEntriesHelper(ctx, env.Client(), ext),
 	}
 	handler.state, err = helper.GetExtensionState(ext)
 	if err != nil || refresh {
@@ -71,11 +71,7 @@ func NewStateHandler(ctx context.Context, env *Env, ext *v1alpha1.Extension, ref
 		} else {
 			handler.Infof("refreshing state for %s", ext.Name)
 		}
-		cluster, err := controller.GetCluster(ctx, env.Client(), ext.Namespace)
-		if err != nil {
-			return nil, err
-		}
-		_, err = handler.Refresh(cluster)
+		_, err = handler.Refresh()
 		if err != nil {
 			handler.Infof("cannot setup state for %s -> refreshing: %s", ext.Name, err)
 			return nil, err
@@ -88,24 +84,8 @@ func (s *StateHandler) Infof(msg string, args ...interface{}) {
 	s.Info(fmt.Sprintf(msg, args...), "component", service.ServiceName, "namespace", s.ext.Namespace)
 }
 
-func (s *StateHandler) ShootID(cluster *controller.Cluster) (string, string, error) {
-	if cluster.Shoot.Status.ClusterIdentity == nil {
-		return "", "", fmt.Errorf("missing shoot cluster identity")
-	}
-	return *cluster.Shoot.Status.ClusterIdentity, ShortenID(*cluster.Shoot.Status.ClusterIdentity, 63), nil
-}
-
-func (s *StateHandler) List(cluster *controller.Cluster) ([]dnsapi.DNSEntry, error) {
-	_, labelValue, err := s.ShootID(cluster)
-	if err != nil {
-		return nil, err
-	}
-	list := &dnsapi.DNSEntryList{}
-	err = s.ListObjects(list, client.InNamespace(s.ext.Namespace), client.MatchingLabels(map[string]string{s.EntryLabel(): labelValue}))
-	if err != nil && !errors.IsNotFound(err) {
-		return nil, err
-	}
-	return list.Items, nil
+func (s *StateHandler) ShootDNSEntriesHelper() *ShootDNSEntriesHelper {
+	return s.helper
 }
 
 func (s *StateHandler) Delete(name string) error {
@@ -120,8 +100,8 @@ func (s *StateHandler) StateItems() []*apis.DNSEntry {
 	return s.state.Entries
 }
 
-func (s *StateHandler) Refresh(cluster *controller.Cluster) (bool, error) {
-	list, err := s.List(cluster)
+func (s *StateHandler) Refresh() (bool, error) {
+	list, err := s.ShootDNSEntriesHelper().List()
 	if err != nil {
 		return false, err
 	}

@@ -17,6 +17,7 @@
 package replication
 
 import (
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/common"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 
 	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
@@ -65,6 +66,6 @@ func AddToManager(mgr manager.Manager) error {
 	if err != nil {
 		return err
 	}
-	predicate := ForService(reconciler.EntryLabel())
+	predicate := ForService(common.ShootDNSEntryLabelKey)
 	return ctrl.Watch(&source.Kind{Type: &dnsapi.DNSEntry{}}, &handler.EnqueueRequestForObject{}, predicate)
 }
