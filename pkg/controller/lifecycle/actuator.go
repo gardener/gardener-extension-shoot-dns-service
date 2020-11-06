@@ -31,7 +31,6 @@ import (
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
 	"github.com/gardener/gardener/extensions/pkg/util"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"github.com/gardener/gardener/pkg/chartrenderer"
 	"github.com/gardener/gardener/pkg/client/kubernetes"
@@ -115,11 +114,9 @@ func (a *actuator) Reconcile(ctx context.Context, ex *extensionsv1alpha1.Extensi
 	// Shoots that don't specify a DNS domain or that are scheduled to a seed that is tainted with "DNS disabled"
 	// don't get an DNS service
 
-	// TODO: remove the deprecated taint check in a future version
 	if !seedSettingShootDNSEnabled(cluster.Seed.Spec.Settings) ||
-		gardencorev1beta1helper.TaintsHave(cluster.Seed.Spec.Taints, gardencorev1beta1.DeprecatedSeedTaintDisableDNS) ||
 		cluster.Shoot.Spec.DNS == nil {
-		a.Info("DNS domain is not specified, the seed .spec.settings.shootDNS.enabled=false or the seed is tainted with 'disable-dns', therefore no shoot dns service is installed", "shoot", ex.Namespace)
+		a.Info("DNS domain is not specified, the seed .spec.settings.shootDNS.enabled=false, therefore no shoot dns service is installed", "shoot", ex.Namespace)
 		return a.Delete(ctx, ex)
 	}
 
