@@ -40,8 +40,8 @@ def add_image_dependency(component, image_name, image_reference, image_version):
 def add_component_dependency(component, dependency_name, dependency_version):
     component.componentReferences.append(
         gci.componentmodel.ComponentReference(
-            name=dependency_version,
-            componentName=dependency_version,
+            name=dependency_name,
+            componentName=dependency_name,
             version=dependency_version,
             labels=[],
         )
