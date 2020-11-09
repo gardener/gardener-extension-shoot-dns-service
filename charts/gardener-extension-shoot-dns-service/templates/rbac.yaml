@@ -66,6 +66,7 @@ rules:
   - list
   - watch
   - delete
+  - deletecollection
 - apiGroups:
     - "dns.gardener.cloud"
   resources:

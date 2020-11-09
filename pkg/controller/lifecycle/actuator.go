@@ -28,6 +28,7 @@ import (
 	"github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	resourceapi "github.com/gardener/gardener-resource-manager/pkg/apis/resources/v1alpha1"
 	"github.com/gardener/gardener/extensions/pkg/controller"
+	controllererror "github.com/gardener/gardener/extensions/pkg/controller/error"
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
 	"github.com/gardener/gardener/extensions/pkg/util"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -36,7 +37,7 @@ import (
 	"github.com/gardener/gardener/pkg/client/kubernetes"
 	"github.com/gardener/gardener/pkg/utils"
 	"github.com/gardener/gardener/pkg/utils/chart"
-	managedresources "github.com/gardener/gardener/pkg/utils/managedresources"
+	"github.com/gardener/gardener/pkg/utils/managedresources"
 	"github.com/gardener/gardener/pkg/utils/secrets"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -105,7 +106,7 @@ func (a *actuator) Reconcile(ctx context.Context, ex *extensionsv1alpha1.Extensi
 
 	resurrection := false
 	if ex.Status.State != nil && !common.IsMigrating(ex) {
-		resurrection, err = a.ResurrectFrom(ex, cluster)
+		resurrection, err = a.ResurrectFrom(ex)
 		if err != nil {
 			return err
 		}
@@ -120,13 +121,13 @@ func (a *actuator) Reconcile(ctx context.Context, ex *extensionsv1alpha1.Extensi
 		return a.Delete(ctx, ex)
 	}
 
-	if err := a.createShootResources(ctx, cluster, ex.Namespace); err != nil {
+	if err := a.createOrUpdateShootResources(ctx, cluster, ex.Namespace); err != nil {
 		return err
 	}
-	return a.createSeedResources(ctx, cluster, ex, !resurrection)
+	return a.createOrUpdateSeedResources(ctx, cluster, ex, !resurrection, true)
 }
 
-func (a *actuator) ResurrectFrom(ex *extensionsv1alpha1.Extension, cluster *controller.Cluster) (bool, error) {
+func (a *actuator) ResurrectFrom(ex *extensionsv1alpha1.Extension) (bool, error) {
 	owner := &v1alpha1.DNSOwner{}
 
 	err := a.GetObject(client.ObjectKey{Name: a.OwnerName(ex.Namespace)}, owner)
@@ -149,7 +150,7 @@ func (a *actuator) ResurrectFrom(ex *extensionsv1alpha1.Extension, cluster *cont
 
 	handler.Infof("resources object not found, also -> trying to resurrect DNS entries before setting up new owner")
 
-	found, err := handler.List(cluster)
+	found, err := handler.ShootDNSEntriesHelper().List()
 	if err != nil {
 		return true, err
 	}
@@ -200,7 +201,8 @@ func (a *actuator) Migrate(ctx context.Context, ex *extensionsv1alpha1.Extension
 	return a.Delete(ctx, ex)
 }
 
-func (a *actuator) createSeedResources(ctx context.Context, cluster *controller.Cluster, ex *extensionsv1alpha1.Extension, refresh bool) error {
+func (a *actuator) createOrUpdateSeedResources(ctx context.Context, cluster *controller.Cluster, ex *extensionsv1alpha1.Extension,
+	refresh bool, deploymentEnabled bool) error {
 	namespace := ex.Namespace
 	shootKubeconfig, err := a.createKubeconfig(ctx, namespace)
 	if err != nil {
@@ -216,7 +218,7 @@ func (a *actuator) createSeedResources(ctx context.Context, cluster *controller.
 		return err
 	}
 
-	shootID, creatorLabelValue, err := handler.ShootID(cluster)
+	shootID, creatorLabelValue, err := handler.ShootDNSEntriesHelper().ShootID()
 	if err != nil {
 		return err
 	}
@@ -237,9 +239,13 @@ func (a *actuator) createSeedResources(ctx context.Context, cluster *controller.
 		a.Config().SeedID = seedID
 	}
 
+	replicas := 1
+	if !deploymentEnabled {
+		replicas = 0
+	}
 	chartValues := map[string]interface{}{
 		"serviceName":         service.ServiceName,
-		"replicas":            controller.GetReplicas(cluster, 1),
+		"replicas":            controller.GetReplicas(cluster, replicas),
 		"targetClusterSecret": shootKubeconfig.GetName(),
 		"creatorLabelValue":   creatorLabelValue,
 		"shootId":             shootID,
@@ -259,14 +265,33 @@ func (a *actuator) createSeedResources(ctx context.Context, cluster *controller.
 	}
 
 	a.Info("Component is being applied", "component", service.ExtensionServiceName, "namespace", namespace)
-	return a.createManagedResource(ctx, namespace, SeedResourcesName, "seed", a.renderer, service.SeedChartName, chartValues, nil)
+	return a.createOrUpdateManagedResource(ctx, namespace, SeedResourcesName, "seed", a.renderer, service.SeedChartName, chartValues, nil)
 }
 
 func (a *actuator) deleteSeedResources(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
 	namespace := ex.Namespace
 	a.Info("Component is being deleted", "component", service.ExtensionServiceName, "namespace", namespace)
 
-	if err := managedresources.DeleteManagedResource(ctx, a.Client(), namespace, SeedResourcesName); err != nil {
+	entriesHelper := common.NewShootDNSEntriesHelper(ctx, a.Client(), ex)
+	list, err := entriesHelper.List()
+	if err != nil {
+		return err
+	}
+	if len(list) > 0 {
+		// need to wait until all shoot DNS entries have been deleted
+		// for robustness scale deployment of shoot-dns-service-seed down to 0
+		// and delete all shoot DNS entries
+		err := a.cleanupShootDNSEntries(entriesHelper)
+		if err != nil {
+			return errors.Wrap(err, "cleanupShootDNSEntries failed")
+		}
+		a.Info("Waiting until all shoot DNS entries have been deleted", "component", service.ExtensionServiceName, "namespace", namespace)
+		return &controllererror.RequeueAfterError{
+			Cause:        fmt.Errorf("waiting until shoot DNS entries have been deleted"),
+			RequeueAfter: 20 * time.Second,
+		}
+	}
+	if err = managedresources.DeleteManagedResource(ctx, a.Client(), namespace, SeedResourcesName); err != nil {
 		return err
 	}
 
@@ -283,19 +308,26 @@ func (a *actuator) deleteSeedResources(ctx context.Context, ex *extensionsv1alph
 		return err
 	}
 
-	handler, err := common.NewStateHandler(ctx, a.Env, ex, true)
+	return nil
+}
+
+func (a *actuator) cleanupShootDNSEntries(helper *common.ShootDNSEntriesHelper) error {
+	cluster, err := helper.GetCluster()
 	if err != nil {
 		return err
 	}
-	for _, item := range handler.StateItems() {
-		if err := handler.Delete(item.Name); err != nil {
-			return err
-		}
+	err = a.createOrUpdateSeedResources(helper.Context(), cluster, helper.Extension(), false, false)
+	if err != nil {
+		return err
+	}
+	err = helper.DeleteAll()
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
-func (a *actuator) createShootResources(ctx context.Context, cluster *controller.Cluster, namespace string) error {
+func (a *actuator) createOrUpdateShootResources(ctx context.Context, cluster *controller.Cluster, namespace string) error {
 	crd := &unstructured.Unstructured{}
 	crd.SetAPIVersion("apiextensions.k8s.io/v1beta1")
 	crd.SetKind("CustomResourceDefinition")
@@ -321,7 +353,7 @@ func (a *actuator) createShootResources(ctx context.Context, cluster *controller
 	}
 	injectedLabels := map[string]string{controller.ShootNoCleanupLabel: "true"}
 
-	return a.createManagedResource(ctx, namespace, ShootResourcesName, "", renderer, service.ShootChartName, chartValues, injectedLabels)
+	return a.createOrUpdateManagedResource(ctx, namespace, ShootResourcesName, "", renderer, service.ShootChartName, chartValues, injectedLabels)
 }
 
 func (a *actuator) deleteShootResources(ctx context.Context, namespace string) error {
@@ -351,7 +383,7 @@ func (a *actuator) createKubeconfig(ctx context.Context, namespace string) (*cor
 	return util.GetOrCreateShootKubeconfig(ctx, a.Client(), certConfig, namespace)
 }
 
-func (a *actuator) createManagedResource(ctx context.Context, namespace, name, class string, renderer chartrenderer.Interface, chartName string, chartValues map[string]interface{}, injectedLabels map[string]string) error {
+func (a *actuator) createOrUpdateManagedResource(ctx context.Context, namespace, name, class string, renderer chartrenderer.Interface, chartName string, chartValues map[string]interface{}, injectedLabels map[string]string) error {
 	chartPath := filepath.Join(service.ChartsPath, chartName)
 	chart, err := renderer.Render(chartPath, chartName, namespace, chartValues)
 	if err != nil {
