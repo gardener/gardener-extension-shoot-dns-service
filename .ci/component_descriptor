@@ -60,7 +60,8 @@ for image in images_list_contents.get('images', []):
     # use same heuristics as before: if the image's repository starts with
     # 'eu.gcr.io/gardener-project' assume it's one of our components ...
     # NOTE: Usually that is 'eu.gcr.io/gardener-project/gardener', but for this
-    # repository the image repository is different
+    # component (or rather: its' dependencies) the image repository is
+    # different.
     if image['repository'].startswith('eu.gcr.io/gardener-project'):
         add_component_dependency(
             component=own_component,
