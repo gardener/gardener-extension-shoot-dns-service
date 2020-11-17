@@ -185,7 +185,11 @@ func (a *actuator) ResurrectFrom(ex *extensionsv1alpha1.Extension) (bool, error)
 
 // Delete the Extension resource.
 func (a *actuator) Delete(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
-	if err := a.deleteSeedResources(ctx, ex); err != nil {
+	return a.delete(ctx, ex, false)
+}
+
+func (a *actuator) delete(ctx context.Context, ex *extensionsv1alpha1.Extension, migrate bool) error {
+	if err := a.deleteSeedResources(ctx, ex, migrate); err != nil {
 		return err
 	}
 	return a.deleteShootResources(ctx, ex.Namespace)
@@ -203,7 +207,7 @@ func (a *actuator) Migrate(ctx context.Context, ex *extensionsv1alpha1.Extension
 		return err
 	}
 
-	return a.Delete(ctx, ex)
+	return a.delete(ctx, ex, true)
 }
 
 func (a *actuator) createOrUpdateSeedResources(ctx context.Context, cluster *controller.Cluster, ex *extensionsv1alpha1.Extension,
@@ -273,30 +277,32 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, cluster *con
 	return a.createOrUpdateManagedResource(ctx, namespace, SeedResourcesName, "seed", a.renderer, service.SeedChartName, chartValues, nil)
 }
 
-func (a *actuator) deleteSeedResources(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
+func (a *actuator) deleteSeedResources(ctx context.Context, ex *extensionsv1alpha1.Extension, migrate bool) error {
 	namespace := ex.Namespace
 	a.Info("Component is being deleted", "component", service.ExtensionServiceName, "namespace", namespace)
 
-	entriesHelper := common.NewShootDNSEntriesHelper(ctx, a.Client(), ex)
-	list, err := entriesHelper.List()
-	if err != nil {
-		return err
-	}
-	if len(list) > 0 {
-		// need to wait until all shoot DNS entries have been deleted
-		// for robustness scale deployment of shoot-dns-service-seed down to 0
-		// and delete all shoot DNS entries
-		err := a.cleanupShootDNSEntries(entriesHelper)
+	if !migrate {
+		entriesHelper := common.NewShootDNSEntriesHelper(ctx, a.Client(), ex)
+		list, err := entriesHelper.List()
 		if err != nil {
-			return errors.Wrap(err, "cleanupShootDNSEntries failed")
+			return err
 		}
-		a.Info("Waiting until all shoot DNS entries have been deleted", "component", service.ExtensionServiceName, "namespace", namespace)
-		return &controllererror.RequeueAfterError{
-			Cause:        fmt.Errorf("waiting until shoot DNS entries have been deleted"),
-			RequeueAfter: 20 * time.Second,
+		if len(list) > 0 {
+			// need to wait until all shoot DNS entries have been deleted
+			// for robustness scale deployment of shoot-dns-service-seed down to 0
+			// and delete all shoot DNS entries
+			err := a.cleanupShootDNSEntries(entriesHelper)
+			if err != nil {
+				return errors.Wrap(err, "cleanupShootDNSEntries failed")
+			}
+			a.Info("Waiting until all shoot DNS entries have been deleted", "component", service.ExtensionServiceName, "namespace", namespace)
+			return &controllererror.RequeueAfterError{
+				Cause:        fmt.Errorf("waiting until shoot DNS entries have been deleted"),
+				RequeueAfter: 20 * time.Second,
+			}
 		}
 	}
-	if err = managedresources.DeleteManagedResource(ctx, a.Client(), namespace, SeedResourcesName); err != nil {
+	if err := managedresources.DeleteManagedResource(ctx, a.Client(), namespace, SeedResourcesName); err != nil {
 		return err
 	}
 
