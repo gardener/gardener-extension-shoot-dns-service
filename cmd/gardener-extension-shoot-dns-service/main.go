@@ -15,9 +15,10 @@
 package main
 
 import (
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+
 	"github.com/gardener/gardener-extension-shoot-dns-service/cmd/gardener-extension-shoot-dns-service/app"
 
-	"github.com/gardener/gardener/extensions/pkg/controller"
 	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
 	"github.com/gardener/gardener/extensions/pkg/log"
 	runtimelog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -26,8 +27,8 @@ import (
 func main() {
 	runtimelog.SetLogger(log.ZapLogger(false))
 
-	cmd := app.NewServiceControllerCommand(controller.SetupSignalHandlerContext())
-	if err := cmd.Execute(); err != nil {
+	ctx := signals.SetupSignalHandler()
+	if err := app.NewServiceControllerCommand().ExecuteContext(ctx); err != nil {
 		controllercmd.LogErrAndExit(err, "error executing the main controller command")
 	}
 }

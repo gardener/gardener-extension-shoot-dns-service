@@ -17,6 +17,8 @@
 package replication
 
 import (
+	"context"
+
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/common"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 
@@ -41,24 +43,24 @@ func newReconciler(name string, controllerConfig config.DNSServiceConfig) *recon
 ////////////////////////////////////////////////////////////////////////////////
 // entry reconcilation
 
-func (r *reconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) {
+func (r *reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	result := reconcile.Result{}
 
-	ext, err := r.findExtension(req.Namespace)
+	ext, err := r.findExtension(ctx, req.Namespace)
 	if err != nil {
 		return result, err
 	}
 	if common.IsMigrating(ext) {
 		return result, nil
 	}
-	statehandler, err := common.NewStateHandler(r.Context(), r.Env, ext, false)
+	statehandler, err := common.NewStateHandler(ctx, r.Env, ext, false)
 	if err != nil {
 		return result, err
 	}
 
 	mod := false
 	entry := &dnsapi.DNSEntry{}
-	err = r.Client().Get(r.Context(), req.NamespacedName, entry)
+	err = r.Client().Get(ctx, req.NamespacedName, entry)
 	if err != nil {
 		if !errors.IsNotFound(err) {
 			return result, err
@@ -88,6 +90,6 @@ func (r *reconciler) delete(statehandler *common.StateHandler, req reconcile.Req
 ////////////////////////////////////////////////////////////////////////////////
 // extension handling
 
-func (r *reconciler) findExtension(namespace string) (*extapi.Extension, error) {
-	return common.FindExtension(r.Context(), r.Client(), namespace)
+func (r *reconciler) findExtension(ctx context.Context, namespace string) (*extapi.Extension, error) {
+	return common.FindExtension(ctx, r.Client(), namespace)
 }

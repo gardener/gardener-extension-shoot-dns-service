@@ -16,8 +16,10 @@ package app
 
 import (
 	"context"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/healthcheck"
@@ -26,9 +28,7 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
-	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
 	"github.com/gardener/gardener/extensions/pkg/util"
-	"github.com/gardener/gardener/pkg/client/kubernetes/utils"
 
 	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 
@@ -40,18 +40,20 @@ import (
 )
 
 // NewServiceControllerCommand creates a new command that is used to start the DNS Service controller.
-func NewServiceControllerCommand(ctx context.Context) *cobra.Command {
+func NewServiceControllerCommand() *cobra.Command {
 	options := NewOptions()
 
 	cmd := &cobra.Command{
-		Use:   service.ServiceName + "-extension-controller-manager",
-		Short: "DNS Meta Controller for Shoots.",
+		Use:           service.ServiceName + "-extension-controller-manager",
+		Short:         "DNS Meta Controller for Shoots.",
+		SilenceErrors: true,
 
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := options.optionAggregator.Complete(); err != nil {
-				controllercmd.LogErrAndExit(err, "Error completing options")
+				return fmt.Errorf("error completing options: %s", err)
 			}
-			options.run(ctx)
+			cmd.SilenceUsage = true
+			return options.run(cmd.Context())
 		},
 	}
 
@@ -60,7 +62,7 @@ func NewServiceControllerCommand(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-func (o *Options) run(ctx context.Context) {
+func (o *Options) run(ctx context.Context) error {
 	// TODO: Make these flags configurable via command line parameters or component config file.
 	util.ApplyClientConnectionConfigurationToRESTConfig(&componentbaseconfig.ClientConnectionConfiguration{
 		QPS:   100.0,
@@ -69,25 +71,25 @@ func (o *Options) run(ctx context.Context) {
 
 	mgrScheme := runtime.NewScheme()
 	if err := scheme.AddToScheme(mgrScheme); err != nil {
-		controllercmd.LogErrAndExit(err, "Could not update manager scheme (kubernetes)")
+		return fmt.Errorf("could not update manager scheme (kubernetes): %s", err)
 	}
 	if err := dnsapi.AddToScheme(mgrScheme); err != nil {
-		controllercmd.LogErrAndExit(err, "Could not update manager scheme (dnsapi)")
+		return fmt.Errorf("could not update manager scheme (dnsapi): %s", err)
 	}
 	if err := extensionscontroller.AddToScheme(mgrScheme); err != nil {
-		controllercmd.LogErrAndExit(err, "Could not update manager scheme")
+		return fmt.Errorf("could not update manager scheme: %s", err)
 	}
 
 	mgrOpts := o.managerOptions.Completed().Options()
 	mgrOpts.Scheme = mgrScheme
-	mgrOpts.NewClient = utils.NewClientFuncWithDisabledCacheFor(
+	mgrOpts.ClientDisableCacheFor = []client.Object{
 		&corev1.Secret{},    // applied for ManagedResources
 		&corev1.ConfigMap{}, // applied for monitoring config
 		&dnsapi.DNSOwner{},  // avoid watching DNSOwner
-	)
+	}
 	mgr, err := manager.New(o.restOptions.Completed().Config, mgrOpts)
 	if err != nil {
-		controllercmd.LogErrAndExit(err, "Could not instantiate controller-manager")
+		return fmt.Errorf("could not instantiate controller-manager: %s", err)
 	}
 
 	o.serviceOptions.Completed().Apply(&config.DNSService)
@@ -98,10 +100,12 @@ func (o *Options) run(ctx context.Context) {
 	o.reconcileOptions.Completed().Apply(&lifecycle.DefaultAddOptions.IgnoreOperationAnnotation)
 
 	if err := o.controllerSwitches.Completed().AddToManager(mgr); err != nil {
-		controllercmd.LogErrAndExit(err, "Could not add controllers to manager")
+		return fmt.Errorf("could not add controllers to manager: %s", err)
 	}
 
-	if err := mgr.Start(ctx.Done()); err != nil {
-		controllercmd.LogErrAndExit(err, "Error running manager")
+	if err := mgr.Start(ctx); err != nil {
+		return fmt.Errorf("error running manager: %s", err)
 	}
+
+	return nil
 }

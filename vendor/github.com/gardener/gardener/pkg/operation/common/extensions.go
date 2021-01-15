@@ -84,20 +84,6 @@ func SyncClusterResourceToSeed(ctx context.Context, client client.Client, cluste
 			APIVersion: gardencorev1beta1.SchemeGroupVersion.String(),
 			Kind:       "Shoot",
 		}
-
-		// TODO: Workaround for the issue that was fixed with https://github.com/gardener/gardener/pull/2265. It adds a
-		//       fake "observed generation" and a fake "last operation" and in case it is not set yet. This prevents the
-		//       ShootNotFailed predicate in the extensions library from reacting false negatively. This fake status is only
-		//       internally and will not be reported in the Shoot object in the garden cluster.
-		//       This code can be removed in a future version after giving extension controllers enough time to revendor
-		//       Gardener's extensions library.
-		shootObj.Status.ObservedGeneration = shootObj.Generation
-		if shootObj.Status.LastOperation == nil {
-			shootObj.Status.LastOperation = &gardencorev1beta1.LastOperation{
-				Type:  gardencorev1beta1.LastOperationTypeCreate,
-				State: gardencorev1beta1.LastOperationStateSucceeded,
-			}
-		}
 	}
 
 	_, err := controllerutil.CreateOrUpdate(ctx, client, cluster, func() error {
@@ -120,7 +106,7 @@ func WaitUntilExtensionCRReady(
 	ctx context.Context,
 	c client.Client,
 	logger logrus.FieldLogger,
-	newObjFunc func() runtime.Object,
+	newObjFunc func() client.Object,
 	kind string,
 	namespace string,
 	name string,
@@ -152,7 +138,7 @@ func WaitUntilObjectReadyWithHealthFunction(
 	c client.Client,
 	logger logrus.FieldLogger,
 	healthFunc health.Func,
-	newObjFunc func() runtime.Object,
+	newObjFunc func() client.Object,
 	kind string,
 	namespace string,
 	name string,
@@ -222,11 +208,7 @@ func DeleteExtensionCR(
 		return err
 	}
 
-	if err := client.IgnoreNotFound(c.Delete(ctx, obj, deleteOpts...)); err != nil {
-		return err
-	}
-
-	return nil
+	return client.IgnoreNotFound(c.Delete(ctx, obj, deleteOpts...))
 }
 
 // DeleteExtensionCRs lists all extension resources and loops over them. It executes the given <predicateFunc> for each
@@ -234,7 +216,7 @@ func DeleteExtensionCR(
 func DeleteExtensionCRs(
 	ctx context.Context,
 	c client.Client,
-	listObj runtime.Object,
+	listObj client.ObjectList,
 	newObjFunc func() extensionsv1alpha1.Object,
 	namespace string,
 	predicateFunc func(obj extensionsv1alpha1.Object) bool,
@@ -264,7 +246,7 @@ func WaitUntilExtensionCRsDeleted(
 	ctx context.Context,
 	c client.Client,
 	logger logrus.FieldLogger,
-	listObj runtime.Object,
+	listObj client.ObjectList,
 	newObjFunc func() extensionsv1alpha1.Object,
 	kind string,
 	namespace string,
@@ -379,7 +361,7 @@ func RestoreExtensionWithDeployFunction(
 	return AnnotateExtensionObjectWithOperation(ctx, c, extensionObj, v1beta1constants.GardenerOperationRestore)
 }
 
-//RestoreExtensionObjectState restores the status.state field of the extension resources and deploys any required resources from the provided shoot state
+// RestoreExtensionObjectState restores the status.state field of the extension resources and deploys any required resources from the provided shoot state
 func RestoreExtensionObjectState(
 	ctx context.Context,
 	c client.Client,
@@ -451,7 +433,7 @@ func MigrateExtensionCR(
 func MigrateExtensionCRs(
 	ctx context.Context,
 	c client.Client,
-	listObj runtime.Object,
+	listObj client.ObjectList,
 	newObjFunc func() extensionsv1alpha1.Object,
 	namespace string,
 ) error {
@@ -508,7 +490,7 @@ func WaitUntilExtensionCRMigrated(
 func WaitUntilExtensionCRsMigrated(
 	ctx context.Context,
 	c client.Client,
-	listObj runtime.Object,
+	listObj client.ObjectList,
 	newObjFunc func() extensionsv1alpha1.Object,
 	namespace string,
 	interval time.Duration,
@@ -544,7 +526,7 @@ func AnnotateExtensionObjectWithOperation(ctx context.Context, c client.Client, 
 func applyFuncToExtensionResources(
 	ctx context.Context,
 	c client.Client,
-	listObj runtime.Object,
+	listObj client.ObjectList,
 	namespace string,
 	predicateFunc func(obj extensionsv1alpha1.Object) bool,
 	applyFunc func(ctx context.Context, object extensionsv1alpha1.Object) error,

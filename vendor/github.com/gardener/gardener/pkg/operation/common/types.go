@@ -29,13 +29,6 @@ const (
 	// KonnectivityTunnel dictates that a konnectivity proxy is used as a tunnel between seed and shoot networks.
 	KonnectivityTunnel string = "konnectivity-agent"
 
-	// BackupBucketName is a constant for the name of bucket of object storage.
-	BackupBucketName = "bucketName"
-
-	// BackupSecretName defines the name of the secret containing the credentials which are required to
-	// authenticate against the respective cloud provider (required to store the backups of Shoot clusters).
-	BackupSecretName = "etcd-backup"
-
 	// BasicAuthSecretName is the name of the secret containing basic authentication credentials for the kube-apiserver.
 	BasicAuthSecretName = "kube-apiserver-basic-auth"
 
@@ -53,12 +46,6 @@ const (
 	// ConfirmationDeletion is an annotation on a Shoot and Project resources whose value must be set to "true" in order to
 	// allow deleting the resource (if the annotation is not set any DELETE request will be denied).
 	ConfirmationDeletion = "confirmation.gardener.cloud/deletion"
-
-	// ConfirmationDeletionDeprecated is an annotation on a Shoot resource whose value must be set to "true" in order to
-	// allow deleting the Shoot (if the annotation is not set any DELETE request will be denied).
-	//
-	// Deprecated: Use `ConfirmationDeletion` instead.
-	ConfirmationDeletionDeprecated = "confirmation.garden.sapcloud.io/deletion"
 
 	// ControllerManagerInternalConfigMapName is the name of the internal config map in which the Gardener controller
 	// manager stores its configuration.
@@ -79,12 +66,6 @@ const (
 	// DNSExcludeZones is the key for an annotation on a Kubernetes Secret object whose value must point to a list
 	// of zones that shall be excluded.
 	DNSExcludeZones = "dns.gardener.cloud/exclude-zones"
-
-	// EtcdRoleMain is the constant defining the role for main etcd storing data about objects in Shoot.
-	EtcdRoleMain = "main"
-
-	// EtcdRoleEvents is the constant defining the role for etcd storing events in Shoot.
-	EtcdRoleEvents = "events"
 
 	// EtcdEncryptionSecretName is the name of the shoot-specific secret which contains
 	// that shoot's EncryptionConfiguration. The EncryptionConfiguration contains a key
@@ -134,9 +115,6 @@ const (
 	// GardenRoleInternalDomain is the value of the GardenRole key indicating type 'internal-domain'.
 	GardenRoleInternalDomain = "internal-domain"
 
-	// GardenRoleAlertingSMTP is the value of the GardenRole key indicating type 'alerting-smtp'.
-	GardenRoleAlertingSMTP = "alerting-smtp"
-
 	// GardenRoleOpenVPNDiffieHellman is the value of the GardenRole key indicating type 'openvpn-diffie-hellman'.
 	GardenRoleOpenVPNDiffieHellman = "openvpn-diffie-hellman"
 
@@ -152,12 +130,6 @@ const (
 	// GardenCreatedBy is the key for an annotation of a Shoot cluster whose value indicates contains the username
 	// of the user that created the resource.
 	GardenCreatedBy = "gardener.cloud/created-by"
-
-	// GardenCreatedByDeprecated is the key for an annotation of a Shoot cluster whose value indicates contains the username
-	// of the user that created the resource.
-	//
-	// Deprecated: Use `GardenCreatedBy` instead.
-	GardenCreatedByDeprecated = "garden.sapcloud.io/createdBy"
 
 	// GrafanaOperatorsPrefix is a constant for a prefix used for the operators Grafana instance.
 	GrafanaOperatorsPrefix = "go"
@@ -204,9 +176,6 @@ const (
 	// VPNShootDeploymentName is the name of the vpn-shoot deployment.
 	VPNShootDeploymentName = "vpn-shoot"
 
-	// MetricsServerDeploymentName is the name of the metrics-server deployment.
-	MetricsServerDeploymentName = "metrics-server"
-
 	// KubeProxyDaemonSetName is the name of the kube-proxy daemon set.
 	KubeProxyDaemonSetName = "kube-proxy"
 
@@ -246,21 +215,16 @@ const (
 	// ProjectPrefix is the prefix of namespaces representing projects.
 	ProjectPrefix = "garden-"
 
-	// ProjectName is they key of a label on namespaces whose value holds the project name.
+	// ProjectName is the key of a label on namespaces whose value holds the project name.
 	ProjectName = "project.gardener.cloud/name"
 
-	// ProjectNameDeprecated is they key of a label on namespaces whose value holds the project name.
-	//
-	// Deprecated: Use `ProjectName` instead.
-	ProjectNameDeprecated = "project.garden.sapcloud.io/name"
+	// ProjectSkipStaleCheck is the key of an annotation on a project namespace that marks the associated Project to be
+	// skipped by the stale project controller. If the project has already configured stale timestamps in its status
+	// then they will be reset.
+	ProjectSkipStaleCheck = "project.gardener.cloud/skip-stale-check"
 
-	// NamespaceProject is they key of an annotation on namespace whose value holds the project uid.
+	// NamespaceProject is the key of an annotation on namespace whose value holds the project uid.
 	NamespaceProject = "namespace.gardener.cloud/project"
-
-	// NamespaceProjectDeprecated is they key of an annotation on namespace whose value holds the project uid.
-	//
-	// Deprecated: Use `NamespaceProject` instead.
-	NamespaceProjectDeprecated = "namespace.garden.sapcloud.io/project"
 
 	// NamespaceKeepAfterProjectDeletion is a constant for an annotation on a `Namespace` resource that states that it
 	// should not be deleted if the corresponding `Project` gets deleted. Please note that all project related labels
@@ -279,17 +243,12 @@ const (
 	// of referenced quotas.
 	ShootExpirationTimestamp = "shoot.gardener.cloud/expiration-timestamp"
 
-	// ShootNoCleanup is a constant for a label on a resource indicating the the Gardener cleaner should not delete this
+	// ShootNoCleanup is a constant for a label on a resource indicating that the Gardener cleaner should not delete this
 	// resource when cleaning a shoot during the deletion flow.
 	ShootNoCleanup = "shoot.gardener.cloud/no-cleanup"
 
 	// ShootStatus is a constant for a label on a Shoot resource indicating that the Shoot's health.
 	ShootStatus = "shoot.gardener.cloud/status"
-
-	// ShootOperationDeprecated is a constant for an annotation on a Shoot in a failed state indicating that an operation shall be performed.
-	//
-	// Deprecated: Use `v1beta1constants.GardenerOperation` instead.
-	ShootOperationDeprecated = "shoot.garden.sapcloud.io/operation"
 
 	// ShootOperationMaintain is a constant for an annotation on a Shoot indicating that the Shoot maintenance shall be executed as soon as
 	// possible.
@@ -305,7 +264,8 @@ const (
 	// ShootTasks is a constant for an annotation on a Shoot which states that certain tasks should be done.
 	ShootTasks = "shoot.gardener.cloud/tasks"
 
-	// ShootTaskDeployInfrastructure is a name for a Shoot's infrastructure deployment task.
+	// ShootTaskDeployInfrastructure is a name for a Shoot's infrastructure deployment task. It indicates that the
+	// Infrastructure extension resource shall be reconciled.
 	ShootTaskDeployInfrastructure = "deployInfrastructure"
 
 	// ShootTaskRestartControlPlanePods is a name for a Shoot task which is dedicated to restart related control plane pods.
@@ -330,9 +290,6 @@ const (
 
 	// ManagedResourceShootCoreName is the name of the shoot core managed resource.
 	ManagedResourceShootCoreName = "shoot-core"
-
-	// ManagedResourceCoreNamespaceName is the name of the core namespace managed resource.
-	ManagedResourceCoreNamespaceName = "shoot-core-namespaces"
 
 	// ManagedResourceAddonsName is the name of the addons managed resource.
 	ManagedResourceAddonsName = "addons"
@@ -402,6 +359,9 @@ const (
 
 	// NginxIngressControllerImageName is the name of the NginxIngressController image.
 	NginxIngressControllerImageName = "nginx-ingress-controller"
+
+	// NginxIngressControllerSeedImageName is the name of the NginxIngressController image.
+	NginxIngressControllerSeedImageName = "nginx-ingress-controller-seed"
 
 	// IngressDefaultBackendImageName is the name of the IngressDefaultBackend image.
 	IngressDefaultBackendImageName = "ingress-default-backend"
@@ -486,17 +446,14 @@ const (
 	// IstioNamespace is the istio-system namespace
 	IstioNamespace = "istio-system"
 
-	// IstioIngressGatewayNamespace is the istio-ingress namespace
-	IstioIngressGatewayNamespace = "istio-ingress"
-
-	// IstioIngressGatewayServiceName is the name of the Service used for SNI to the Shoot API Servers.
-	IstioIngressGatewayServiceName = "istio-ingressgateway"
-
 	// APIServerProxyImageName is the image of apiserver-proxy
 	APIServerProxyImageName = "apiserver-proxy"
 
-	// APIServerPorxySidecarImageName is the image of apiserver-proxy sidecar
-	APIServerPorxySidecarImageName = "apiserver-proxy-sidecar"
+	// APIServerProxySidecarImageName is the image of apiserver-proxy sidecar.
+	APIServerProxySidecarImageName = "apiserver-proxy-sidecar"
+
+	// APIServerProxyPodMutatorWebhookImageName is the image of apiserver-proxy pod mutator webhook.
+	APIServerProxyPodMutatorWebhookImageName = "apiserver-proxy-pod-webhook"
 
 	// ServiceAccountSigningKeySecretDataKey is the data key of a signing key Kubernetes secret.
 	ServiceAccountSigningKeySecretDataKey = "signing-key"
@@ -511,13 +468,12 @@ const (
 	GrafanaTLS = "grafana-tls"
 	// PrometheusTLS is the name of the secret resource which holds the TLS certificate for Prometheus.
 	PrometheusTLS = "prometheus-tls"
-	// EtcdServerTLS is the name of the secret resource which holds TLS server certificate of Etcd
-	EtcdServerTLS = "etcd-server-cert"
-	// EtcdClientTLS is the name of the secret resource which holds TLS client certificate of Etcd
-	EtcdClientTLS = "etcd-client-tls"
 
 	// EndUserCrtValidity is the time period a user facing certificate is valid.
 	EndUserCrtValidity = 730 * 24 * time.Hour // ~2 years, see https://support.apple.com/en-us/HT210176
+
+	// ShootDNSIngressName is a constant for the DNS resources used for the shoot ingress addon.
+	ShootDNSIngressName = "ingress"
 )
 
 var (
@@ -547,12 +503,5 @@ var (
 	// RequiredLoggingStatefulSets is a set of the required logging stateful sets.
 	RequiredLoggingStatefulSets = sets.NewString(
 		v1beta1constants.StatefulSetNameLoki,
-	)
-
-	// ManagedResourcesShoot is a set of managed resource names which contain resources deployed to the shoot.
-	ManagedResourcesShoot = sets.NewString(
-		ManagedResourceCoreNamespaceName,
-		ManagedResourceShootCoreName,
-		ManagedResourceAddonsName,
 	)
 )
