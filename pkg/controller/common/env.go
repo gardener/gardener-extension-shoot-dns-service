@@ -24,7 +24,6 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 
 	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -35,7 +34,6 @@ type Env struct {
 	name       string
 	restConfig *rest.Config
 	client     client.Client
-	ctx        context.Context
 	config     config.DNSServiceConfig
 	logr.Logger
 }
@@ -43,7 +41,6 @@ type Env struct {
 func NewEnv(name string, config config.DNSServiceConfig) *Env {
 	return &Env{
 		name:   name,
-		ctx:    context.Background(),
 		config: config,
 		Logger: log.Log.WithName(name),
 	}
@@ -51,10 +48,6 @@ func NewEnv(name string, config config.DNSServiceConfig) *Env {
 
 func (e *Env) Infof(msg string, args ...interface{}) {
 	e.Info(fmt.Sprintf(msg, args...), "component", service.ServiceName)
-}
-
-func (e *Env) Context() context.Context {
-	return e.ctx
 }
 
 func (e *Env) RestConfig() *rest.Config {
@@ -69,16 +62,16 @@ func (e *Env) Config() *config.DNSServiceConfig {
 	return &e.config
 }
 
-func (e *Env) CreateObject(obj runtime.Object, opts ...client.CreateOption) error {
-	return e.client.Create(e.ctx, obj, opts...)
+func (e *Env) CreateObject(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+	return e.client.Create(ctx, obj, opts...)
 }
 
-func (e *Env) GetObject(key client.ObjectKey, obj runtime.Object) error {
-	return e.client.Get(e.ctx, key, obj)
+func (e *Env) GetObject(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+	return e.client.Get(ctx, key, obj)
 }
 
-func (e *Env) UpdateObject(obj runtime.Object, opts ...client.UpdateOption) error {
-	return e.client.Update(e.ctx, obj, opts...)
+func (e *Env) UpdateObject(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+	return e.client.Update(ctx, obj, opts...)
 }
 
 // InjectFunc enables dependency injection into the actuator.

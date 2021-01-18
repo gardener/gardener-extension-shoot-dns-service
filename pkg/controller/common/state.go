@@ -42,6 +42,7 @@ import (
 
 type StateHandler struct {
 	*Env
+	ctx      context.Context
 	ext      *v1alpha1.Extension
 	state    *apis.DNSState
 	modified bool
@@ -59,6 +60,7 @@ func NewStateHandler(ctx context.Context, env *Env, ext *v1alpha1.Extension, ref
 
 	handler := &StateHandler{
 		Env:    env,
+		ctx:    ctx,
 		ext:    ext,
 		elem:   elem,
 		helper: NewShootDNSEntriesHelper(ctx, env.Client(), ext),

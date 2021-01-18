@@ -106,7 +106,7 @@ func (a *actuator) Reconcile(ctx context.Context, ex *extensionsv1alpha1.Extensi
 
 	resurrection := false
 	if ex.Status.State != nil && !common.IsMigrating(ex) {
-		resurrection, err = a.ResurrectFrom(ex)
+		resurrection, err = a.ResurrectFrom(ctx, ex)
 		if err != nil {
 			return err
 		}
@@ -127,22 +127,22 @@ func (a *actuator) Reconcile(ctx context.Context, ex *extensionsv1alpha1.Extensi
 	return a.createOrUpdateSeedResources(ctx, cluster, ex, !resurrection, true)
 }
 
-func (a *actuator) ResurrectFrom(ex *extensionsv1alpha1.Extension) (bool, error) {
+func (a *actuator) ResurrectFrom(ctx context.Context, ex *extensionsv1alpha1.Extension) (bool, error) {
 	owner := &v1alpha1.DNSOwner{}
 
-	err := a.GetObject(client.ObjectKey{Name: a.OwnerName(ex.Namespace)}, owner)
+	err := a.GetObject(ctx, client.ObjectKey{Name: a.OwnerName(ex.Namespace)}, owner)
 	if err == nil || !k8serr.IsNotFound(err) {
 		return false, err
 	}
 	// Ok, Owner object lost. This might have several reasons, we have to try to
 	// exclude a human error before initiating a resurrection
 
-	handler, err := common.NewStateHandler(a.Context(), a.Env, ex, false)
+	handler, err := common.NewStateHandler(ctx, a.Env, ex, false)
 	if err != nil {
 		return false, err
 	}
 	handler.Infof("owner object not found")
-	err = a.GetObject(client.ObjectKey{Namespace: ex.Namespace, Name: SeedResourcesName}, &resourceapi.ManagedResource{})
+	err = a.GetObject(ctx, client.ObjectKey{Namespace: ex.Namespace, Name: SeedResourcesName}, &resourceapi.ManagedResource{})
 	if err == nil || !k8serr.IsNotFound(err) {
 		// a potentially missing DNSOwner object will be reconciled by resource manager
 		return false, err
@@ -172,7 +172,7 @@ func (a *actuator) ResurrectFrom(ex *extensionsv1alpha1.Extension) (bool, error)
 			},
 			Spec: *item.Spec,
 		}
-		err := a.CreateObject(obj)
+		err := a.CreateObject(ctx, obj)
 		if err != nil && !k8serr.IsAlreadyExists(err) {
 			lasterr = err
 		}

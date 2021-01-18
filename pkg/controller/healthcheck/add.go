@@ -15,6 +15,8 @@
 package healthcheck
 
 import (
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/lifecycle"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 
@@ -40,7 +42,7 @@ func RegisterHealthChecks(mgr manager.Manager) error {
 	return healthcheck.DefaultRegistration(
 		service.ExtensionType,
 		extensionsv1alpha1.SchemeGroupVersion.WithKind(extensionsv1alpha1.ExtensionResource),
-		func() runtime.Object { return &extensionsv1alpha1.ExtensionList{} },
+		func() client.ObjectList { return &extensionsv1alpha1.ExtensionList{} },
 		func() extensionsv1alpha1.Object { return &extensionsv1alpha1.Extension{} },
 		mgr,
 		DefaultAddOptions,

@@ -47,7 +47,7 @@ type AddOptions struct {
 // ForService returns a predicate that matches the given name of a resource.
 func ForService(labelKey string) predicate.Predicate {
 	return predutils.FromMapper(predutils.MapperFunc(func(e event.GenericEvent) bool {
-		for k := range e.Meta.GetLabels() {
+		for k := range e.Object.GetLabels() {
 			if k == labelKey {
 				return true
 			}
