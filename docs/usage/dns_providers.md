@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Gardener can manage DNS records on your behalf, so that you can request them via different resource types (see [here](../dns_names)) within the shoot cluster. The domains for which you are permitted to request records, are however restricted and depend on the DNS provider configuration.
+Gardener can manage DNS records on your behalf, so that you can request them via different resource types (see [here](./dns_names.md)) within the shoot cluster. The domains for which you are permitted to request records, are however restricted and depend on the DNS provider configuration.
 
 ## Shoot provider
 
