@@ -24,6 +24,8 @@ spec:
       labels:
         app: {{ template "service.name" . }}
         release: {{ .Release.Name }}
+        garden.sapcloud.io/role: controlplane
+        gardener.cloud/role: controlplane
         networking.gardener.cloud/to-dns: allowed
         networking.gardener.cloud/to-shoot-apiserver: allowed
         networking.gardener.cloud/to-seed-apiserver: allowed
