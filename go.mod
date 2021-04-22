@@ -8,7 +8,6 @@ require (
 	github.com/gardener/gardener v1.20.3
 	github.com/gardener/gardener-resource-manager v0.18.0
 	github.com/go-logr/logr v0.3.0
-	github.com/gobuffalo/packr/v2 v2.8.0
 	github.com/golang/mock v1.5.0
 	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.5
