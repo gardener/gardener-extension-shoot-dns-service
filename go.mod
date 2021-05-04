@@ -6,7 +6,7 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/ahmetb/gen-crd-api-reference-docs v0.2.0
 	github.com/gardener/external-dns-management v0.7.20
-	github.com/gardener/gardener v1.20.3
+	github.com/gardener/gardener v1.21.0
 	github.com/gardener/gardener-resource-manager v0.18.0
 	github.com/go-logr/logr v0.3.0
 	github.com/golang/mock v1.5.0
