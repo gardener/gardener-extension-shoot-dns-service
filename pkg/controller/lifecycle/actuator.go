@@ -32,6 +32,7 @@ import (
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
 	"github.com/gardener/gardener/extensions/pkg/util"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"github.com/gardener/gardener/pkg/chartrenderer"
 	"github.com/gardener/gardener/pkg/client/kubernetes"
@@ -203,7 +204,7 @@ func (a *actuator) Restore(ctx context.Context, ex *extensionsv1alpha1.Extension
 // Migrate the Extension resource.
 func (a *actuator) Migrate(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
 	// Keep objects for shoot managed resources so that they are not deleted from the shoot during the migration
-	if err := managedresources.KeepManagedResourceObjects(ctx, a.Client(), ex.GetNamespace(), ShootResourcesName, true); err != nil {
+	if err := managedresources.SetKeepObjects(ctx, a.Client(), ex.GetNamespace(), ShootResourcesName, true); err != nil {
 		return err
 	}
 
@@ -302,13 +303,13 @@ func (a *actuator) deleteSeedResources(ctx context.Context, ex *extensionsv1alph
 			}
 		}
 	}
-	if err := managedresources.DeleteManagedResource(ctx, a.Client(), namespace, SeedResourcesName); err != nil {
+	if err := managedresources.Delete(ctx, a.Client(), namespace, SeedResourcesName, false); err != nil {
 		return err
 	}
 
 	timeoutCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
-	if err := managedresources.WaitUntilManagedResourceDeleted(timeoutCtx, a.Client(), namespace, SeedResourcesName); err != nil {
+	if err := managedresources.WaitUntilDeleted(timeoutCtx, a.Client(), namespace, SeedResourcesName); err != nil {
 		return err
 	}
 
@@ -349,7 +350,7 @@ func (a *actuator) createOrUpdateShootResources(ctx context.Context, cluster *co
 	crd.SetUID("")
 	crd.SetCreationTimestamp(metav1.Time{})
 	crd.SetGeneration(0)
-	if err := managedresources.CreateManagedResourceFromUnstructured(ctx, a.Client(), namespace, KeptShootResourcesName, "", []*unstructured.Unstructured{crd}, true, nil); err != nil {
+	if err := managedresources.CreateFromUnstructured(ctx, a.Client(), namespace, KeptShootResourcesName, false, "", []*unstructured.Unstructured{crd}, true, nil); err != nil {
 		return errors.Wrapf(err, "could not create managed resource %s", KeptShootResourcesName)
 	}
 
@@ -362,28 +363,28 @@ func (a *actuator) createOrUpdateShootResources(ctx context.Context, cluster *co
 		"userName":    service.UserName,
 		"serviceName": service.ServiceName,
 	}
-	injectedLabels := map[string]string{controller.ShootNoCleanupLabel: "true"}
+	injectedLabels := map[string]string{v1beta1constants.ShootNoCleanup: "true"}
 
 	return a.createOrUpdateManagedResource(ctx, namespace, ShootResourcesName, "", renderer, service.ShootChartName, chartValues, injectedLabels)
 }
 
 func (a *actuator) deleteShootResources(ctx context.Context, namespace string) error {
-	if err := managedresources.DeleteManagedResource(ctx, a.Client(), namespace, ShootResourcesName); err != nil {
+	if err := managedresources.Delete(ctx, a.Client(), namespace, ShootResourcesName, false); err != nil {
 		return err
 	}
-	if err := managedresources.DeleteManagedResource(ctx, a.Client(), namespace, KeptShootResourcesName); err != nil {
+	if err := managedresources.Delete(ctx, a.Client(), namespace, KeptShootResourcesName, false); err != nil {
 		return err
 	}
 
 	timeoutCtx1, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
-	if err := managedresources.WaitUntilManagedResourceDeleted(timeoutCtx1, a.Client(), namespace, ShootResourcesName); err != nil {
+	if err := managedresources.WaitUntilDeleted(timeoutCtx1, a.Client(), namespace, ShootResourcesName); err != nil {
 		return err
 	}
 
 	timeoutCtx2, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
-	return managedresources.WaitUntilManagedResourceDeleted(timeoutCtx2, a.Client(), namespace, KeptShootResourcesName)
+	return managedresources.WaitUntilDeleted(timeoutCtx2, a.Client(), namespace, KeptShootResourcesName)
 }
 
 func (a *actuator) createKubeconfig(ctx context.Context, namespace string) (*corev1.Secret, error) {
@@ -401,7 +402,10 @@ func (a *actuator) createOrUpdateManagedResource(ctx context.Context, namespace,
 		return err
 	}
 
-	return managedresources.CreateManagedResource(ctx, a.Client(), namespace, name, class, chartName, chart.Manifest(), false, injectedLabels, false)
+	data := map[string][]byte{chartName: chart.Manifest()}
+	keepObjects := false
+	forceOverwriteAnnotations := false
+	return managedresources.Create(ctx, a.Client(), namespace, name, false, class, data, &keepObjects, injectedLabels, &forceOverwriteAnnotations)
 }
 
 // seedSettingShootDNSEnabled returns true if the 'shoot dns' setting is enabled.
