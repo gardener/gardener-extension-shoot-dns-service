@@ -136,7 +136,8 @@ func (f *shootDNSFramework) deleteNamespaceAndWait(ctx context.Context, ns *v1.N
 	f.Logger.Printf("deleted namespace %s", ns.Name)
 }
 
-func (f *shootDNSFramework) createEchoheaders(ctx context.Context, svcLB, delete bool, timeout time.Duration) {
+func (f *shootDNSFramework) createEchoheaders(ctx context.Context, svcLB, delete bool,
+	timeoutDNS time.Duration, timeoutHttp time.Duration) {
 	suffix := "ingress"
 	if svcLB {
 		suffix = "service-lb"
@@ -157,7 +158,9 @@ func (f *shootDNSFramework) createEchoheaders(ctx context.Context, svcLB, delete
 	framework.ExpectNoError(err)
 
 	domainName := fmt.Sprintf("%s.%s", values["EchoName"], values["ShootDnsName"])
-	err = runHttpRequest(domainName, timeout)
+	err = awaitDNSRecord(domainName, timeoutDNS)
+	framework.ExpectNoError(err)
+	err = runHttpRequest(domainName, timeoutHttp)
 	framework.ExpectNoError(err)
 
 	if delete {
@@ -176,13 +179,13 @@ var _ = Describe("ShootDNS test", func() {
 	BeforeEach(f.prepareClientsAndCluster, 60)
 
 	framework.CIt("Create and delete echoheaders service with type LoadBalancer", func(ctx context.Context) {
-		f.createEchoheaders(ctx, true, true, 180*time.Second)
-	}, 300*time.Second)
+		f.createEchoheaders(ctx, true, true, 120*time.Second, 420*time.Second)
+	}, 600*time.Second)
 
 	framework.CIt("Create echoheaders ingress", func(ctx context.Context) {
 		// cleanup during shoot deletion to test proper cleanup
-		f.createEchoheaders(ctx, false, false, 180*time.Second)
-	}, 300*time.Second)
+		f.createEchoheaders(ctx, false, false, 120*time.Second, 420*time.Second)
+	}, 600*time.Second)
 
 	framework.CIt("Create custom DNS entry", func(ctx context.Context) {
 		namespace := "shootdns-test-custom-dnsentry"
@@ -196,10 +199,7 @@ var _ = Describe("ShootDNS test", func() {
 		err := f.RenderAndDeployTemplate(ctx, f.shootClient, templates.CustomDNSEntry, values)
 		framework.ExpectNoError(err)
 
-		err = await(func() error {
-			_, err := lookupHost(domainName, "8.8.8.8")
-			return err
-		}, 3*time.Second, 60*time.Second)
+		err = awaitDNSRecord(domainName, 120*time.Second)
 		framework.ExpectNoError(err)
 
 		f.deleteNamespaceAndWait(ctx, ns)
@@ -220,7 +220,7 @@ func await(f func() error, sleep, timeout time.Duration) error {
 	return err
 }
 
-func runHttpRequest(domainName string, timeout time.Duration) error {
+func awaitDNSRecord(domainName string, timeout time.Duration) error {
 	// first make a DNS lookup to avoid long waiting time because of negative DNS caching
 	err := await(func() error {
 		_, err := lookupHost(domainName, "8.8.8.8")
@@ -229,8 +229,11 @@ func runHttpRequest(domainName string, timeout time.Duration) error {
 	if err != nil {
 		return errors.Wrapf(err, "lookup host %s failed", domainName)
 	}
+	return nil
+}
 
-	err = await(func() error {
+func runHttpRequest(domainName string, timeout time.Duration) error {
+	err := await(func() error {
 		url := fmt.Sprintf("http://%s", domainName)
 		resp, err := http.Get(url)
 		if err != nil {
