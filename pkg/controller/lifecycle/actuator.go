@@ -259,7 +259,6 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, cluster *con
 		"targetClusterSecret": shootKubeconfig.GetName(),
 		"creatorLabelValue":   creatorLabelValue,
 		"shootId":             shootID,
-		"shootMigrationId":    a.oldShootId(namespace),
 		"seedId":              seedID,
 		"dnsClass":            a.Config().DNSClass,
 		"dnsOwner":            a.OwnerName(namespace),
@@ -415,8 +414,4 @@ func seedSettingShootDNSEnabled(settings *gardencorev1beta1.SeedSettings) bool {
 
 func (a *actuator) OwnerName(namespace string) string {
 	return fmt.Sprintf("%s-%s", OwnerName, namespace)
-}
-
-func (a *actuator) oldShootId(namespace string) string {
-	return fmt.Sprintf("%s.gardener.cloud/%s", a.Config().GardenID, namespace)
 }
