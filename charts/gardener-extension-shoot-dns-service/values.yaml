@@ -7,8 +7,6 @@ serviceName: shoot-dns-service
 dnsClass: garden
 
 gardener:
-  garden:
-    identity: ""
   seed:
     identity: ""
 

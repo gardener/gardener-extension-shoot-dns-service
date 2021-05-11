@@ -22,7 +22,6 @@ var DNSService DNSServiceConfig
 
 // DNSServiceConfig contains configuration for the dns service.
 type DNSServiceConfig struct {
-	GardenID string
 	SeedID   string
 	DNSClass string
 }

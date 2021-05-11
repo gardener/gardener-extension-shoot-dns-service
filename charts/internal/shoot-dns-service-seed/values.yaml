@@ -9,7 +9,6 @@ images:
 
 targetClusterSecret: "target-cluster"
 creatorLabelValue: "4711-abc"
-#shootMigrationId: "4700"
 shootId: "4711"
 seedId: "3141"
 podAnnotations: {}
