@@ -27,6 +27,8 @@ rules:
   resources:
   - dnsentries
   - dnsentries/status
+  - dnsannotations
+  - dnsannotations/status
   verbs:
   - get
   - list

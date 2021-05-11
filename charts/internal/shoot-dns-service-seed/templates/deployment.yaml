@@ -48,7 +48,7 @@ spec:
           - --target.id={{ .Values.seedId }}
           - --target.disable-deploy-crds
           - --target-owner-id={{ .Values.shootId }}-shootdns
-          - --controllers=dnssources,dnsentry-source
+          - --controllers=dnssources,dnsentry-source,annotation
           - --namespace=kube-system
           - --target-namespace={{ .Release.Namespace }}
           - --target-creator-label-name=gardener.cloud/shoot-id
