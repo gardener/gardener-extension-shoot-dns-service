@@ -179,13 +179,13 @@ var _ = Describe("ShootDNS test", func() {
 	BeforeEach(f.prepareClientsAndCluster, 60)
 
 	framework.CIt("Create and delete echoheaders service with type LoadBalancer", func(ctx context.Context) {
-		f.createEchoheaders(ctx, true, true, 120*time.Second, 420*time.Second)
-	}, 600*time.Second)
+		f.createEchoheaders(ctx, true, true, 360*time.Second, 420*time.Second)
+	}, 840*time.Second)
 
 	framework.CIt("Create echoheaders ingress", func(ctx context.Context) {
 		// cleanup during shoot deletion to test proper cleanup
-		f.createEchoheaders(ctx, false, false, 120*time.Second, 420*time.Second)
-	}, 600*time.Second)
+		f.createEchoheaders(ctx, false, false, 180*time.Second, 420*time.Second)
+	}, 660*time.Second)
 
 	framework.CIt("Create custom DNS entry", func(ctx context.Context) {
 		namespace := "shootdns-test-custom-dnsentry"
