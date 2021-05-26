@@ -16,6 +16,7 @@ package lifecycle
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"path/filepath"
 	"time"
@@ -45,6 +46,7 @@ import (
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -62,6 +64,10 @@ const (
 	// OwnerName is the name of the DNSOwner object created for the shoot dns service
 	OwnerName = service.ServiceName
 )
+
+// dnsAnnotationCRD contains the contents of the dnsAnnotationCRD.yaml file.
+//go:embed dnsAnnotationCRD.yaml
+var dnsAnnotationCRD string
 
 // NewActuator returns an actuator responsible for Extension resources.
 func NewActuator(config config.DNSServiceConfig) extension.Actuator {
@@ -349,7 +355,14 @@ func (a *actuator) createOrUpdateShootResources(ctx context.Context, cluster *co
 	crd.SetUID("")
 	crd.SetCreationTimestamp(metav1.Time{})
 	crd.SetGeneration(0)
-	if err := managedresources.CreateFromUnstructured(ctx, a.Client(), namespace, KeptShootResourcesName, false, "", []*unstructured.Unstructured{crd}, true, nil); err != nil {
+
+	crd2 := &unstructured.Unstructured{}
+	dec := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+	_, _, err := dec.Decode([]byte(dnsAnnotationCRD), nil, crd2)
+	if err != nil {
+		return errors.Wrap(err, "could not unmarshal dnsannotation.dns.gardener.cloud crd")
+	}
+	if err = managedresources.CreateFromUnstructured(ctx, a.Client(), namespace, KeptShootResourcesName, false, "", []*unstructured.Unstructured{crd, crd2}, true, nil); err != nil {
 		return errors.Wrapf(err, "could not create managed resource %s", KeptShootResourcesName)
 	}
 
