@@ -48,9 +48,9 @@ func CopyMap(m map[string]string) map[string]string {
 	return r
 }
 
-func FindExtension(ctx context.Context, c client.Client, namespace string) (*extapi.Extension, error) {
+func FindExtension(ctx context.Context, reader client.Reader, namespace string) (*extapi.Extension, error) {
 	list := &extapi.ExtensionList{}
-	if err := c.List(ctx, list, client.InNamespace(namespace)); err != nil {
+	if err := reader.List(ctx, list, client.InNamespace(namespace)); err != nil {
 		if errors.IsNotFound(err) {
 			return nil, nil
 		}

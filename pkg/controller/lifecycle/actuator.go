@@ -229,7 +229,7 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, cluster *con
 	if err != nil {
 		return err
 	}
-	err = handler.Update()
+	err = handler.Update("refresh")
 	if err != nil {
 		return err
 	}

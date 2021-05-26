@@ -184,9 +184,9 @@ func (s *StateHandler) EnsureEntryFor(entry *dnsapi.DNSEntry) bool {
 	return true
 }
 
-func (s *StateHandler) Update() error {
+func (s *StateHandler) Update(reason string) error {
 	if s.modified {
-		s.Infof("updating modified state for %s", s.ext.Name)
+		s.Info("updating modified state", "namespace", s.ext.Namespace, "extension", s.ext.Name, "reason", reason)
 		wire := &wireapi.DNSState{}
 		wire.APIVersion = wireapi.SchemeGroupVersion.String()
 		wire.Kind = wireapi.DNSStateKind
@@ -200,13 +200,13 @@ func (s *StateHandler) Update() error {
 		}
 		s.ext.Status.State.Raw, err = json.Marshal(wire)
 		if err != nil {
-			s.Infof("marshalling failed: %s", err)
+			s.Info("marshalling failed", "error", err)
 			return err
 		}
 		s.ext.Status.State.Object = nil
 		err = s.client.Status().Update(s.ctx, s.ext)
 		if err != nil {
-			s.Infof("update failed: %s", err)
+			s.Info("update failed", "error", err)
 		} else {
 			s.modified = false
 		}
