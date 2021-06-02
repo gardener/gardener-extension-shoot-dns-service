@@ -18,9 +18,12 @@ package replication
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/common"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	extapi "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
@@ -30,13 +33,15 @@ import (
 
 type reconciler struct {
 	*common.Env
+	lock *StringsLock
 }
 
 // newReconciler creates a new reconcile.Reconciler that reconciles
 // Extension resources of Gardener's `extensions.gardener.cloud` API group.
 func newReconciler(name string, controllerConfig config.DNSServiceConfig) *reconciler {
 	return &reconciler{
-		Env: common.NewEnv(name, controllerConfig),
+		Env:  common.NewEnv(name, controllerConfig),
+		lock: NewStringsLock(),
 	}
 }
 
@@ -45,6 +50,15 @@ func newReconciler(name string, controllerConfig config.DNSServiceConfig) *recon
 
 func (r *reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	result := reconcile.Result{}
+
+	// ensure that only one DNSEntry is reconciled per extension (shoot) to avoid parallel conflicting updates
+	if !r.lock.TryLock(req.Namespace) {
+		r.Env.Info("delaying as namespace already locked", "namespace", req.Namespace, "entry", req.Name)
+		result.Requeue = true
+		result.RequeueAfter = wait.Jitter(1*time.Second, 0)
+		return result, nil
+	}
+	defer r.lock.Unlock(req.Namespace)
 
 	ext, err := r.findExtension(ctx, req.Namespace)
 	if err != nil {
@@ -58,25 +72,26 @@ func (r *reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return result, err
 	}
 
-	mod := false
 	entry := &dnsapi.DNSEntry{}
 	err = r.Client().Get(ctx, req.NamespacedName, entry)
+	var format string
 	if err != nil {
 		if !errors.IsNotFound(err) {
 			return result, err
 		}
-		mod = r.delete(statehandler, req) || mod
+		r.delete(statehandler, req)
+		format = "entry %s deleted"
 	} else {
 		if entry.DeletionTimestamp != nil {
-			mod = r.delete(statehandler, req) || mod
+			r.delete(statehandler, req)
+			format = "entry %s deleting"
 		} else {
-			mod = r.reconcile(statehandler, entry) || mod
+			r.reconcile(statehandler, entry)
+			format = "entry %s created or updated"
 		}
 	}
-	if mod {
-		return result, statehandler.Update()
-	}
-	return result, nil
+	reason := fmt.Sprintf(format, req.Name)
+	return result, statehandler.Update(reason)
 }
 
 func (r *reconciler) reconcile(statehandler *common.StateHandler, entry *dnsapi.DNSEntry) bool {
@@ -91,5 +106,6 @@ func (r *reconciler) delete(statehandler *common.StateHandler, req reconcile.Req
 // extension handling
 
 func (r *reconciler) findExtension(ctx context.Context, namespace string) (*extapi.Extension, error) {
-	return common.FindExtension(ctx, r.Client(), namespace)
+	// apiReader is used as copy from cache is sometimes outdated
+	return common.FindExtension(ctx, r.APIReader(), namespace)
 }

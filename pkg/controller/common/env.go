@@ -18,11 +18,8 @@ package common
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
-
 	"github.com/go-logr/logr"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,6 +32,7 @@ type Env struct {
 	restConfig *rest.Config
 	client     client.Client
 	config     config.DNSServiceConfig
+	apiReader  client.Reader
 	logr.Logger
 }
 
@@ -44,10 +42,6 @@ func NewEnv(name string, config config.DNSServiceConfig) *Env {
 		config: config,
 		Logger: log.Log.WithName(name),
 	}
-}
-
-func (e *Env) Infof(msg string, args ...interface{}) {
-	e.Info(fmt.Sprintf(msg, args...), "component", service.ServiceName)
 }
 
 func (e *Env) RestConfig() *rest.Config {
@@ -60,6 +54,10 @@ func (e *Env) Client() client.Client {
 
 func (e *Env) Config() *config.DNSServiceConfig {
 	return &e.config
+}
+
+func (e *Env) APIReader() client.Reader {
+	return e.apiReader
 }
 
 func (e *Env) CreateObject(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
@@ -88,6 +86,12 @@ func (e *Env) InjectLogger(l logr.Logger) error {
 // InjectConfig injects the rest configuration into the reconciler.
 func (e *Env) InjectConfig(config *rest.Config) error {
 	e.restConfig = config
+	return nil
+}
+
+// InjectAPIReader injects the APIReader into the reconciler.
+func (e *Env) InjectAPIReader(reader client.Reader) error {
+	e.apiReader = reader
 	return nil
 }
 
