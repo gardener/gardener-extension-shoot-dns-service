@@ -6,6 +6,9 @@ image:
 serviceName: shoot-dns-service
 dnsClass: garden
 
+dnsProviderReplication:
+  enabled: true
+
 gardener:
   seed:
     identity: ""

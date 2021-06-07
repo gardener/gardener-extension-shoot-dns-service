@@ -9,35 +9,6 @@ names for shoot clusters. So, far only the external DNS domain of a shoot
 (already used for the kubernetes api server and ingress DNS names) can be used
 for managed DNS names.
 
-<style>
-#body-inner blockquote {
-    border: 0;
-    padding: 10px;
-    margin-top: 40px;
-    margin-bottom: 40px;
-    border-radius: 4px;
-    background-color: rgba(0,0,0,0.05);
-    box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
-    position:relative;
-    padding-left:60px;
-}
-#body-inner blockquote:before {
-    content: "!";
-    font-weight: bold;
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    background-color: #00a273;
-    color: white;
-    vertical-align: middle;
-    margin: auto;
-    width: 36px;
-    font-size: 30px;
-    text-align: center;
-}
-</style>
-
 ## Configuration
 
 A general description for configuring the DNS management of the
@@ -68,6 +39,27 @@ DNS names. This is either the shoot domain as subdomain of the default domain
 configured for the gardener installation or a dedicated domain with dedicated
 access credentials configured for a dedicated shoot via the shoot manifest.
 
+Starting with version v1.13.0, you can specify `DNSProviders` and its credentials
+`Secret` directly in the shoot.
+See [example files (20-* and 30-*)](https://github.com/gardener/external-dns-management/tree/master/examples) 
+for details for the various provider types. 
+
+This feature is enabled by default, but can be disabled globally in the `ControllerDeployment`
+
+```yaml
+apiVersion: core.gardener.cloud/v1beta1
+kind: ControllerDeployment
+metadata:
+  name: extension-shoot-dns-service
+type: helm
+providerConfig:
+  chart: ...
+  values:
+    image:
+      ...
+    dnsProviderReplication:
+      enabled: false
+``` 
 ### Shoot Feature Gate
 
 If the shoot DNS feature is not globally enabled by default (depends on the 

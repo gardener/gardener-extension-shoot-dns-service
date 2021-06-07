@@ -31,9 +31,10 @@ import (
 
 // DNSServiceOptions holds options related to the dns service.
 type DNSServiceOptions struct {
-	SeedID   string
-	DNSClass string
-	config   *DNSServiceConfig
+	SeedID                string
+	DNSClass              string
+	ReplicateDNSProviders bool
+	config                *DNSServiceConfig
 }
 
 // HealthOptions holds options for health checks.
@@ -46,6 +47,7 @@ type HealthOptions struct {
 func (o *DNSServiceOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.SeedID, "seed-id", "", "ID of the current cluster")
 	fs.StringVar(&o.DNSClass, "dns-class", "garden", "DNS class used to filter DNS source resources in shoot clusters")
+	fs.BoolVar(&o.ReplicateDNSProviders, "replicate-dns-providers", false, "enables replication of DNSProviders from shoot cluster to seed cluster")
 }
 
 // AddFlags implements Flagger.AddFlags.
@@ -55,7 +57,7 @@ func (o *HealthOptions) AddFlags(fs *pflag.FlagSet) {
 
 // Complete implements Completer.Complete.
 func (o *DNSServiceOptions) Complete() error {
-	o.config = &DNSServiceConfig{SeedID: o.SeedID, DNSClass: o.DNSClass}
+	o.config = &DNSServiceConfig{SeedID: o.SeedID, DNSClass: o.DNSClass, ReplicateDNSProviders: o.ReplicateDNSProviders}
 	return nil
 }
 
@@ -77,14 +79,16 @@ func (o *HealthOptions) Completed() *HealthConfig {
 
 // DNSServiceConfig contains configuration information about the dns service.
 type DNSServiceConfig struct {
-	SeedID   string
-	DNSClass string
+	SeedID                string
+	DNSClass              string
+	ReplicateDNSProviders bool
 }
 
 // Apply applies the DNSServiceOptions to the passed ControllerOptions instance.
 func (c *DNSServiceConfig) Apply(cfg *config.DNSServiceConfig) {
 	cfg.SeedID = c.SeedID
 	cfg.DNSClass = c.DNSClass
+	cfg.ReplicateDNSProviders = c.ReplicateDNSProviders
 }
 
 // HealthConfig contains configuration information about the health check controller.

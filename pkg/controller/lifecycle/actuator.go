@@ -267,8 +267,11 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, cluster *con
 		"shootId":             shootID,
 		"seedId":              seedID,
 		"dnsClass":            a.Config().DNSClass,
-		"dnsOwner":            a.OwnerName(namespace),
-		"shootActive":         !common.IsMigrating(ex),
+		"dnsProviderReplication": map[string]interface{}{
+			"enabled": a.Config().ReplicateDNSProviders,
+		},
+		"dnsOwner":    a.OwnerName(namespace),
+		"shootActive": !common.IsMigrating(ex),
 		"podAnnotations": map[string]interface{}{
 			"checksum/secret-kubeconfig": utils.ComputeChecksum(shootKubeconfig.Data),
 		},
@@ -362,7 +365,22 @@ func (a *actuator) createOrUpdateShootResources(ctx context.Context, cluster *co
 	if err != nil {
 		return errors.Wrap(err, "could not unmarshal dnsannotation.dns.gardener.cloud crd")
 	}
-	if err = managedresources.CreateFromUnstructured(ctx, a.Client(), namespace, KeptShootResourcesName, false, "", []*unstructured.Unstructured{crd, crd2}, true, nil); err != nil {
+
+	objs := []*unstructured.Unstructured{crd, crd2}
+	if a.Config().ReplicateDNSProviders {
+		crd3 := &unstructured.Unstructured{}
+		crd3.SetAPIVersion("apiextensions.k8s.io/v1beta1")
+		crd3.SetKind("CustomResourceDefinition")
+		if err := a.Client().Get(ctx, client.ObjectKey{Name: "dnsproviders.dns.gardener.cloud"}, crd3); err != nil {
+			return errors.Wrap(err, "could not get crd dnsproviders.dns.gardener.cloud")
+		}
+		crd3.SetResourceVersion("")
+		crd3.SetUID("")
+		crd3.SetCreationTimestamp(metav1.Time{})
+		crd3.SetGeneration(0)
+		objs = append(objs, crd3)
+	}
+	if err = managedresources.CreateFromUnstructured(ctx, a.Client(), namespace, KeptShootResourcesName, false, "", objs, true, nil); err != nil {
 		return errors.Wrapf(err, "could not create managed resource %s", KeptShootResourcesName)
 	}
 
@@ -374,6 +392,9 @@ func (a *actuator) createOrUpdateShootResources(ctx context.Context, cluster *co
 	chartValues := map[string]interface{}{
 		"userName":    service.UserName,
 		"serviceName": service.ServiceName,
+		"dnsProviderReplication": map[string]interface{}{
+			"enabled": a.Config().ReplicateDNSProviders,
+		},
 	}
 	injectedLabels := map[string]string{v1beta1constants.ShootNoCleanup: "true"}
 

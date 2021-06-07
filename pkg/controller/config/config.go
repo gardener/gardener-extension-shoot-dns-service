@@ -22,6 +22,7 @@ var DNSService DNSServiceConfig
 
 // DNSServiceConfig contains configuration for the dns service.
 type DNSServiceConfig struct {
-	SeedID   string
-	DNSClass string
+	SeedID                string
+	DNSClass              string
+	ReplicateDNSProviders bool
 }

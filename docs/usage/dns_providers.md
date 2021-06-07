@@ -19,21 +19,66 @@ You are permitted to request any sub-domain of `.dns.domain` that is not already
 
 ## Additional providers
 
-If you need to request DNS records for domains not managed by the [default provider](#Shoot-provider), additional providers must be configured in the shoot specification.
+If you need to request DNS records for domains not managed by the [default provider](#Shoot-provider), additional providers can either
+be configured in the shoot specification or added as `DNSProvider` resources to the shoot cluster.
+
+### Additional providers in the shoot specification
+
+To add a providers in the shoot spec, you need set them in the `spec.dns.providers` list.
 
 For example:
-```
+```yaml
 kind: Shoot
 ...
-dns:
-  domain: shoot.project.default-domain.gardener.cloud
-  providers:
-  - secretName: my-aws-account
-    type: aws-route53
-  - secretName: my-gcp-account
-    type: google-clouddns
+spec:
+  dns:
+    domain: shoot.project.default-domain.gardener.cloud
+    providers:
+    - secretName: my-aws-account
+      type: aws-route53
+    - secretName: my-gcp-account
+      type: google-clouddns
 ```
 
 > Please consult the [API-Reference](https://gardener.cloud/documentation/references/core/#core.gardener.cloud/v1beta1.DNSProvider) to get a complete list of supported fields and configuration options.
 
 Referenced secrets should exist in the project namespace in the Garden cluster and must comply with the provider specific credentials format. The **External-DNS-Management** project provides corresponding examples ([20-secret-\<provider-name>-credentials.yaml](https://github.com/gardener/external-dns-management/tree/master/examples)) for known providers.
+
+### Additional providers as resources in the shoot cluster
+
+To add a provider directly in the shoot cluster, provide a `DNSProvider` in any namespace together
+with `Secret` containing the credentials.
+
+For example if the domain is hosted with AWS Route 53 (provider type `aws-route53`):
+```yaml
+apiVersion: dns.gardener.cloud/v1alpha1
+kind: DNSProvider
+metadata:
+  name: my-own-domain
+  namespace: my-namespace
+spec:
+  type: aws-route53
+  secretRef:
+    name: my-own-domain-credentials
+  domains:
+    include:
+    - my.own.domain.com
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-own-domain-credentials
+  namespace: my-namespace
+type: Opaque
+data:
+  # replace '...' with values encoded as base64
+  AWS_ACCESS_KEY_ID: ...
+  AWS_SECRET_ACCESS_KEY: ...
+```
+
+The **External-DNS-Management** project provides examples with more details for `DNSProviders` (30-provider-\<provider-name>.yaml)
+and credential `Secrets` (20-secret-\<provider-name>.yaml) at [https://github.com/gardener/external-dns-management//examples](https://github.com/gardener/external-dns-management/tree/master/examples)
+for all supported provider types.
+
+*Note*: This feature can be disabled in the `ControllerDeployment` with setting
+`dnsProviderReplication.enabled` to `false` 

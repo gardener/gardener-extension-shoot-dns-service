@@ -39,6 +39,9 @@ spec:
         - --leader-election-id={{ include "leaderelectionid" . }}
         - --seed-id={{ .Values.gardener.seed.identity }}
         - --dns-class={{ .Values.dnsClass }}
+        {{- if .Values.dnsProviderReplication.enabled }}
+        - --replicate-dns-providers
+        {{- end }}
         env:
         - name: LEADER_ELECTION_NAMESPACE
           valueFrom:
