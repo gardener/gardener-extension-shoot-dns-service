@@ -54,6 +54,8 @@ For example if the domain is hosted with AWS Route 53 (provider type `aws-route5
 apiVersion: dns.gardener.cloud/v1alpha1
 kind: DNSProvider
 metadata:
+  annotations:
+    dns.gardener.cloud/class: garden
   name: my-own-domain
   namespace: my-namespace
 spec:

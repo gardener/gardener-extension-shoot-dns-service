@@ -44,7 +44,7 @@ Starting with version v1.13.0, you can specify `DNSProviders` and its credential
 See [example files (20-* and 30-*)](https://github.com/gardener/external-dns-management/tree/master/examples) 
 for details for the various provider types. 
 
-This feature is enabled by default, but can be disabled globally in the `ControllerDeployment`
+By default, `DNSProvider` replication is enabled, but it can be disabled globally in the `ControllerDeployment`
 
 ```yaml
 apiVersion: core.gardener.cloud/v1beta1
@@ -59,7 +59,9 @@ providerConfig:
       ...
     dnsProviderReplication:
       enabled: false
-``` 
+```
+This feature flag can also be overwritten for each shoot cluster in the shoot manifest (see below).
+
 ### Shoot Feature Gate
 
 If the shoot DNS feature is not globally enabled by default (depends on the 
@@ -75,4 +77,24 @@ spec:
     - type: shoot-dns-service
 ...
 ```
+
+#### Enable/disable DNS provider replication for a shoot
+
+The DNSProvider` replication feature enablement can be overwritten in the
+shoot manifest, e.g.
+
+```yaml
+...
+spec:
+  extensions:
+    - type: shoot-dns-service
+      providerConfig:
+        apiVersion: service.dns.extensions.gardener.cloud/v1alpha1
+        kind: DNSConfig
+        dnsProviderReplication:
+          enabled: false
+...
+```
+
+
 
