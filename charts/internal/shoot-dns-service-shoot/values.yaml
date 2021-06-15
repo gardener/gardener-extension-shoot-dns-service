@@ -6,4 +6,4 @@ userName: dummy
 serviceName: dummy
 
 dnsProviderReplication:
-  enabled: true
+  enabled: false
