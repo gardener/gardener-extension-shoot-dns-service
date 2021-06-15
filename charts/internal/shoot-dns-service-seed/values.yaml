@@ -15,7 +15,7 @@ podAnnotations: {}
 dnsClass: ""
 
 dnsProviderReplication:
-  enabled: true
+  enabled: false
 
 resources:
   requests:

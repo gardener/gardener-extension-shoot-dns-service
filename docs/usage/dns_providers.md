@@ -19,8 +19,9 @@ You are permitted to request any sub-domain of `.dns.domain` that is not already
 
 ## Additional providers
 
-If you need to request DNS records for domains not managed by the [default provider](#Shoot-provider), additional providers can either
-be configured in the shoot specification or added as `DNSProvider` resources to the shoot cluster.
+If you need to request DNS records for domains not managed by the [default provider](#Shoot-provider), additional providers can 
+be configured in the shoot specification.
+Alternatively, if it is enabled, it can be added as `DNSProvider` resources to the shoot cluster.
 
 ### Additional providers in the shoot specification
 
@@ -45,6 +46,22 @@ spec:
 Referenced secrets should exist in the project namespace in the Garden cluster and must comply with the provider specific credentials format. The **External-DNS-Management** project provides corresponding examples ([20-secret-\<provider-name>-credentials.yaml](https://github.com/gardener/external-dns-management/tree/master/examples)) for known providers.
 
 ### Additional providers as resources in the shoot cluster
+
+If it is not enabled globally, you have to enable the feature in the shoot manifest:
+
+```yaml
+Kind: Shoot
+...
+spec:
+  extensions:
+    - type: shoot-dns-service
+      providerConfig:
+        apiVersion: service.dns.extensions.gardener.cloud/v1alpha1
+        kind: DNSConfig
+        dnsProviderReplication:
+          enabled: true
+...
+```
 
 To add a provider directly in the shoot cluster, provide a `DNSProvider` in any namespace together
 with `Secret` containing the credentials.
@@ -81,6 +98,3 @@ data:
 The **External-DNS-Management** project provides examples with more details for `DNSProviders` (30-provider-\<provider-name>.yaml)
 and credential `Secrets` (20-secret-\<provider-name>.yaml) at [https://github.com/gardener/external-dns-management//examples](https://github.com/gardener/external-dns-management/tree/master/examples)
 for all supported provider types.
-
-*Note*: This feature can be disabled in the `ControllerDeployment` with setting
-`dnsProviderReplication.enabled` to `false` 

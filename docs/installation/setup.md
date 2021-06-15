@@ -36,15 +36,13 @@ spec:
 So, far only the external DNS domain of a shoot already used
 for the kubernetes api server and ingress DNS names can be used for managed
 DNS names. This is either the shoot domain as subdomain of the default domain
-configured for the gardener installation or a dedicated domain with dedicated
+configured for the gardener installation, or a dedicated domain with dedicated
 access credentials configured for a dedicated shoot via the shoot manifest.
 
-Starting with version v1.13.0, you can specify `DNSProviders` and its credentials
-`Secret` directly in the shoot.
-See [example files (20-* and 30-*)](https://github.com/gardener/external-dns-management/tree/master/examples) 
-for details for the various provider types. 
-
-By default, `DNSProvider` replication is enabled, but it can be disabled globally in the `ControllerDeployment`
+Alternatively, you can specify `DNSProviders` and its credentials
+`Secret` directly in the shoot, if this feature is enabled.
+By default, `DNSProvider` replication is disabled, but it can be enabled globally in the `ControllerDeployment`
+or for a shoot cluster in the shoot manifest (details see further below). 
 
 ```yaml
 apiVersion: core.gardener.cloud/v1beta1
@@ -58,9 +56,12 @@ providerConfig:
     image:
       ...
     dnsProviderReplication:
-      enabled: false
+      enabled: true
 ```
-This feature flag can also be overwritten for each shoot cluster in the shoot manifest (see below).
+
+See [example files (20-* and 30-*)](https://github.com/gardener/external-dns-management/tree/master/examples)
+for details for the various provider types.
+
 
 ### Shoot Feature Gate
 
@@ -84,6 +85,7 @@ The DNSProvider` replication feature enablement can be overwritten in the
 shoot manifest, e.g.
 
 ```yaml
+Kind: Shoot
 ...
 spec:
   extensions:
@@ -92,7 +94,7 @@ spec:
         apiVersion: service.dns.extensions.gardener.cloud/v1alpha1
         kind: DNSConfig
         dnsProviderReplication:
-          enabled: false
+          enabled: true
 ...
 ```
 

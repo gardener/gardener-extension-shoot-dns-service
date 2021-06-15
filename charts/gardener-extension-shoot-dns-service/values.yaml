@@ -7,7 +7,7 @@ serviceName: shoot-dns-service
 dnsClass: garden
 
 dnsProviderReplication:
-  enabled: true
+  enabled: false
 
 gardener:
   seed:
