@@ -9,35 +9,6 @@ names for shoot clusters. So, far only the external DNS domain of a shoot
 (already used for the kubernetes api server and ingress DNS names) can be used
 for managed DNS names.
 
-<style>
-#body-inner blockquote {
-    border: 0;
-    padding: 10px;
-    margin-top: 40px;
-    margin-bottom: 40px;
-    border-radius: 4px;
-    background-color: rgba(0,0,0,0.05);
-    box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
-    position:relative;
-    padding-left:60px;
-}
-#body-inner blockquote:before {
-    content: "!";
-    font-weight: bold;
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    background-color: #00a273;
-    color: white;
-    vertical-align: middle;
-    margin: auto;
-    width: 36px;
-    font-size: 30px;
-    text-align: center;
-}
-</style>
-
 ## Configuration
 
 A general description for configuring the DNS management of the
@@ -65,8 +36,32 @@ spec:
 So, far only the external DNS domain of a shoot already used
 for the kubernetes api server and ingress DNS names can be used for managed
 DNS names. This is either the shoot domain as subdomain of the default domain
-configured for the gardener installation or a dedicated domain with dedicated
+configured for the gardener installation, or a dedicated domain with dedicated
 access credentials configured for a dedicated shoot via the shoot manifest.
+
+Alternatively, you can specify `DNSProviders` and its credentials
+`Secret` directly in the shoot, if this feature is enabled.
+By default, `DNSProvider` replication is disabled, but it can be enabled globally in the `ControllerDeployment`
+or for a shoot cluster in the shoot manifest (details see further below). 
+
+```yaml
+apiVersion: core.gardener.cloud/v1beta1
+kind: ControllerDeployment
+metadata:
+  name: extension-shoot-dns-service
+type: helm
+providerConfig:
+  chart: ...
+  values:
+    image:
+      ...
+    dnsProviderReplication:
+      enabled: true
+```
+
+See [example files (20-* and 30-*)](https://github.com/gardener/external-dns-management/tree/master/examples)
+for details for the various provider types.
+
 
 ### Shoot Feature Gate
 
@@ -83,4 +78,25 @@ spec:
     - type: shoot-dns-service
 ...
 ```
+
+#### Enable/disable DNS provider replication for a shoot
+
+The DNSProvider` replication feature enablement can be overwritten in the
+shoot manifest, e.g.
+
+```yaml
+Kind: Shoot
+...
+spec:
+  extensions:
+    - type: shoot-dns-service
+      providerConfig:
+        apiVersion: service.dns.extensions.gardener.cloud/v1alpha1
+        kind: DNSConfig
+        dnsProviderReplication:
+          enabled: true
+...
+```
+
+
 

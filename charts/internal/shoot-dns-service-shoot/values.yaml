@@ -4,3 +4,6 @@
 
 userName: dummy
 serviceName: dummy
+
+dnsProviderReplication:
+  enabled: false

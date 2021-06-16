@@ -38,6 +38,10 @@ type DNSProviderList struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name=TYPE,JSONPath=".spec.type",type=string
 // +kubebuilder:printcolumn:name=STATUS,JSONPath=".status.state",type=string
+// +kubebuilder:printcolumn:name=AGE,JSONPath=".metadata.creationTimestamp",type=date,description="creation timestamp"
+// +kubebuilder:printcolumn:name=INCLUDED_DOMAINS,JSONPath=".status.domains.included",type=string,description="included domains"
+// +kubebuilder:printcolumn:name=INCLUDED_ZONES,JSONPath=".status.zones.included",type=string,priority=2000,description="included zones"
+// +kubebuilder:printcolumn:name=MESSAGE,JSONPath=".status.message",type=string,priority=2000,description="message describing the reason for the state"
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -68,6 +72,9 @@ type DNSProviderSpec struct {
 	// (by default all zones will be served)
 	// +optional
 	Zones *DNSSelection `json:"zones,omitempty"`
+	// default TTL used for DNS entries if not specified explicitly
+	// +optional
+	DefaultTTL *int64 `json:"defaultTTL,omitempty"`
 }
 
 type DNSSelection struct {
@@ -87,12 +94,18 @@ type DNSProviderStatus struct {
 	State string `json:"state"`
 	// message describing the reason for the actual state of the provider
 	Message *string `json:"message,omitempty"`
+	// lastUpdateTime contains the timestamp of the last status update
+	// +optional
+	LastUptimeTime *metav1.Time `json:"lastUpdateTime,omitempty"`
 	// actually served domain selection
 	// +optional
 	Domains DNSSelectionStatus `json:"domains"`
 	// actually served zones
 	// +optional
 	Zones DNSSelectionStatus `json:"zones"`
+	// actually used default TTL for DNS entries
+	// +optional
+	DefaultTTL *int64 `json:"defaultTTL,omitempty"`
 }
 
 type DNSSelectionStatus struct {

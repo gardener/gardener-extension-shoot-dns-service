@@ -21,10 +21,14 @@ import (
 	"path/filepath"
 	"time"
 
+	apisservice "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/validation"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/common"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/imagevector"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	"github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	resourceapi "github.com/gardener/gardener-resource-manager/pkg/apis/resources/v1alpha1"
@@ -80,6 +84,7 @@ type actuator struct {
 	*common.Env
 	applier  kubernetes.ChartApplier
 	renderer chartrenderer.Interface
+	decoder  runtime.Decoder
 }
 
 // InjectConfig injects the rest config to this actuator.
@@ -104,9 +109,20 @@ func (a *actuator) InjectConfig(config *rest.Config) error {
 	return nil
 }
 
+// InjectScheme injects the given scheme into the reconciler.
+func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
+	a.decoder = serializer.NewCodecFactory(scheme, serializer.EnableStrict).UniversalDecoder()
+	return nil
+}
+
 // Reconcile the Extension resource.
 func (a *actuator) Reconcile(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
 	cluster, err := controller.GetCluster(ctx, a.Client(), ex.Namespace)
+	if err != nil {
+		return err
+	}
+
+	dnsConfig, err := a.extractDNSConfig(ex)
 	if err != nil {
 		return err
 	}
@@ -128,10 +144,23 @@ func (a *actuator) Reconcile(ctx context.Context, ex *extensionsv1alpha1.Extensi
 		return a.Delete(ctx, ex)
 	}
 
-	if err := a.createOrUpdateShootResources(ctx, cluster, ex.Namespace); err != nil {
+	if err := a.createOrUpdateShootResources(ctx, dnsConfig, cluster, ex.Namespace); err != nil {
 		return err
 	}
-	return a.createOrUpdateSeedResources(ctx, cluster, ex, !resurrection, true)
+	return a.createOrUpdateSeedResources(ctx, dnsConfig, cluster, ex, !resurrection, true)
+}
+
+func (a *actuator) extractDNSConfig(ex *extensionsv1alpha1.Extension) (*apisservice.DNSConfig, error) {
+	dnsConfig := &apisservice.DNSConfig{}
+	if ex.Spec.ProviderConfig != nil {
+		if _, _, err := a.decoder.Decode(ex.Spec.ProviderConfig.Raw, nil, dnsConfig); err != nil {
+			return nil, fmt.Errorf("failed to decode provider config: %+v", err)
+		}
+		if errs := validation.ValidateDNSConfig(dnsConfig); len(errs) > 0 {
+			return nil, errs.ToAggregate()
+		}
+	}
+	return dnsConfig, nil
 }
 
 func (a *actuator) ResurrectFrom(ctx context.Context, ex *extensionsv1alpha1.Extension) (bool, error) {
@@ -217,7 +246,7 @@ func (a *actuator) Migrate(ctx context.Context, ex *extensionsv1alpha1.Extension
 	return a.delete(ctx, ex, true)
 }
 
-func (a *actuator) createOrUpdateSeedResources(ctx context.Context, cluster *controller.Cluster, ex *extensionsv1alpha1.Extension,
+func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *apisservice.DNSConfig, cluster *controller.Cluster, ex *extensionsv1alpha1.Extension,
 	refresh bool, deploymentEnabled bool) error {
 	namespace := ex.Namespace
 	shootKubeconfig, err := a.createKubeconfig(ctx, namespace)
@@ -267,8 +296,11 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, cluster *con
 		"shootId":             shootID,
 		"seedId":              seedID,
 		"dnsClass":            a.Config().DNSClass,
-		"dnsOwner":            a.OwnerName(namespace),
-		"shootActive":         !common.IsMigrating(ex),
+		"dnsProviderReplication": map[string]interface{}{
+			"enabled": a.replicateDNSProviders(dnsconfig),
+		},
+		"dnsOwner":    a.OwnerName(namespace),
+		"shootActive": !common.IsMigrating(ex),
 		"podAnnotations": map[string]interface{}{
 			"checksum/secret-kubeconfig": utils.ComputeChecksum(shootKubeconfig.Data),
 		},
@@ -281,6 +313,13 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, cluster *con
 
 	a.Info("Component is being applied", "component", service.ExtensionServiceName, "namespace", namespace)
 	return a.createOrUpdateManagedResource(ctx, namespace, SeedResourcesName, "seed", a.renderer, service.SeedChartName, chartValues, nil)
+}
+
+func (a *actuator) replicateDNSProviders(dnsconfig *apisservice.DNSConfig) bool {
+	if dnsconfig != nil && dnsconfig.DNSProviderReplication != nil {
+		return dnsconfig.DNSProviderReplication.Enabled
+	}
+	return a.Config().ReplicateDNSProviders
 }
 
 func (a *actuator) deleteSeedResources(ctx context.Context, ex *extensionsv1alpha1.Extension, migrate bool) error {
@@ -333,7 +372,11 @@ func (a *actuator) cleanupShootDNSEntries(helper *common.ShootDNSEntriesHelper) 
 	if err != nil {
 		return err
 	}
-	err = a.createOrUpdateSeedResources(helper.Context(), cluster, helper.Extension(), false, false)
+	dnsconfig, err := a.extractDNSConfig(helper.Extension())
+	if err != nil {
+		return err
+	}
+	err = a.createOrUpdateSeedResources(helper.Context(), dnsconfig, cluster, helper.Extension(), false, false)
 	if err != nil {
 		return err
 	}
@@ -344,7 +387,7 @@ func (a *actuator) cleanupShootDNSEntries(helper *common.ShootDNSEntriesHelper) 
 	return nil
 }
 
-func (a *actuator) createOrUpdateShootResources(ctx context.Context, cluster *controller.Cluster, namespace string) error {
+func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *apisservice.DNSConfig, cluster *controller.Cluster, namespace string) error {
 	crd := &unstructured.Unstructured{}
 	crd.SetAPIVersion("apiextensions.k8s.io/v1beta1")
 	crd.SetKind("CustomResourceDefinition")
@@ -362,7 +405,23 @@ func (a *actuator) createOrUpdateShootResources(ctx context.Context, cluster *co
 	if err != nil {
 		return errors.Wrap(err, "could not unmarshal dnsannotation.dns.gardener.cloud crd")
 	}
-	if err = managedresources.CreateFromUnstructured(ctx, a.Client(), namespace, KeptShootResourcesName, false, "", []*unstructured.Unstructured{crd, crd2}, true, nil); err != nil {
+
+	replicateDNSProviders := a.replicateDNSProviders(dnsconfig)
+	objs := []*unstructured.Unstructured{crd, crd2}
+	if replicateDNSProviders {
+		crd3 := &unstructured.Unstructured{}
+		crd3.SetAPIVersion("apiextensions.k8s.io/v1beta1")
+		crd3.SetKind("CustomResourceDefinition")
+		if err := a.Client().Get(ctx, client.ObjectKey{Name: "dnsproviders.dns.gardener.cloud"}, crd3); err != nil {
+			return errors.Wrap(err, "could not get crd dnsproviders.dns.gardener.cloud")
+		}
+		crd3.SetResourceVersion("")
+		crd3.SetUID("")
+		crd3.SetCreationTimestamp(metav1.Time{})
+		crd3.SetGeneration(0)
+		objs = append(objs, crd3)
+	}
+	if err = managedresources.CreateFromUnstructured(ctx, a.Client(), namespace, KeptShootResourcesName, false, "", objs, true, nil); err != nil {
 		return errors.Wrapf(err, "could not create managed resource %s", KeptShootResourcesName)
 	}
 
@@ -374,6 +433,9 @@ func (a *actuator) createOrUpdateShootResources(ctx context.Context, cluster *co
 	chartValues := map[string]interface{}{
 		"userName":    service.UserName,
 		"serviceName": service.ServiceName,
+		"dnsProviderReplication": map[string]interface{}{
+			"enabled": replicateDNSProviders,
+		},
 	}
 	injectedLabels := map[string]string{v1beta1constants.ShootNoCleanup: "true"}
 

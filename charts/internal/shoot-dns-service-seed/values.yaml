@@ -14,6 +14,9 @@ seedId: "3141"
 podAnnotations: {}
 dnsClass: ""
 
+dnsProviderReplication:
+  enabled: false
+
 resources:
   requests:
     memory: "64Mi"

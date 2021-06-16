@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	serviceinstall "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/install"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/healthcheck"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/lifecycle"
@@ -75,6 +76,9 @@ func (o *Options) run(ctx context.Context) error {
 	}
 	if err := dnsapi.AddToScheme(mgrScheme); err != nil {
 		return fmt.Errorf("could not update manager scheme (dnsapi): %s", err)
+	}
+	if err := serviceinstall.AddToScheme(mgrScheme); err != nil {
+		return fmt.Errorf("could not update manager scheme: %s", err)
 	}
 	if err := extensionscontroller.AddToScheme(mgrScheme); err != nil {
 		return fmt.Errorf("could not update manager scheme: %s", err)

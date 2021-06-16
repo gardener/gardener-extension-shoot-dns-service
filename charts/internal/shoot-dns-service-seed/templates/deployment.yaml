@@ -48,7 +48,10 @@ spec:
           - --target.id={{ .Values.seedId }}
           - --target.disable-deploy-crds
           - --target-owner-id={{ .Values.shootId }}-shootdns
-          - --controllers=dnssources,dnsentry-source,annotation
+          - --controllers=dnssources,dnsentry-source,annotation{{- if .Values.dnsProviderReplication.enabled -}},dnsprovider-replication{{- end }}
+          {{- if .Values.dnsProviderReplication.enabled }}
+          - --dnsprovider-replication.target-realms={{ .Release.Namespace }},
+          {{- end }}
           - --namespace=kube-system
           - --target-namespace={{ .Release.Namespace }}
           - --target-creator-label-name=gardener.cloud/shoot-id
@@ -56,6 +59,7 @@ spec:
           - --target-set-ignore-owners
           - --dns-target-class=gardendns
           - --dns-class={{ .Values.dnsClass }}
+          - --lease-name=shoot-dns-service
           resources:
 {{ toYaml .Values.resources | indent 12 }}
       volumes:
