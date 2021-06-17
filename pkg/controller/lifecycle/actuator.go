@@ -309,7 +309,7 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 
 	if cluster.Shoot.Spec.DNS != nil && cluster.Shoot.Spec.DNS.Domain != nil {
 		if a.Config().DNSActivation != "" {
-			dnsname := fmt.Sprintf("%s.%s", a.Config().DNSActivation, cluster.Shoot.Spec.DNS.Domain)
+			dnsname := fmt.Sprintf("%s.%s", a.Config().DNSActivation, *cluster.Shoot.Spec.DNS.Domain)
 			chartValues["dnsActivationName"] = dnsname
 		}
 	}
