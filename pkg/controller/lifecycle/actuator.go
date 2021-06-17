@@ -21,14 +21,15 @@ import (
 	"path/filepath"
 	"time"
 
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+
 	apisservice "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/validation"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/common"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/imagevector"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	"github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	resourceapi "github.com/gardener/gardener-resource-manager/pkg/apis/resources/v1alpha1"
@@ -304,6 +305,13 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 		"podAnnotations": map[string]interface{}{
 			"checksum/secret-kubeconfig": utils.ComputeChecksum(shootKubeconfig.Data),
 		},
+	}
+
+	if cluster.Shoot.Spec.DNS != nil && cluster.Shoot.Spec.DNS.Domain != nil {
+		if a.Config().DNSActivation != "" {
+			dnsname := fmt.Sprintf("%s.%s", a.Config().DNSActivation, cluster.Shoot.Spec.DNS.Domain)
+			chartValues["dnsActivationName"] = dnsname
+		}
 	}
 
 	chartValues, err = chart.InjectImages(chartValues, imagevector.ImageVector(), []string{service.ImageName})
