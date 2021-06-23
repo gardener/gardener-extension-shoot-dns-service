@@ -2,4 +2,4 @@ images:
 - name: dns-controller-manager
   sourceRepository: github.com/gardener/external-dns-management
   repository: eu.gcr.io/gardener-project/dns-controller-manager
-  tag: "v0.10.2"
+  tag: "v0.10.3-dev-d8b61bfae6e6177402b9609595eccd41bc8d796d"
