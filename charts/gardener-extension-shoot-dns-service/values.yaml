@@ -5,6 +5,7 @@ image:
 
 serviceName: shoot-dns-service
 dnsClass: garden
+# dnsActivation: <shoot dns subdomain>
 
 dnsProviderReplication:
   enabled: false

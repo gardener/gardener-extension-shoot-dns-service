@@ -33,6 +33,7 @@ import (
 type DNSServiceOptions struct {
 	SeedID                string
 	DNSClass              string
+	DNSActivation         string
 	ReplicateDNSProviders bool
 	config                *DNSServiceConfig
 }
@@ -47,6 +48,7 @@ type HealthOptions struct {
 func (o *DNSServiceOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.SeedID, "seed-id", "", "ID of the current cluster")
 	fs.StringVar(&o.DNSClass, "dns-class", "garden", "DNS class used to filter DNS source resources in shoot clusters")
+	fs.StringVar(&o.DNSActivation, "dns-activation", "", "Enable DNS based owner activation by specifying a sub domain for the shoot domain to use for the activation record")
 	fs.BoolVar(&o.ReplicateDNSProviders, "replicate-dns-providers", false, "enables replication of DNSProviders from shoot cluster to seed cluster")
 }
 
@@ -57,7 +59,7 @@ func (o *HealthOptions) AddFlags(fs *pflag.FlagSet) {
 
 // Complete implements Completer.Complete.
 func (o *DNSServiceOptions) Complete() error {
-	o.config = &DNSServiceConfig{SeedID: o.SeedID, DNSClass: o.DNSClass, ReplicateDNSProviders: o.ReplicateDNSProviders}
+	o.config = &DNSServiceConfig{SeedID: o.SeedID, DNSClass: o.DNSClass, ReplicateDNSProviders: o.ReplicateDNSProviders, DNSActivation: o.DNSActivation}
 	return nil
 }
 
@@ -81,6 +83,7 @@ func (o *HealthOptions) Completed() *HealthConfig {
 type DNSServiceConfig struct {
 	SeedID                string
 	DNSClass              string
+	DNSActivation         string
 	ReplicateDNSProviders bool
 }
 
@@ -88,6 +91,7 @@ type DNSServiceConfig struct {
 func (c *DNSServiceConfig) Apply(cfg *config.DNSServiceConfig) {
 	cfg.SeedID = c.SeedID
 	cfg.DNSClass = c.DNSClass
+	cfg.DNSActivation = c.DNSActivation
 	cfg.ReplicateDNSProviders = c.ReplicateDNSProviders
 }
 

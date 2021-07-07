@@ -24,5 +24,6 @@ var DNSService DNSServiceConfig
 type DNSServiceConfig struct {
 	SeedID                string
 	DNSClass              string
+	DNSActivation         string
 	ReplicateDNSProviders bool
 }
