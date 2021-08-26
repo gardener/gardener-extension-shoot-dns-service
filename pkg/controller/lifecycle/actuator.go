@@ -31,7 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	"github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
-	resourceapi "github.com/gardener/gardener-resource-manager/pkg/apis/resources/v1alpha1"
+	resourceapi "github.com/gardener/gardener-resource-manager/api/resources/v1alpha1"
 	"github.com/gardener/gardener/extensions/pkg/controller"
 	controllererror "github.com/gardener/gardener/extensions/pkg/controller/error"
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
