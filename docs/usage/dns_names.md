@@ -23,7 +23,7 @@ spec:
 
 ## DNS providers, domain scope
 
-Gardener can only manage DNS records on your behalf if you have proper DNS providers in place. Please consult [this page](../dns_providers) for more information.
+Gardener can only manage DNS records on your behalf if you have proper DNS providers in place. Please consult [this page](./dns_providers.md) for more information.
 
 ## Request DNS records via Service/Ingress resources
 
