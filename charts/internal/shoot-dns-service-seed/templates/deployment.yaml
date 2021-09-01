@@ -60,6 +60,7 @@ spec:
           - --dns-target-class=gardendns
           - --dns-class={{ .Values.dnsClass }}
           - --lease-name=shoot-dns-service
+          - --lease-resource-lock=leases
           resources:
 {{ toYaml .Values.resources | indent 12 }}
       volumes:
