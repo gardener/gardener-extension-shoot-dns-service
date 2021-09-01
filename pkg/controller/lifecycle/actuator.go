@@ -27,8 +27,12 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/imagevector"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
+	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/util/json"
 
 	"github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	resourceapi "github.com/gardener/gardener-resource-manager/api/resources/v1alpha1"
@@ -45,6 +49,7 @@ import (
 	"github.com/gardener/gardener/pkg/utils/chart"
 	"github.com/gardener/gardener/pkg/utils/managedresources"
 	"github.com/gardener/gardener/pkg/utils/secrets"
+	versionutils "github.com/gardener/gardener/pkg/utils/version"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
@@ -388,16 +393,16 @@ func (a *actuator) cleanupShootDNSEntries(helper *common.ShootDNSEntriesHelper) 
 }
 
 func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *apisservice.DNSConfig, cluster *controller.Cluster, namespace string) error {
+	k8sVersionLessThan116, _ := versionutils.CompareVersions(cluster.Shoot.Spec.Kubernetes.Version, "<", "1.16")
+
 	crd := &unstructured.Unstructured{}
-	crd.SetAPIVersion("apiextensions.k8s.io/v1beta1")
+	// assuming k8s version of seed is always >= 1.16
+	crd.SetAPIVersion(apiextensionsv1.SchemeGroupVersion.String())
 	crd.SetKind("CustomResourceDefinition")
 	if err := a.Client().Get(ctx, client.ObjectKey{Name: "dnsentries.dns.gardener.cloud"}, crd); err != nil {
 		return errors.Wrap(err, "could not get crd dnsentries.dns.gardener.cloud")
 	}
-	crd.SetResourceVersion("")
-	crd.SetUID("")
-	crd.SetCreationTimestamp(metav1.Time{})
-	crd.SetGeneration(0)
+	cleanCRD(crd)
 
 	crd2 := &unstructured.Unstructured{}
 	dec := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
@@ -410,17 +415,21 @@ func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *
 	objs := []*unstructured.Unstructured{crd, crd2}
 	if replicateDNSProviders {
 		crd3 := &unstructured.Unstructured{}
-		crd3.SetAPIVersion("apiextensions.k8s.io/v1beta1")
-		crd3.SetKind("CustomResourceDefinition")
+		crd3.SetAPIVersion(crd.GetAPIVersion())
+		crd3.SetKind(crd.GetKind())
 		if err := a.Client().Get(ctx, client.ObjectKey{Name: "dnsproviders.dns.gardener.cloud"}, crd3); err != nil {
 			return errors.Wrap(err, "could not get crd dnsproviders.dns.gardener.cloud")
 		}
-		crd3.SetResourceVersion("")
-		crd3.SetUID("")
-		crd3.SetCreationTimestamp(metav1.Time{})
-		crd3.SetGeneration(0)
+		cleanCRD(crd3)
 		objs = append(objs, crd3)
 	}
+	if k8sVersionLessThan116 {
+		objs, err = a.convertToV1beta1(objs)
+		if err != nil {
+			return err
+		}
+	}
+
 	if err = managedresources.CreateFromUnstructured(ctx, a.Client(), namespace, KeptShootResourcesName, false, "", objs, true, nil); err != nil {
 		return errors.Wrapf(err, "could not create managed resource %s", KeptShootResourcesName)
 	}
@@ -489,4 +498,51 @@ func seedSettingShootDNSEnabled(settings *gardencorev1beta1.SeedSettings) bool {
 
 func (a *actuator) OwnerName(namespace string) string {
 	return fmt.Sprintf("%s-%s", OwnerName, namespace)
+}
+
+func (a *actuator) convertToV1beta1(objs []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
+	scheme := runtime.NewScheme()
+	_ = apiextensionsv1.AddToScheme(scheme)
+	_ = apiextensionsv1beta1.AddToScheme(scheme)
+
+	var converted []*unstructured.Unstructured
+
+	for _, obj := range objs {
+		crd := &apiextensions.CustomResourceDefinition{}
+		err := scheme.Convert(obj, crd, nil)
+		if err != nil {
+			return nil, fmt.Errorf("cannot convert CRD %s from v1: %w", obj.GetName(), err)
+		}
+		crdv1beta1 := &apiextensionsv1beta1.CustomResourceDefinition{}
+		err = scheme.Convert(crd, crdv1beta1, nil)
+		if err != nil {
+			return nil, fmt.Errorf("cannot convert CRD %s to v1beta1: %w", obj.GetName(), err)
+		}
+		crdv1beta1.SetGroupVersionKind(apiextensionsv1beta1.SchemeGroupVersion.WithKind("CustomResourceDefinition"))
+		bytes, err := json.Marshal(crdv1beta1)
+		if err != nil {
+			return nil, fmt.Errorf("cannot marshal CRD v1beta1 %s: %w", obj.GetName(), err)
+		}
+		obj2 := &unstructured.Unstructured{}
+		err = json.Unmarshal(bytes, obj2)
+		if err != nil {
+			return nil, fmt.Errorf("cannot unmarshal CRD v1beta %s: %w", obj.GetName(), err)
+		}
+		delete(obj2.Object, "status")
+		converted = append(converted, obj2)
+	}
+	return converted, nil
+}
+
+func cleanCRD(crd *unstructured.Unstructured) {
+	crd.SetResourceVersion("")
+	crd.SetUID("")
+	crd.SetCreationTimestamp(metav1.Time{})
+	crd.SetGeneration(0)
+	crd.SetManagedFields(nil)
+	annotations := crd.GetAnnotations()
+	if annotations != nil {
+		delete(annotations, "kubectl.kubernetes.io/last-applied-configuration")
+	}
+	crd.SetAnnotations(annotations)
 }
