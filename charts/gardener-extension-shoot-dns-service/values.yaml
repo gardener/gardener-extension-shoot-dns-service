@@ -13,6 +13,8 @@ gardener:
   seed:
     identity: ""
 
+leaderElection:
+  resourceLock: leases
 
 resources:
   requests:
