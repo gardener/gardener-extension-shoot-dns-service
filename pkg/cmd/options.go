@@ -34,6 +34,7 @@ type DNSServiceOptions struct {
 	SeedID                string
 	DNSClass              string
 	ReplicateDNSProviders bool
+	OwnerDNSActivation    bool
 	config                *DNSServiceConfig
 }
 
@@ -48,6 +49,7 @@ func (o *DNSServiceOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.SeedID, "seed-id", "", "ID of the current cluster")
 	fs.StringVar(&o.DNSClass, "dns-class", "garden", "DNS class used to filter DNS source resources in shoot clusters")
 	fs.BoolVar(&o.ReplicateDNSProviders, "replicate-dns-providers", false, "enables replication of DNSProviders from shoot cluster to seed cluster")
+	fs.BoolVar(&o.OwnerDNSActivation, "enable-owner-dns-activation", false, "enables DNS activation of the shootdns DNSOwner")
 }
 
 // AddFlags implements Flagger.AddFlags.
@@ -57,7 +59,12 @@ func (o *HealthOptions) AddFlags(fs *pflag.FlagSet) {
 
 // Complete implements Completer.Complete.
 func (o *DNSServiceOptions) Complete() error {
-	o.config = &DNSServiceConfig{SeedID: o.SeedID, DNSClass: o.DNSClass, ReplicateDNSProviders: o.ReplicateDNSProviders}
+	o.config = &DNSServiceConfig{
+		SeedID:                o.SeedID,
+		DNSClass:              o.DNSClass,
+		ReplicateDNSProviders: o.ReplicateDNSProviders,
+		OwnerDNSActivation:    o.OwnerDNSActivation,
+	}
 	return nil
 }
 
@@ -82,6 +89,7 @@ type DNSServiceConfig struct {
 	SeedID                string
 	DNSClass              string
 	ReplicateDNSProviders bool
+	OwnerDNSActivation    bool
 }
 
 // Apply applies the DNSServiceOptions to the passed ControllerOptions instance.
@@ -89,6 +97,7 @@ func (c *DNSServiceConfig) Apply(cfg *config.DNSServiceConfig) {
 	cfg.SeedID = c.SeedID
 	cfg.DNSClass = c.DNSClass
 	cfg.ReplicateDNSProviders = c.ReplicateDNSProviders
+	cfg.OwnerDNSActivation = c.OwnerDNSActivation
 }
 
 // HealthConfig contains configuration information about the health check controller.

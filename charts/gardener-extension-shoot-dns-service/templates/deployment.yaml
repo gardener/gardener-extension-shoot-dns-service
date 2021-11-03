@@ -43,6 +43,9 @@ spec:
         {{- if .Values.dnsProviderReplication.enabled }}
         - --replicate-dns-providers
         {{- end }}
+        {{- if .Values.ownerDnsActivation.enabled }}
+        - --enable-owner-dns-activation
+        {{- end }}
         env:
         - name: LEADER_ELECTION_NAMESPACE
           valueFrom:

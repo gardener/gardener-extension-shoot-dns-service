@@ -13,6 +13,12 @@ shootId: "4711"
 seedId: "3141"
 podAnnotations: {}
 dnsClass: ""
+shootActive: true
+
+dnsActivation:
+  enabled: false
+#  dnsName: shoot.foo.bar.com
+#  value: my-cluster-id
 
 dnsProviderReplication:
   enabled: false

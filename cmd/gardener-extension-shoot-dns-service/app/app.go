@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -87,9 +88,10 @@ func (o *Options) run(ctx context.Context) error {
 	mgrOpts := o.managerOptions.Completed().Options()
 	mgrOpts.Scheme = mgrScheme
 	mgrOpts.ClientDisableCacheFor = []client.Object{
-		&corev1.Secret{},    // applied for ManagedResources
-		&corev1.ConfigMap{}, // applied for monitoring config
-		&dnsapi.DNSOwner{},  // avoid watching DNSOwner
+		&corev1.Secret{},      // applied for ManagedResources
+		&corev1.ConfigMap{},   // applied for monitoring config
+		&dnsapi.DNSOwner{},    // avoid watching DNSOwner
+		&v1alpha1.DNSRecord{}, // avoid watching DNSRecord
 	}
 	mgr, err := manager.New(o.restOptions.Completed().Config, mgrOpts)
 	if err != nil {

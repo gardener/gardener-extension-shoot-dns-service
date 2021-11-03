@@ -75,9 +75,14 @@ rules:
     - get
     - list
 - apiGroups:
+    - "extensions.gardener.cloud"
+  resources:
+    - "dnsrecords"
+  verbs:
+    - get
+- apiGroups:
   - ""
   resources:
-  - "configmaps"
   - "secrets"
   verbs:
   - "*"
