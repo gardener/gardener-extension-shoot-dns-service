@@ -25,4 +25,5 @@ type DNSServiceConfig struct {
 	SeedID                string
 	DNSClass              string
 	ReplicateDNSProviders bool
+	OwnerDNSActivation    bool
 }

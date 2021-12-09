@@ -9,6 +9,9 @@ dnsClass: garden
 dnsProviderReplication:
   enabled: false
 
+ownerDnsActivation:
+  enabled: true
+
 gardener:
   seed:
     identity: ""

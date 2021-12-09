@@ -27,6 +27,7 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/imagevector"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
+	"github.com/gardener/gardener/pkg/extensions"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -275,17 +276,10 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 
 	seedID := a.Config().SeedID
 	if seedID == "" {
-		// load seed cluster-identity from kube-system namespace
-		cm := &corev1.ConfigMap{}
-		err = a.Client().Get(context.TODO(), client.ObjectKey{Namespace: "kube-system", Name: "cluster-identity"}, cm)
-		if err != nil {
-			return errors.Wrap(err, "cannot get seed identity from configmap 'kube-system/cluster-identity'")
+		if cluster.Seed.Status.ClusterIdentity == nil {
+			return fmt.Errorf("missing 'seed.status.clusterIdentity' in cluster")
 		}
-		var ok bool
-		seedID, ok = cm.Data["cluster-identity"]
-		if !ok {
-			return fmt.Errorf("'cluster-identity' not found in configmap 'kube-system/cluster-identity'")
-		}
+		seedID = *cluster.Seed.Status.ClusterIdentity
 		a.Config().SeedID = seedID
 	}
 
@@ -293,6 +287,21 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 	if !deploymentEnabled {
 		replicas = 0
 	}
+	shootActive := !common.IsMigrating(ex)
+	enableDNSActivation := shootActive && a.Config().OwnerDNSActivation
+	dnsActivationName := ""
+	ownerID := ""
+	if enableDNSActivation {
+		dnsActivationName, ownerID, err = extensions.GetOwnerNameAndID(ctx, a.Client(), namespace, cluster.Shoot.Name)
+		if err != nil {
+			return err
+		}
+		if dnsActivationName == "" {
+			shootActive = false // owner should not be active if owner DNSRecord is not found
+			enableDNSActivation = false
+		}
+	}
+
 	chartValues := map[string]interface{}{
 		"serviceName":         service.ServiceName,
 		"replicas":            controller.GetReplicas(cluster, replicas),
@@ -305,9 +314,14 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 			"enabled": a.replicateDNSProviders(dnsconfig),
 		},
 		"dnsOwner":    a.OwnerName(namespace),
-		"shootActive": !common.IsMigrating(ex),
+		"shootActive": shootActive,
 		"podAnnotations": map[string]interface{}{
 			"checksum/secret-kubeconfig": utils.ComputeChecksum(shootKubeconfig.Data),
+		},
+		"dnsActivation": map[string]interface{}{
+			"enabled": enableDNSActivation,
+			"dnsName": dnsActivationName,
+			"value":   ownerID,
 		},
 	}
 

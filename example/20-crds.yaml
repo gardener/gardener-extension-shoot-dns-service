@@ -289,8 +289,6 @@ kind: CustomResourceDefinition
 metadata:
   name: dnsentries.dns.gardener.cloud
 spec:
-  conversion:
-    strategy: None
   group: dns.gardener.cloud
   names:
     kind: DNSEntry
@@ -350,22 +348,17 @@ spec:
         openAPIV3Schema:
           properties:
             apiVersion:
-              description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
               type: string
             kind:
-              description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
               type: string
             metadata:
               type: object
             spec:
               properties:
                 cnameLookupInterval:
-                  description: lookup interval for CNAMEs that must be resolved to IP
-                    addresses
+                  description: lookup interval for CNAMEs that must be resolved to IP addresses
                   format: int64
                   type: integer
                 dnsName:
@@ -387,8 +380,7 @@ spec:
                     - name
                   type: object
                 targets:
-                  description: target records (CNAME or A records), either text or targets
-                    must be specified
+                  description: target records (CNAME or A records), either text or targets must be specified
                   items:
                     type: string
                   type: array
@@ -407,8 +399,7 @@ spec:
             status:
               properties:
                 lastUpdateTime:
-                  description: lastUpdateTime contains the timestamp of the last status
-                    update
+                  description: lastUpdateTime contains the timestamp of the last status update
                   format: date-time
                   type: string
                 message:
@@ -452,8 +443,6 @@ kind: CustomResourceDefinition
 metadata:
   name: dnsowners.dns.gardener.cloud
 spec:
-  conversion:
-    strategy: None
   group: dns.gardener.cloud
   names:
     kind: DNSOwner
@@ -468,7 +457,7 @@ spec:
         - jsonPath: .spec.ownerId
           name: OwnerId
           type: string
-        - jsonPath: .spec.active
+        - jsonPath: .status.active
           name: Active
           type: boolean
         - jsonPath: .status.entries.amount
@@ -488,29 +477,35 @@ spec:
         openAPIV3Schema:
           properties:
             apiVersion:
-              description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
               type: string
             kind:
-              description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
               type: string
             metadata:
               type: object
             spec:
               properties:
                 active:
-                  description: state of the ownerid for the DNS controller observing
-                    entry using this owner id (default:true)
+                  description: state of the ownerid for the DNS controller observing entry using this owner id (default:true)
                   type: boolean
+                dnsActivation:
+                  description: Optional activation info for controlling the owner activation remotely via DNS TXT record
+                  properties:
+                    dnsName:
+                      description: DNS name for controlling the owner activation remotely via DNS TXT record
+                      type: string
+                    value:
+                      description: Optional value for the DNS activation record used to activate this owner The default is the id of the cluster used to read the owner object
+                      type: string
+                  required:
+                    - dnsName
+                  type: object
                 ownerId:
                   description: owner id used to tag entries in external DNS system
                   type: string
                 validUntil:
-                  description: optional time this owner should be active if active flag
-                    is not false
+                  description: optional time this owner should be active if active flag is not false
                   format: date-time
                   type: string
               required:
@@ -518,6 +513,9 @@ spec:
               type: object
             status:
               properties:
+                active:
+                  description: state of the ownerid for the DNS controller observing entry using this owner id
+                  type: boolean
                 entries:
                   description: Entry statistic for this owner id
                   properties:
@@ -544,8 +542,6 @@ kind: CustomResourceDefinition
 metadata:
   name: dnsproviders.dns.gardener.cloud
 spec:
-  conversion:
-    strategy: None
   group: dns.gardener.cloud
   names:
     kind: DNSProvider
@@ -586,14 +582,10 @@ spec:
         openAPIV3Schema:
           properties:
             apiVersion:
-              description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
               type: string
             kind:
-              description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
               type: string
             metadata:
               type: object
@@ -604,8 +596,7 @@ spec:
                   format: int64
                   type: integer
                 domains:
-                  description: desired selection of usable domains (by default all zones
-                    and domains in those zones will be served)
+                  description: desired selection of usable domains (by default all zones and domains in those zones will be served)
                   properties:
                     exclude:
                       description: values that should be ignored (domains or zones)
@@ -623,25 +614,20 @@ spec:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
                 secretRef:
-                  description: access credential for the external DNS system of the
-                    given type
+                  description: access credential for the external DNS system of the given type
                   properties:
                     name:
-                      description: Name is unique within a namespace to reference a
-                        secret resource.
+                      description: Name is unique within a namespace to reference a secret resource.
                       type: string
                     namespace:
-                      description: Namespace defines the space within which the secret
-                        name must be unique.
+                      description: Namespace defines the space within which the secret name must be unique.
                       type: string
                   type: object
                 type:
-                  description: type of the provider (selecting the responsible type
-                    of DNS controller)
+                  description: type of the provider (selecting the responsible type of DNS controller)
                   type: string
                 zones:
-                  description: desired selection of usable domains the domain selection
-                    is used for served zones, only (by default all zones will be served)
+                  description: desired selection of usable domains the domain selection is used for served zones, only (by default all zones will be served)
                   properties:
                     exclude:
                       description: values that should be ignored (domains or zones)
@@ -676,13 +662,11 @@ spec:
                       type: array
                   type: object
                 lastUpdateTime:
-                  description: lastUpdateTime contains the timestamp of the last status
-                    update
+                  description: lastUpdateTime contains the timestamp of the last status update
                   format: date-time
                   type: string
                 message:
-                  description: message describing the reason for the actual state of
-                    the provider
+                  description: message describing the reason for the actual state of the provider
                   type: string
                 observedGeneration:
                   format: int64

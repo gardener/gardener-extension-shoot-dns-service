@@ -132,9 +132,9 @@ spec:
         - shoot-dns-service-extension-controller-manager
         - --healthcheck-max-concurrent-reconciles=1
         - --ignore-operation-annotation=true
-        - --garden-id=4711
         - --seed-id=0815
         - --dns-class=garden
+        - --enable-owner-dns-activation
         env:
         - name: LEADER_ELECTION_NAMESPACE
           valueFrom:
