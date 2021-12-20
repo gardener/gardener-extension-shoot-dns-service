@@ -2,7 +2,10 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-userName: dummy
+#userName: dummy
+#shootAccessServiceAccountName: ""
+useTokenRequestor: false
+
 serviceName: dummy
 
 dnsProviderReplication:

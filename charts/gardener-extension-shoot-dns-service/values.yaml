@@ -13,6 +13,7 @@ ownerDnsActivation:
   enabled: true
 
 gardener:
+  version: ""
   seed:
     identity: ""
 

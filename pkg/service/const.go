@@ -34,6 +34,11 @@ const (
 
 	// SecretName is the name of the secret used to store the access data for the shoot cluster.
 	SecretName = ExtensionServiceName
+
+	// ShootAccessSecretName is the name of the shoot access secret in the seed.
+	ShootAccessSecretName = "extension-shoot-dns-service"
+	// ShootAccessServiceAccountName is the name of the service account used for accessing the shoot.
+	ShootAccessServiceAccountName = ShootAccessSecretName
 )
 
 // ChartsPath is the path to the charts

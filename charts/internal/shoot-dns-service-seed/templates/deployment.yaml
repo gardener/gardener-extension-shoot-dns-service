@@ -9,7 +9,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-  revisionHistoryLimit: 0
+  revisionHistoryLimit: 2
   replicas: {{ .Values.replicas }}
   selector:
     matchLabels:
@@ -17,9 +17,15 @@ spec:
       release: {{ .Release.Name }}
   template:
     metadata:
-      {{- if .Values.podAnnotations }}
+      {{- if or .Values.useProjectedTokenMount .Values.podAnnotations }}
       annotations:
+        {{- if .Values.useProjectedTokenMount }}
+        # TODO(rfranzke): Remove in a future release.
+        security.gardener.cloud/trigger: rollout
+        {{- end }}
+        {{- if .Values.podAnnotations }}
 {{ toYaml .Values.podAnnotations | indent 8 }}
+        {{- end }}
       {{- end }}
       labels:
         app: {{ template "service.name" . }}
@@ -35,11 +41,21 @@ spec:
         - name: {{ template "service.name" . }}
           image: {{ index .Values.images "dns-controller-manager" }}
           volumeMounts:
+          {{- if .Values.useTokenRequestor }}
+          - mountPath: /var/run/secrets/gardener.cloud/shoot/generic-kubeconfig
+            name: kubeconfig
+            readOnly: true
+          {{- else }}
           - name: source-cluster
             mountPath: "/etc/source-cluster"
             readOnly: true
+          {{- end }}
           args:
+          {{- if .Values.useTokenRequestor }}
+          - --kubeconfig=/var/run/secrets/gardener.cloud/shoot/generic-kubeconfig/kubeconfig
+          {{- else }}
           - --kubeconfig=/etc/source-cluster/kubeconfig
+          {{- end }}
           - --kubeconfig.id={{ .Values.shootId }}
           - --kubeconfig.disable-deploy-crds
           - --target=IN-CLUSTER
@@ -63,6 +79,25 @@ spec:
           resources:
 {{ toYaml .Values.resources | indent 12 }}
       volumes:
+      {{- if .Values.useTokenRequestor }}
+      - name: kubeconfig
+        projected:
+          defaultMode: 420
+          sources:
+          - secret:
+              items:
+              - key: kubeconfig
+                path: kubeconfig
+              name: generic-token-kubeconfig
+              optional: false
+          - secret:
+              items:
+              - key: token
+                path: token
+              name: {{ .Values.targetClusterSecret }}
+              optional: false
+      {{- else }}
       - name: source-cluster
         secret:
           secretName: {{ .Values.targetClusterSecret }}
+      {{- end }}

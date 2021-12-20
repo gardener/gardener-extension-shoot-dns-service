@@ -35,7 +35,9 @@ start:
 		--ignore-operation-annotation=$(IGNORE_OPERATION_ANNOTATION) \
 		--leader-election=$(LEADER_ELECTION) \
 		--garden-id=garden \
-		--seed-id=seed
+		--seed-id=seed \
+		--gardener-version="v1.39.0"
+
 #################################################################
 # Rules related to binary build, Docker image build and release #
 #################################################################
