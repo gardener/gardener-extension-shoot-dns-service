@@ -41,7 +41,7 @@ spec:
       type: google-clouddns
 ```
 
-> Please consult the [API-Reference](https://gardener.cloud/docs/references/core/#core.gardener.cloud/v1beta1.DNSProvider) to get a complete list of supported fields and configuration options.
+> Please consult the [API-Reference](https://gardener.cloud/docs/gardener/api-reference/core/#core.gardener.cloud/v1beta1.DNSProvider) to get a complete list of supported fields and configuration options.
 
 Referenced secrets should exist in the project namespace in the Garden cluster and must comply with the provider specific credentials format. The **External-DNS-Management** project provides corresponding examples ([20-secret-\<provider-name>-credentials.yaml](https://github.com/gardener/external-dns-management/tree/master/examples)) for known providers.
 
