@@ -79,6 +79,13 @@ type DNSEntrySpec struct {
 }
 
 type DNSEntryStatus struct {
+	DNSBaseStatus `json:",inline"`
+	// effective targets generated for the entry
+	// +optional
+	Targets []string `json:"targets,omitempty"`
+}
+
+type DNSBaseStatus struct {
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 	// entry state
@@ -102,9 +109,6 @@ type DNSEntryStatus struct {
 	// time to live used for the entry
 	// +optional
 	TTL *int64 `json:"ttl,omitempty"`
-	// effective targets generated for the entry
-	// +optional
-	Targets []string `json:"targets,omitempty"`
 }
 
 type EntryReference struct {

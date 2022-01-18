@@ -22,6 +22,8 @@ import (
 
 	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	predutils "github.com/gardener/gardener/pkg/controllerutils/predicate"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -46,14 +48,29 @@ type AddOptions struct {
 
 // ForService returns a predicate that matches the given name of a resource.
 func ForService(labelKey string) predicate.Predicate {
-	return predutils.FromMapper(predutils.MapperFunc(func(e event.GenericEvent) bool {
-		for k := range e.Object.GetLabels() {
-			if k == labelKey {
-				return true
-			}
+	f := func(obj client.Object) bool {
+		if obj == nil || obj.GetLabels() == nil {
+			return false
 		}
-		return false
-	}), predutils.CreateTrigger, predutils.UpdateNewTrigger, predutils.DeleteTrigger, predutils.GenericTrigger)
+
+		_, ok := obj.GetLabels()[labelKey]
+		return ok
+	}
+
+	return predicate.Funcs{
+		CreateFunc: func(event event.CreateEvent) bool {
+			return f(event.Object)
+		},
+		UpdateFunc: func(event event.UpdateEvent) bool {
+			return f(event.ObjectNew)
+		},
+		GenericFunc: func(event event.GenericEvent) bool {
+			return f(event.Object)
+		},
+		DeleteFunc: func(event event.DeleteEvent) bool {
+			return f(event.Object)
+		},
+	}
 }
 
 // AddToManager adds a DNS Service replication controller to the given Controller Manager.

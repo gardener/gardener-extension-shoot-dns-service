@@ -17,7 +17,8 @@
 package helper
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -46,7 +47,7 @@ func GetExtensionState(ext *extapi.Extension) (*api.DNSState, error) {
 	state := &api.DNSState{}
 	if ext.Status.State != nil && ext.Status.State.Raw != nil {
 		if _, _, err := decoder.Decode(ext.Status.State.Raw, nil, state); err != nil {
-			return state, errors.Wrapf(err, "could not decode extension state")
+			return state, fmt.Errorf("could not decode extension state: %w", err)
 		}
 	}
 	return state, nil

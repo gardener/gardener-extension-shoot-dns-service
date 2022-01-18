@@ -6,3 +6,27 @@ metadata:
   namespace: shoot--foo--bar
 spec:
   type: shoot-dns-service
+  providerConfig:
+    apiVersion: service.dns.extensions.gardener.cloud/v1alpha1
+    kind: DNSConfig
+
+    #dnsProviderReplication:
+    #  enabled: true
+
+    providers:
+      - secretName: playground
+        type: aws-route53
+        #primary: true
+        #domains:
+        #  include:
+        #  - domain1.my.com
+        #  - domain2.my.com
+        #  exclude:
+        #  - foo.domain1.my.com
+        #zones:
+        #  include:
+        #  - Z1
+        #  exclude:
+        #  - Z2
+
+    #syncProvidersFromShootSpecDNS: true

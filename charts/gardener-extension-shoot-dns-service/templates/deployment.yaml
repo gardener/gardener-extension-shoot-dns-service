@@ -40,6 +40,9 @@ spec:
         - --leader-election-resource-lock={{ .Values.leaderElection.resourceLock }}
         - --seed-id={{ .Values.gardener.seed.identity }}
         - --dns-class={{ .Values.dnsClass }}
+        {{- if .Values.dnsProviderManagement.enabled }}
+        - --manage-dns-providers
+        {{- end }}
         {{- if .Values.dnsProviderReplication.enabled }}
         - --replicate-dns-providers
         {{- end }}

@@ -9,6 +9,9 @@ dnsClass: garden
 dnsProviderReplication:
   enabled: false
 
+dnsProviderManagement:
+  enabled: false
+
 ownerDnsActivation:
   enabled: true
 
