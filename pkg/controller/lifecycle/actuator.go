@@ -29,16 +29,7 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/imagevector"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 
-    dnsv1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
-
-	"github.com/gardener/gardener/pkg/operation/botanist/component"
-	"github.com/gardener/gardener/pkg/utils/flow"
-	"github.com/hashicorp/go-multierror"
-	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-
-	 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
+	dnsv1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 
 	"github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
@@ -48,24 +39,28 @@ import (
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 
-	resourceapi "github.com/gardener/gardener/pkg/apis/resources/v1alpha1"
+	resourcesv1alpha1 "github.com/gardener/gardener/pkg/apis/resources/v1alpha1"
 	"github.com/gardener/gardener/pkg/chartrenderer"
 	"github.com/gardener/gardener/pkg/client/kubernetes"
 	reconcilerutils "github.com/gardener/gardener/pkg/controllerutils/reconciler"
 	"github.com/gardener/gardener/pkg/extensions"
+	"github.com/gardener/gardener/pkg/operation/botanist/component"
 	"github.com/gardener/gardener/pkg/utils"
 	"github.com/gardener/gardener/pkg/utils/chart"
 	gutil "github.com/gardener/gardener/pkg/utils/gardener"
+	"github.com/gardener/gardener/pkg/utils/flow"
 	kutil "github.com/gardener/gardener/pkg/utils/kubernetes"
 	"github.com/gardener/gardener/pkg/utils/managedresources"
 	"github.com/gardener/gardener/pkg/utils/secrets"
 	versionutils "github.com/gardener/gardener/pkg/utils/version"
 
-	"github.com/sirupsen/logrus"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
+	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+
+	"github.com/hashicorp/go-multierror"
+	"github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -207,7 +202,7 @@ func (a *actuator) extractDNSConfig(ex *extensionsv1alpha1.Extension) (*apisserv
 		if _, _, err := a.decoder.Decode(ex.Spec.ProviderConfig.Raw, nil, dnsConfig); err != nil {
 			return nil, fmt.Errorf("failed to decode provider config: %+v", err)
 		}
-		if errs := validation.ValidateDNSConfig(dnsConfig); len(errs) > 0 {
+		if errs := validation.ValidateDNSConfig(dnsConfig, nil); len(errs) > 0 {
 			return nil, errs.ToAggregate()
 		}
 	}
@@ -415,18 +410,19 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 
 func (a *actuator) createOrUpdateDNSProviders(ctx context.Context, dnsconfig *apisservice.DNSConfig, namespace string, cluster *controller.Cluster) error {
 	var result error
-	primary, err := a.preparePrimaryDNSProvider(ctx, dnsconfig, namespace, cluster)
+	primary, mappedSecretName, err := a.preparePrimaryDNSProvider(ctx, dnsconfig, namespace, cluster)
 	if err != nil {
 		result = multierror.Append(result, err)
 	}
 
+	resources := cluster.Shoot.Spec.Resources
 	providers := map[string]*dnsv1alpha1.DNSProvider{}
 	providers[ExternalDNSProviderName] = nil // always remember to deletion on misconfiguration
 	if primary != nil {
-		providers[ExternalDNSProviderName] = buildDNSProvider(primary, namespace, ExternalDNSProviderName, false)
+		providers[ExternalDNSProviderName] = buildDNSProvider(primary, namespace, ExternalDNSProviderName, false, mappedSecretName)
 	}
 
-	result = a.addAdditionalDNSProviders(providers, ctx, dnsconfig, namespace, result)
+	result = a.addAdditionalDNSProviders(providers, ctx, result, dnsconfig, namespace, resources)
 
 	deployers := map[string]component.DeployWaiter{}
 	for name, p := range providers {
@@ -494,7 +490,8 @@ func (a *actuator) deployDNSProviders(ctx context.Context, dnsProviders map[stri
 	return flow.Parallel(fns...)(ctx)
 }
 
-func (a *actuator) addAdditionalDNSProviders(providers map[string]*dnsv1alpha1.DNSProvider, ctx context.Context, dnsconfig *apisservice.DNSConfig, namespace string, result error) error {
+func (a *actuator) addAdditionalDNSProviders(providers map[string]*dnsv1alpha1.DNSProvider, ctx context.Context, result error,
+	dnsconfig *apisservice.DNSConfig, namespace string, resources []gardencorev1beta1.NamedResourceReference) error {
 	for i, provider := range dnsconfig.Providers {
 		p := provider
 		if p.Primary != nil && *p.Primary {
@@ -512,31 +509,31 @@ func (a *actuator) addAdditionalDNSProviders(providers map[string]*dnsv1alpha1.D
 			continue
 		}
 
-		secretName := p.SecretName
-		if secretName == nil {
-			result = multierror.Append(result, fmt.Errorf("dns provider[%d] doesn't specify a secretName", i))
+		mappedSecretName, err := lookupReference(resources, p.SecretName, i)
+		if err != nil {
+			result = multierror.Append(result, err)
 			continue
 		}
 
-		providerName := fmt.Sprintf("%s-%s", *providerType, *secretName)
+		providerName := fmt.Sprintf("%s-%s", *providerType, *p.SecretName)
 		providers[providerName] = nil
 
 		secret := &corev1.Secret{}
 		if err := a.Client().Get(
 			ctx,
-			kutil.Key(namespace, *secretName),
+			kutil.Key(namespace, mappedSecretName),
 			secret,
 		); err != nil {
-			result = multierror.Append(result, fmt.Errorf("could not get dns provider[%d] secret %q: %w", i, *secretName, err))
+			result = multierror.Append(result, fmt.Errorf("could not get dns provider[%d] secret %q -> %q: %w", i, *p.SecretName, mappedSecretName, err))
 			continue
 		}
 
-		providers[providerName] = buildDNSProvider(&p, namespace, providerName, true)
+		providers[providerName] = buildDNSProvider(&p, namespace, providerName, true, mappedSecretName)
 	}
 	return result
 }
 
-func buildDNSProvider(p *apisservice.DNSProvider, namespace, name string, isAdditional bool) *dnsv1alpha1.DNSProvider {
+func buildDNSProvider(p *apisservice.DNSProvider, namespace, name string, isAdditional bool, mappedSecretName string) *dnsv1alpha1.DNSProvider {
 	var includeDomains, excludeDomains, includeZones, excludeZones []string
 	if domains := p.Domains; domains != nil {
 		includeDomains = domains.Include
@@ -547,8 +544,12 @@ func buildDNSProvider(p *apisservice.DNSProvider, namespace, name string, isAddi
 		excludeZones = zones.Exclude
 	}
 	var labels map[string]string
+	secretName := *p.SecretName
 	if isAdditional {
 		labels = map[string]string{v1beta1constants.GardenRole: DNSProviderRoleAdditional}
+	}
+	if mappedSecretName != "" {
+		secretName = mappedSecretName
 	}
 	return &dnsv1alpha1.DNSProvider{
 		ObjectMeta: metav1.ObjectMeta{
@@ -561,7 +562,7 @@ func buildDNSProvider(p *apisservice.DNSProvider, namespace, name string, isAddi
 			Type:           *p.Type,
 			ProviderConfig: nil,
 			SecretRef: &corev1.SecretReference{
-				Name:      *p.SecretName,
+				Name:      secretName,
 				Namespace: namespace,
 			},
 			Domains: &dnsv1alpha1.DNSSelection{
@@ -576,16 +577,31 @@ func buildDNSProvider(p *apisservice.DNSProvider, namespace, name string, isAddi
 	}
 }
 
-func (a *actuator) preparePrimaryDNSProvider(ctx context.Context, dnsconfig *apisservice.DNSConfig, namespace string, cluster *controller.Cluster) (*apisservice.DNSProvider, error) {
-	for _, provider := range dnsconfig.Providers {
+func lookupReference(resources []gardencorev1beta1.NamedResourceReference, secretName *string, index int) (string, error) {
+	if secretName == nil {
+		return "", fmt.Errorf("dns provider[%d] doesn't specify a secretName", index)
+	}
+
+	for _, res := range resources {
+		if res.Name == *secretName {
+			return v1beta1constants.ReferencedResourcesPrefix + res.ResourceRef.Name, nil
+		}
+	}
+
+	return "", fmt.Errorf("dns provider[%d] secretName %s not found in referenced resources", index, *secretName)
+}
+
+func (a *actuator) preparePrimaryDNSProvider(ctx context.Context, dnsconfig *apisservice.DNSConfig, namespace string, cluster *controller.Cluster) (*apisservice.DNSProvider, string, error) {
+	for i, provider := range dnsconfig.Providers {
 		if provider.Primary != nil && *provider.Primary {
-			return &provider, nil
+			mappedSecretName, err := lookupReference(cluster.Shoot.Spec.Resources, provider.SecretName, i)
+			return &provider, mappedSecretName, err
 		}
 	}
 
 	secretRef, providerType, err := GetSecretRefFromDNSRecordExternal(ctx, a.Client(), namespace, cluster.Shoot.Name)
 	if err != nil || secretRef == nil {
-		return nil, err
+		return nil, "", err
 	}
 	return &apisservice.DNSProvider{
 		Domains: &apisservice.DNSIncludeExclude{
@@ -593,7 +609,7 @@ func (a *actuator) preparePrimaryDNSProvider(ctx context.Context, dnsconfig *api
 		},
 		SecretName: &secretRef.Name,
 		Type:       &providerType,
-	}, nil
+	}, "", nil
 }
 
 func (a *actuator) replicateDNSProviders(dnsconfig *apisservice.DNSConfig) bool {

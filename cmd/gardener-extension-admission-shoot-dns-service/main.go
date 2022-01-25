@@ -26,7 +26,7 @@ import (
 
 func main() {
 	runtimelog.SetLogger(logger.ZapLogger(false))
-	cmd := app.NewValidatorCommand(signals.SetupSignalHandler())
+	cmd := app.NewAdmissionCommand(signals.SetupSignalHandler())
 
 	if err := cmd.Execute(); err != nil {
 		controllercmd.LogErrAndExit(err, "error executing the main command")

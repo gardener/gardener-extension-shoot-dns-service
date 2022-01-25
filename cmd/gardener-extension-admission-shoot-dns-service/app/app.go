@@ -16,45 +16,44 @@ package app
 
 import (
 	"context"
-	"fmt"
 
+	admissioncmd "github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/cmd"
+	serviceinstall "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/install"
 	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
 	"github.com/gardener/gardener/extensions/pkg/util"
-	"github.com/gardener/gardener/extensions/pkg/util/index"
+	webhookcmd "github.com/gardener/gardener/extensions/pkg/webhook/cmd"
 	"github.com/gardener/gardener/pkg/apis/core/install"
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/spf13/cobra"
 	componentbaseconfig "k8s.io/component-base/config"
-	"k8s.io/component-base/version/verflag"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
-var log = logf.Log.WithName("gardener-extensions-validator-vsphere")
+var log = logf.Log.WithName("gardener-extension-admission-shoot-dns-service")
 
-// NewValidatorCommand creates a new command for running an Openstack validator.
-func NewValidatorCommand(ctx context.Context) *cobra.Command {
+// NewAdmissionCommand creates a new command for running an AWS admission webhook.
+func NewAdmissionCommand(ctx context.Context) *cobra.Command {
 	var (
 		restOpts = &controllercmd.RESTOptions{}
 		mgrOpts  = &controllercmd.ManagerOptions{
 			WebhookServerPort: 443,
 		}
+		webhookSwitches = admissioncmd.GardenWebhookSwitchOptions()
+		webhookOptions  = webhookcmd.NewAddToManagerSimpleOptions(webhookSwitches)
 
 		aggOption = controllercmd.NewOptionAggregator(
 			restOpts,
 			mgrOpts,
+			webhookOptions,
 		)
 	)
 
 	cmd := &cobra.Command{
-		Use: "validator-shoot-dns-service",
+		Use: "admission webhooks of shoot-dns-service",
 
 		RunE: func(cmd *cobra.Command, args []string) error {
-			verflag.PrintAndExitIfRequested()
-
 			if err := aggOption.Complete(); err != nil {
-				return errors.Wrap(err, "Error completing options")
+				controllercmd.LogErrAndExit(err, "Error completing options")
 			}
 
 			util.ApplyClientConnectionConfigurationToRESTConfig(&componentbaseconfig.ClientConnectionConfiguration{
@@ -64,41 +63,25 @@ func NewValidatorCommand(ctx context.Context) *cobra.Command {
 
 			mgr, err := manager.New(restOpts.Completed().Config, mgrOpts.Completed().Options())
 			if err != nil {
-				return errors.Wrap(err, "Could not instantiate manager")
+				controllercmd.LogErrAndExit(err, "Could not instantiate manager")
 			}
 
 			install.Install(mgr.GetScheme())
 
-			//			if err := vsphereinstall.AddToScheme(mgr.GetScheme()); err != nil {
-			//				return errors.Wrap(err, "Could not update manager scheme")
-			//			}
-
-			if err := mgr.GetFieldIndexer().IndexField(ctx, &gardencorev1beta1.SecretBinding{}, index.SecretRefNamespaceField, index.SecretRefNamespaceIndexerFunc); err != nil {
-				return err
-			}
-
-			if err := mgr.GetFieldIndexer().IndexField(ctx, &gardencorev1beta1.Shoot{}, index.SecretBindingNameField, index.SecretBindingNameIndexerFunc); err != nil {
-				return err
+			if err := serviceinstall.AddToScheme(mgr.GetScheme()); err != nil {
+				controllercmd.LogErrAndExit(err, "Could not update manager scheme")
 			}
 
 			log.Info("Setting up webhook server")
-			//hookServer := mgr.GetWebhookServer()
-
-			log.Info("Registering webhooks")
-			//hookServer.Register("/webhooks/validate", &webhook.Admission{Handler: &validator.Shoot{Logger: log.WithName("shoot-validator")}})
-			//hookServer.Register("/webhooks/mutate", &webhook.Admission{Handler: &mutator.Shoot{Logger: log.WithName("shoot-validator")}})
-
-			if err := mgr.Start(ctx); err != nil {
-				return errors.Wrap(err, "Error running manager")
+			if err := webhookOptions.Completed().AddToManager(mgr); err != nil {
+				return err
 			}
 
-			return nil
+			return mgr.Start(ctx)
 		},
 	}
 
-	flags := cmd.Flags()
-	aggOption.AddFlags(flags)
-	verflag.AddFlags(flags)
+	aggOption.AddFlags(cmd.Flags())
 
 	return cmd
 }
