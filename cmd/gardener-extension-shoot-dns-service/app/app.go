@@ -18,9 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	serviceinstall "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/install"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/healthcheck"
@@ -28,15 +25,15 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/replication"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 
+	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/extensions/pkg/util"
-
-	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
-
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	componentbaseconfig "k8s.io/component-base/config"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -83,6 +80,18 @@ func (o *Options) run(ctx context.Context) error {
 	if err := extensionscontroller.AddToScheme(mgrScheme); err != nil {
 		return fmt.Errorf("could not update manager scheme: %s", err)
 	}
+
+	useTokenRequestor, err := extensionscontroller.UseTokenRequestor(o.generalOptions.Completed().GardenerVersion)
+	if err != nil {
+		return fmt.Errorf("could not determine whether token requestor should be used: %s", err)
+	}
+	lifecycle.DefaultAddOptions.UseTokenRequestor = useTokenRequestor
+
+	useProjectedTokenMount, err := extensionscontroller.UseServiceAccountTokenVolumeProjection(o.generalOptions.Completed().GardenerVersion)
+	if err != nil {
+		return fmt.Errorf("could not determine whether service account token volume projection should be used: %s", err)
+	}
+	lifecycle.DefaultAddOptions.UseProjectedTokenMount = useProjectedTokenMount
 
 	mgrOpts := o.managerOptions.Completed().Options()
 	mgrOpts.Scheme = mgrScheme

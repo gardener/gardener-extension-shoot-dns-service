@@ -15,17 +15,16 @@
 package main
 
 import (
-	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
-
 	"github.com/gardener/gardener-extension-shoot-dns-service/cmd/gardener-extension-shoot-dns-service/app"
 
 	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
-	"github.com/gardener/gardener/extensions/pkg/log"
+	"github.com/gardener/gardener/pkg/logger"
 	runtimelog "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 func main() {
-	runtimelog.SetLogger(log.ZapLogger(false))
+	runtimelog.SetLogger(logger.ZapLogger(false))
 
 	ctx := signals.SetupSignalHandler()
 	if err := app.NewServiceControllerCommand().ExecuteContext(ctx); err != nil {

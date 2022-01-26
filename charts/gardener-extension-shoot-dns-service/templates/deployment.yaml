@@ -46,6 +46,9 @@ spec:
         {{- if .Values.ownerDnsActivation.enabled }}
         - --enable-owner-dns-activation
         {{- end }}
+        {{- if .Values.gardener.version }}
+        - --gardener-version={{ .Values.gardener.version }}
+        {{- end }}
         env:
         - name: LEADER_ELECTION_NAMESPACE
           valueFrom:

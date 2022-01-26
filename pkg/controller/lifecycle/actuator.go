@@ -27,36 +27,38 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/imagevector"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
-	"github.com/gardener/gardener/pkg/extensions"
-	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/apimachinery/pkg/util/json"
 
 	"github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
-	resourceapi "github.com/gardener/gardener-resource-manager/api/resources/v1alpha1"
 	"github.com/gardener/gardener/extensions/pkg/controller"
-	controllererror "github.com/gardener/gardener/extensions/pkg/controller/error"
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
 	"github.com/gardener/gardener/extensions/pkg/util"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
+	resourceapi "github.com/gardener/gardener/pkg/apis/resources/v1alpha1"
 	"github.com/gardener/gardener/pkg/chartrenderer"
 	"github.com/gardener/gardener/pkg/client/kubernetes"
+	reconcilerutils "github.com/gardener/gardener/pkg/controllerutils/reconciler"
+	"github.com/gardener/gardener/pkg/extensions"
 	"github.com/gardener/gardener/pkg/utils"
 	"github.com/gardener/gardener/pkg/utils/chart"
+	gutil "github.com/gardener/gardener/pkg/utils/gardener"
+	kutil "github.com/gardener/gardener/pkg/utils/kubernetes"
 	"github.com/gardener/gardener/pkg/utils/managedresources"
 	"github.com/gardener/gardener/pkg/utils/secrets"
 	versionutils "github.com/gardener/gardener/pkg/utils/version"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
+	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -80,17 +82,21 @@ const (
 var dnsAnnotationCRD string
 
 // NewActuator returns an actuator responsible for Extension resources.
-func NewActuator(config config.DNSServiceConfig) extension.Actuator {
+func NewActuator(config config.DNSServiceConfig, useTokenRequestor bool, useProjectedTokenMount bool) extension.Actuator {
 	return &actuator{
-		Env: common.NewEnv(ActuatorName, config),
+		Env:                    common.NewEnv(ActuatorName, config),
+		useTokenRequestor:      useTokenRequestor,
+		useProjectedTokenMount: useProjectedTokenMount,
 	}
 }
 
 type actuator struct {
 	*common.Env
-	applier  kubernetes.ChartApplier
-	renderer chartrenderer.Interface
-	decoder  runtime.Decoder
+	applier                kubernetes.ChartApplier
+	renderer               chartrenderer.Interface
+	decoder                runtime.Decoder
+	useTokenRequestor      bool
+	useProjectedTokenMount bool
 }
 
 // InjectConfig injects the rest config to this actuator.
@@ -255,10 +261,6 @@ func (a *actuator) Migrate(ctx context.Context, ex *extensionsv1alpha1.Extension
 func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *apisservice.DNSConfig, cluster *controller.Cluster, ex *extensionsv1alpha1.Extension,
 	refresh bool, deploymentEnabled bool) error {
 	namespace := ex.Namespace
-	shootKubeconfig, err := a.createKubeconfig(ctx, namespace)
-	if err != nil {
-		return err
-	}
 
 	handler, err := common.NewStateHandler(ctx, a.Env, ex, refresh)
 	if err != nil {
@@ -303,26 +305,47 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 	}
 
 	chartValues := map[string]interface{}{
-		"serviceName":         service.ServiceName,
-		"replicas":            controller.GetReplicas(cluster, replicas),
-		"targetClusterSecret": shootKubeconfig.GetName(),
-		"creatorLabelValue":   creatorLabelValue,
-		"shootId":             shootID,
-		"seedId":              seedID,
-		"dnsClass":            a.Config().DNSClass,
+		"serviceName":       service.ServiceName,
+		"replicas":          controller.GetReplicas(cluster, replicas),
+		"creatorLabelValue": creatorLabelValue,
+		"shootId":           shootID,
+		"seedId":            seedID,
+		"dnsClass":          a.Config().DNSClass,
 		"dnsProviderReplication": map[string]interface{}{
 			"enabled": a.replicateDNSProviders(dnsconfig),
 		},
 		"dnsOwner":    a.OwnerName(namespace),
 		"shootActive": shootActive,
-		"podAnnotations": map[string]interface{}{
-			"checksum/secret-kubeconfig": utils.ComputeChecksum(shootKubeconfig.Data),
-		},
 		"dnsActivation": map[string]interface{}{
 			"enabled": enableDNSActivation,
 			"dnsName": dnsActivationName,
 			"value":   ownerID,
 		},
+	}
+
+	var secretNameToDelete string
+	if a.useTokenRequestor {
+		if err := gutil.NewShootAccessSecret(service.ShootAccessSecretName, namespace).Reconcile(ctx, a.Client()); err != nil {
+			return err
+		}
+
+		chartValues["targetClusterSecret"] = gutil.SecretNamePrefixShootAccess + service.ShootAccessSecretName
+		chartValues["useTokenRequestor"] = true
+		secretNameToDelete = service.SecretName
+	} else {
+		shootKubeconfig, err := a.createKubeconfig(ctx, namespace)
+		if err != nil {
+			return err
+		}
+
+		chartValues["targetClusterSecret"] = service.SecretName
+		chartValues["podAnnotations"] = map[string]interface{}{"checksum/secret-kubeconfig": utils.ComputeChecksum(shootKubeconfig.Data)}
+		secretNameToDelete = gutil.SecretNamePrefixShootAccess + service.ShootAccessSecretName
+	}
+
+	// TODO(rfranzke): Remove in a future release.
+	if err := kutil.DeleteObject(ctx, a.Client(), &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretNameToDelete, Namespace: namespace}}); err != nil {
+		return err
 	}
 
 	chartValues, err = chart.InjectImages(chartValues, imagevector.ImageVector(), []string{service.ImageName})
@@ -360,7 +383,7 @@ func (a *actuator) deleteSeedResources(ctx context.Context, ex *extensionsv1alph
 				return errors.Wrap(err, "cleanupShootDNSEntries failed")
 			}
 			a.Info("Waiting until all shoot DNS entries have been deleted", "component", service.ExtensionServiceName, "namespace", namespace)
-			return &controllererror.RequeueAfterError{
+			return &reconcilerutils.RequeueAfterError{
 				Cause:        fmt.Errorf("waiting until shoot DNS entries have been deleted"),
 				RequeueAfter: 20 * time.Second,
 			}
@@ -376,14 +399,10 @@ func (a *actuator) deleteSeedResources(ctx context.Context, ex *extensionsv1alph
 		return err
 	}
 
-	secret := &corev1.Secret{}
-	secret.SetName(service.SecretName)
-	secret.SetNamespace(namespace)
-	if err := a.Client().Delete(ctx, secret); client.IgnoreNotFound(err) != nil {
-		return err
-	}
-
-	return nil
+	return kutil.DeleteObjects(ctx, a.Client(),
+		&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: service.SecretName, Namespace: namespace}},
+		&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: gutil.SecretNamePrefixShootAccess + service.ShootAccessSecretName, Namespace: namespace}},
+	)
 }
 
 func (a *actuator) cleanupShootDNSEntries(helper *common.ShootDNSEntriesHelper) error {
@@ -454,13 +473,19 @@ func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *
 	}
 
 	chartValues := map[string]interface{}{
-		"userName":    service.UserName,
 		"serviceName": service.ServiceName,
 		"dnsProviderReplication": map[string]interface{}{
 			"enabled": replicateDNSProviders,
 		},
 	}
 	injectedLabels := map[string]string{v1beta1constants.ShootNoCleanup: "true"}
+
+	if a.useTokenRequestor {
+		chartValues["useTokenRequestor"] = true
+		chartValues["shootAccessServiceAccountName"] = service.ShootAccessServiceAccountName
+	} else {
+		chartValues["userName"] = service.UserName
+	}
 
 	return a.createOrUpdateManagedResource(ctx, namespace, ShootResourcesName, "", renderer, service.ShootChartName, chartValues, injectedLabels)
 }

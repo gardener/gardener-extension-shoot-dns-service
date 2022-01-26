@@ -29,6 +29,7 @@ const ExtensionName = service.ExtensionServiceName
 
 // Options holds configuration passed to the DNS Service controller.
 type Options struct {
+	generalOptions               *controllercmd.GeneralOptions
 	serviceOptions               *dnsservicecmd.DNSServiceOptions
 	healthOptions                *dnsservicecmd.HealthOptions
 	restOptions                  *controllercmd.RESTOptions
@@ -44,6 +45,7 @@ type Options struct {
 // NewOptions creates a new Options instance.
 func NewOptions() *Options {
 	options := &Options{
+		generalOptions: &controllercmd.GeneralOptions{},
 		serviceOptions: &dnsservicecmd.DNSServiceOptions{},
 		healthOptions:  &dnsservicecmd.HealthOptions{},
 		restOptions:    &controllercmd.RESTOptions{},
@@ -71,6 +73,7 @@ func NewOptions() *Options {
 	}
 
 	options.optionAggregator = controllercmd.NewOptionAggregator(
+		options.generalOptions,
 		options.serviceOptions,
 		options.healthOptions,
 		options.restOptions,
