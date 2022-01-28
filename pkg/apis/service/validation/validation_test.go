@@ -19,7 +19,8 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/validation"
 	"github.com/gardener/gardener/pkg/apis/core"
 	"github.com/gardener/gardener/pkg/utils/test/matchers"
-	"k8s.io/api/autoscaling/v1"
+
+	v1 "k8s.io/api/autoscaling/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	. "github.com/onsi/ginkgo"
@@ -108,10 +109,10 @@ var _ = Describe("Validation", func() {
 })
 
 func modifyCopy(orginal []service.DNSProvider, modifier func([]service.DNSProvider)) []service.DNSProvider {
-	var new []service.DNSProvider
+	var array []service.DNSProvider
 	for _, p := range orginal {
-		new = append(new, *p.DeepCopy())
+		array = append(array, *p.DeepCopy())
 	}
-	modifier(new)
-	return new
+	modifier(array)
+	return array
 }

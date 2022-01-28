@@ -47,8 +47,8 @@ import (
 	"github.com/gardener/gardener/pkg/operation/botanist/component"
 	"github.com/gardener/gardener/pkg/utils"
 	"github.com/gardener/gardener/pkg/utils/chart"
-	gutil "github.com/gardener/gardener/pkg/utils/gardener"
 	"github.com/gardener/gardener/pkg/utils/flow"
+	gutil "github.com/gardener/gardener/pkg/utils/gardener"
 	kutil "github.com/gardener/gardener/pkg/utils/kubernetes"
 	"github.com/gardener/gardener/pkg/utils/managedresources"
 	"github.com/gardener/gardener/pkg/utils/secrets"
@@ -115,8 +115,8 @@ func NewActuator(config config.DNSServiceConfig, useTokenRequestor bool, useProj
 	}
 
 	return &actuator{
-		Env:              common.NewEnv(ActuatorName, config),
-		deprecatedLogger: logger,
+		Env:                    common.NewEnv(ActuatorName, config),
+		deprecatedLogger:       logger,
 		useTokenRequestor:      useTokenRequestor,
 		useProjectedTokenMount: useProjectedTokenMount,
 	}

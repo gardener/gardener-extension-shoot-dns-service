@@ -17,7 +17,6 @@ package mutator
 import (
 	extensionswebhook "github.com/gardener/gardener/extensions/pkg/webhook"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -37,8 +36,8 @@ func New(mgr manager.Manager) (*extensionswebhook.Webhook, error) {
 		Provider: "shoot-dns-service",
 		Name:     MutatorName,
 		Path:     MutatorPath,
-		Mutators: map[extensionswebhook.Mutator][]client.Object{
-			NewShootMutator(): {&gardencorev1beta1.Shoot{}},
+		Mutators: map[extensionswebhook.Mutator][]extensionswebhook.Type{
+			NewShootMutator(): {{Obj: &gardencorev1beta1.Shoot{}}},
 		},
 	})
 }

@@ -27,24 +27,17 @@ import (
 	v1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	//"github.com/gardener/gardener/pkg/utils/test/matchers"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
-	//. "github.com/onsi/gomega/gstruct"
 	gomegatypes "github.com/onsi/gomega/types"
 )
 
 type getDecoder interface {
 	GetDecoder() runtime.Decoder
-}
-
-type partialShoot struct {
-	providers []gardencorev1beta1.DNSProvider
-	resources []gardencorev1beta1.NamedResourceReference
 }
 
 type dnsStyle int
@@ -161,7 +154,8 @@ var _ = Describe("Shoot Mutator", func() {
 		install.Install(scheme)
 		serviceinstall.Install(scheme)
 		mutator = admissionmutator.NewShootMutator()
-		mutator.(inject.Scheme).InjectScheme(scheme)
+		err := mutator.(inject.Scheme).InjectScheme(scheme)
+		Expect(err).To(BeNil())
 	})
 
 	DescribeTable("#Mutate",

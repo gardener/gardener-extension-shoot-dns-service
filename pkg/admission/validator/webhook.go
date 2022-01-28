@@ -17,7 +17,6 @@ package validator
 import (
 	extensionswebhook "github.com/gardener/gardener/extensions/pkg/webhook"
 	"github.com/gardener/gardener/pkg/apis/core"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -32,8 +31,8 @@ func New(mgr manager.Manager) (*extensionswebhook.Webhook, error) {
 		Provider: "shoot-dns-service",
 		Name:     extensionswebhook.ValidatorName,
 		Path:     extensionswebhook.ValidatorPath,
-		Validators: map[extensionswebhook.Validator][]client.Object{
-			NewShootValidator(): {&core.Shoot{}},
+		Validators: map[extensionswebhook.Validator][]extensionswebhook.Type{
+			NewShootValidator(): {{Obj: &core.Shoot{}}},
 		},
 	})
 }
