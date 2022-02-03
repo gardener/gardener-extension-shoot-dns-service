@@ -47,8 +47,6 @@ type DNSProviderReplication struct {
 type DNSProvider struct {
 	// Domains contains information about which domains shall be included/excluded for this provider.
 	Domains *DNSIncludeExclude
-	// Primary indicates that this DNSProvider is used for shoot related domains.
-	Primary *bool
 	// SecretName is a name of a secret containing credentials for the stated domain and the
 	// provider.
 	SecretName *string

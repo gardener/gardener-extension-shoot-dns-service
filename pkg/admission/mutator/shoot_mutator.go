@@ -71,16 +71,16 @@ func (s *shoot) mutateShoot(_ context.Context, _, new *gardencorev1beta1.Shoot) 
 		return err
 	}
 
-	sync := dnsConfig == nil || dnsConfig.Providers == nil
+	syncProviders := dnsConfig == nil || dnsConfig.Providers == nil
 	if dnsConfig != nil && dnsConfig.SyncProvidersFromShootSpecDNS != nil {
-		sync = *dnsConfig.SyncProvidersFromShootSpecDNS
+		syncProviders = *dnsConfig.SyncProvidersFromShootSpecDNS
 	}
 
 	if dnsConfig == nil {
 		dnsConfig = &servicev1alpha1.DNSConfig{}
 	}
-	dnsConfig.SyncProvidersFromShootSpecDNS = &sync
-	if !sync {
+	dnsConfig.SyncProvidersFromShootSpecDNS = &syncProviders
+	if !syncProviders {
 		return s.updateDNSConfig(new, dnsConfig)
 	}
 
@@ -91,10 +91,7 @@ func (s *shoot) mutateShoot(_ context.Context, _, new *gardencorev1beta1.Shoot) 
 
 	dnsConfig.Providers = nil
 	for _, p := range new.Spec.DNS.Providers {
-		np := servicev1alpha1.DNSProvider{
-			Type:    p.Type,
-			Primary: p.Primary,
-		}
+		np := servicev1alpha1.DNSProvider{Type: p.Type}
 		if p.Domains != nil {
 			np.Domains = &servicev1alpha1.DNSIncludeExclude{
 				Include: p.Domains.Include,

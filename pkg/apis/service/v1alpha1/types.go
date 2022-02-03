@@ -52,9 +52,6 @@ type DNSProvider struct {
 	// Domains contains information about which domains shall be included/excluded for this provider.
 	// +optional
 	Domains *DNSIncludeExclude `json:"domains,omitempty"`
-	// Primary indicates that this DNSProvider is used for shoot related domains.
-	// +optional
-	Primary *bool `json:"primary,omitempty" protobuf:"varint,2,opt,name=primary"`
 	// SecretName is a name of a secret containing credentials for the stated domain and the
 	// provider.
 	// +optional

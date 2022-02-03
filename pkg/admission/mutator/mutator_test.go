@@ -203,7 +203,6 @@ var _ = Describe("Shoot Mutator", func() {
 						Include: []string{"my.domain.test"},
 						Exclude: []string{"private.my.domain.test"},
 					},
-					Primary:    &btrue,
 					SecretName: &secretMappedName1,
 					Type:       &awsType,
 				},
@@ -217,7 +216,6 @@ var _ = Describe("Shoot Mutator", func() {
 						Include: []string{"my.domain.test"},
 						Exclude: []string{"private.my.domain.test"},
 					},
-					Primary:    &btrue,
 					SecretName: &secretMappedName1,
 					Type:       &awsType,
 				},
@@ -249,7 +247,7 @@ func findExtensionProviderConfig(decoder runtime.Decoder, shoot *gardencorev1bet
 }
 
 func modifyCopy(original *servicev1alpha1.DNSConfig, modifier func(*servicev1alpha1.DNSConfig)) *servicev1alpha1.DNSConfig {
-	new := original.DeepCopy()
-	modifier(new)
-	return new
+	cfg := original.DeepCopy()
+	modifier(cfg)
+	return cfg
 }

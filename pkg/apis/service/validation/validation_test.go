@@ -35,13 +35,11 @@ var _ = Describe("Validation", func() {
 		awsType     = "aws-route53"
 		secretName1 = "my-secret1"
 		secretName2 = "my-secret2"
-		btrue       = true
 		valid       = []service.DNSProvider{
 			{
 				Domains:    &service.DNSIncludeExclude{Include: []string{"my.domain.test"}},
 				Type:       &awsType,
 				SecretName: &secretName1,
-				Primary:    &btrue,
 			},
 			{
 				Type:       &awsType,
@@ -78,6 +76,17 @@ var _ = Describe("Validation", func() {
 			"Field":  Equal("spec.extensions.[@.type='shoot-dns-service'].providerConfig[0].type"),
 			"Detail": Equal("provider type is required"),
 		})),
+		Entry("invalid provider type", service.DNSConfig{
+			Providers: modifyCopy(valid[1:], func(items []service.DNSProvider) {
+				t := "dummy"
+				items[0].Type = &t
+			}),
+		}, resources, matchers.ConsistOfFields(Fields{
+			"Type":     Equal(field.ErrorTypeInvalid),
+			"Field":    Equal("spec.extensions.[@.type='shoot-dns-service'].providerConfig[0].type"),
+			"BadValue": Equal("dummy"),
+			"Detail":   Equal("unsupported provider type. Valid types are: alicloud-dns, aws-route53, azure-dns, azure-private-dns, cloudflare-dns, google-clouddns, infoblox-dns, netlify-dns, openstack-designate, remote"),
+		})),
 		Entry("missing secret name", service.DNSConfig{
 			Providers: modifyCopy(valid[1:], func(items []service.DNSProvider) {
 				items[0].SecretName = nil
@@ -94,16 +103,6 @@ var _ = Describe("Validation", func() {
 			"Field":    Equal("spec.extensions.[@.type='shoot-dns-service'].providerConfig[0].secretName"),
 			"BadValue": Equal("my-secret1"),
 			"Detail":   Equal("secret name is not defined as named resource references at 'spec.resources'"),
-		})),
-		Entry("duplicate primary", service.DNSConfig{
-			Providers: modifyCopy(valid, func(items []service.DNSProvider) {
-				items[1].Primary = &btrue
-			}),
-		}, resources, matchers.ConsistOfFields(Fields{
-			"Type":     Equal(field.ErrorTypeInvalid),
-			"Field":    Equal("spec.extensions.[@.type='shoot-dns-service'].providerConfig[1].primary"),
-			"BadValue": Equal(true),
-			"Detail":   Equal("only one primary provider allowed"),
 		})),
 	)
 })

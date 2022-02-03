@@ -163,18 +163,6 @@ DNSIncludeExclude
 </tr>
 <tr>
 <td>
-<code>primary</code></br>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Primary indicates that this DNSProvider is used for shoot related domains.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>secretName</code></br>
 <em>
 string

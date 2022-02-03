@@ -101,11 +101,6 @@ func (in *DNSProvider) DeepCopyInto(out *DNSProvider) {
 		*out = new(DNSIncludeExclude)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.Primary != nil {
-		in, out := &in.Primary, &out.Primary
-		*out = new(bool)
-		**out = **in
-	}
 	if in.SecretName != nil {
 		in, out := &in.SecretName, &out.SecretName
 		*out = new(string)

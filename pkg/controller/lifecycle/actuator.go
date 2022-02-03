@@ -410,16 +410,16 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 
 func (a *actuator) createOrUpdateDNSProviders(ctx context.Context, dnsconfig *apisservice.DNSConfig, namespace string, cluster *controller.Cluster) error {
 	var result error
-	primary, mappedSecretName, err := a.preparePrimaryDNSProvider(ctx, dnsconfig, namespace, cluster)
+	external, err := a.prepareDefaultExternalDNSProvider(ctx, dnsconfig, namespace, cluster)
 	if err != nil {
 		result = multierror.Append(result, err)
 	}
 
 	resources := cluster.Shoot.Spec.Resources
 	providers := map[string]*dnsv1alpha1.DNSProvider{}
-	providers[ExternalDNSProviderName] = nil // always remember to deletion on misconfiguration
-	if primary != nil {
-		providers[ExternalDNSProviderName] = buildDNSProvider(primary, namespace, ExternalDNSProviderName, false, mappedSecretName)
+	providers[ExternalDNSProviderName] = nil // remember for deletion
+	if external != nil {
+		providers[ExternalDNSProviderName] = buildDNSProvider(external, namespace, ExternalDNSProviderName, false, "")
 	}
 
 	result = a.addAdditionalDNSProviders(providers, ctx, result, dnsconfig, namespace, resources)
@@ -494,9 +494,6 @@ func (a *actuator) addAdditionalDNSProviders(providers map[string]*dnsv1alpha1.D
 	dnsconfig *apisservice.DNSConfig, namespace string, resources []gardencorev1beta1.NamedResourceReference) error {
 	for i, provider := range dnsconfig.Providers {
 		p := provider
-		if p.Primary != nil && *p.Primary {
-			continue
-		}
 
 		providerType := p.Type
 		if providerType == nil {
@@ -591,17 +588,16 @@ func lookupReference(resources []gardencorev1beta1.NamedResourceReference, secre
 	return "", fmt.Errorf("dns provider[%d] secretName %s not found in referenced resources", index, *secretName)
 }
 
-func (a *actuator) preparePrimaryDNSProvider(ctx context.Context, dnsconfig *apisservice.DNSConfig, namespace string, cluster *controller.Cluster) (*apisservice.DNSProvider, string, error) {
-	for i, provider := range dnsconfig.Providers {
+func (a *actuator) prepareDefaultExternalDNSProvider(ctx context.Context, dnsconfig *apisservice.DNSConfig, namespace string, cluster *controller.Cluster) (*apisservice.DNSProvider, error) {
+	for _, provider := range cluster.Shoot.Spec.DNS.Providers {
 		if provider.Primary != nil && *provider.Primary {
-			mappedSecretName, err := lookupReference(cluster.Shoot.Spec.Resources, provider.SecretName, i)
-			return &provider, mappedSecretName, err
+			return nil, nil
 		}
 	}
 
 	secretRef, providerType, err := GetSecretRefFromDNSRecordExternal(ctx, a.Client(), namespace, cluster.Shoot.Name)
 	if err != nil || secretRef == nil {
-		return nil, "", err
+		return nil, err
 	}
 	return &apisservice.DNSProvider{
 		Domains: &apisservice.DNSIncludeExclude{
@@ -609,7 +605,7 @@ func (a *actuator) preparePrimaryDNSProvider(ctx context.Context, dnsconfig *api
 		},
 		SecretName: &secretRef.Name,
 		Type:       &providerType,
-	}, "", nil
+	}, nil
 }
 
 func (a *actuator) replicateDNSProviders(dnsconfig *apisservice.DNSConfig) bool {

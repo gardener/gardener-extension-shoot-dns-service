@@ -15,12 +15,27 @@
 package validation
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service"
 	service2 "github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 	"github.com/gardener/gardener/pkg/apis/core"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
+
+var supportedProviderTypes = []string{
+	"alicloud-dns",
+	"aws-route53",
+	"azure-dns", "azure-private-dns",
+	"cloudflare-dns",
+	"google-clouddns",
+	"infoblox-dns",
+	"netlify-dns",
+	"openstack-designate",
+	"remote",
+}
 
 // ValidateDNSConfig validates the passed DNSConfig.
 // if resources != nil, it also validates if the referenced secrets are defined.
@@ -35,17 +50,13 @@ func ValidateDNSConfig(config *service.DNSConfig, resources []core.NamedResource
 
 func validateProviders(providers []service.DNSProvider, resources []core.NamedResourceReference) field.ErrorList {
 	allErrs := field.ErrorList{}
-	hasPrimary := false
 	path := field.NewPath("spec", "extensions", "[@.type='"+service2.ExtensionType+"']", "providerConfig")
 	for i, p := range providers {
-		if p.Primary != nil && *p.Primary {
-			if hasPrimary {
-				allErrs = append(allErrs, field.Invalid(path.Index(i).Child("primary"), *p.Primary, "only one primary provider allowed"))
-			}
-			hasPrimary = true
-		}
 		if p.Type == nil || *p.Type == "" {
 			allErrs = append(allErrs, field.Required(path.Index(i).Child("type"), "provider type is required"))
+		} else if !isSupportedProviderType(*p.Type) {
+			allErrs = append(allErrs, field.Invalid(path.Index(i).Child("type"), *p.Type,
+				fmt.Sprintf("unsupported provider type. Valid types are: %s", strings.Join(supportedProviderTypes, ", "))))
 		}
 		if p.SecretName == nil || *p.SecretName == "" {
 			allErrs = append(allErrs, field.Required(path.Index(i).Child("secretName"), "secret name is required"))
@@ -63,4 +74,13 @@ func validateProviders(providers []service.DNSProvider, resources []core.NamedRe
 		}
 	}
 	return allErrs
+}
+
+func isSupportedProviderType(providerType string) bool {
+	for _, typ := range supportedProviderTypes {
+		if typ == providerType {
+			return true
+		}
+	}
+	return false
 }
