@@ -28,7 +28,7 @@ const (
 
 var logger = log.Log.WithName("shoot-dns-service-mutator-webhook")
 
-// New creates a new webhook that validates Shoot and CloudProfile resources.
+// New creates a new webhook that validates Shoot resources.
 func New(mgr manager.Manager) (*extensionswebhook.Webhook, error) {
 	logger.Info("Setting up webhook", "name", MutatorName)
 

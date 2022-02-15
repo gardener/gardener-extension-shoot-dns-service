@@ -29,13 +29,11 @@ type DNSConfig struct {
 
 	// Providers is a list of additional DNS providers that shall be enabled for this shoot cluster.
 	// The primary ("external") provider at `spec.dns.provider` is added automatically
-	// +optional
 	Providers []DNSProvider
 
 	// SyncProvidersFromShootSpecDNS is an optional flag for migrating and synchronising the providers given in the
 	// shoot manifest at section `spec.dns.providers`. If true, any direct changes on the `providers` section
 	// are overwritten with the content of section `spec.dns.providers`.
-	// +optional
 	SyncProvidersFromShootSpecDNS *bool
 }
 
@@ -48,29 +46,22 @@ type DNSProviderReplication struct {
 // DNSProvider contains information about a DNS provider.
 type DNSProvider struct {
 	// Domains contains information about which domains shall be included/excluded for this provider.
-	// +optional
 	Domains *DNSIncludeExclude
 	// Primary indicates that this DNSProvider is used for shoot related domains.
-	// +optional
 	Primary *bool
 	// SecretName is a name of a secret containing credentials for the stated domain and the
 	// provider.
-	// +optional
 	SecretName *string
 	// Type is the DNS provider type.
-	// +optional
 	Type *string
 	// Zones contains information about which hosted zones shall be included/excluded for this provider.
-	// +optional
 	Zones *DNSIncludeExclude
 }
 
 // DNSIncludeExclude contains information about which domains shall be included/excluded.
 type DNSIncludeExclude struct {
 	// Include is a list of domains that shall be included.
-	// +optional
 	Include []string
 	// Exclude is a list of domains that shall be excluded.
-	// +optional
 	Exclude []string
 }

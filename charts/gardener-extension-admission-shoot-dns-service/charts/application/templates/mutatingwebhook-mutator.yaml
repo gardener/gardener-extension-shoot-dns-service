@@ -16,7 +16,8 @@ webhooks:
     resources:
     - shoots
   failurePolicy: Fail
-  objectSelector: {}
+  objectSelector:
+    {{- toYaml (default (dict) .Values.global.webhookConfig.objectSelector) | nindent 4 }}
   namespaceSelector: {}
   sideEffects: None
   admissionReviewVersions:

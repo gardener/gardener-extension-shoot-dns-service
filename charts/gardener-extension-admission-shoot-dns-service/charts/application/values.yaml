@@ -20,6 +20,9 @@ global:
       -----BEGIN CERTIFICATE-----
       ...
       -----END CERTIFICATE-----
+    #objectSelector:
+    #  matchLabels:
+    #    foo: bar
     serverPort: 10250
     tls:
       crt: |
