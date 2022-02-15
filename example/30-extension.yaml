@@ -14,8 +14,8 @@ spec:
     #  enabled: true
 
     providers:
-      - secretName: playground
-        type: aws-route53
+    - secretName: playground
+      type: aws-route53
         #primary: true
         #domains:
         #  include:
