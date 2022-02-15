@@ -3,7 +3,7 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: gardener-extension-admission-shoot-dns-service
 webhooks:
-- name: validation.service.dns.extension.gardener.cloud
+- name: validation.service.dns.extensions.gardener.cloud
   rules:
   - apiGroups:
     - "core.gardener.cloud"
