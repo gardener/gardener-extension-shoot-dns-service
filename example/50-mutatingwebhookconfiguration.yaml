@@ -3,7 +3,7 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: gardener-extension-admission-shoot-dns-service
 webhooks:
-- name: mutation.service.dns.extension.gardener.cloud
+- name: mutation.service.dns.extensions.gardener.cloud
   rules:
   - apiGroups:
     - "core.gardener.cloud"
