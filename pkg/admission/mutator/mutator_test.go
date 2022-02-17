@@ -237,7 +237,12 @@ var _ = Describe("Shoot Mutator", func() {
 func findExtensionProviderConfig(decoder runtime.Decoder, shoot *gardencorev1beta1.Shoot) *servicev1alpha1.DNSConfig {
 	for _, ext := range shoot.Spec.Extensions {
 		if ext.Type == service2.ExtensionType && ext.ProviderConfig != nil && ext.ProviderConfig.Raw != nil {
-			dnsConfig := &servicev1alpha1.DNSConfig{}
+			dnsConfig := &servicev1alpha1.DNSConfig{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "DNSConfig",
+					APIVersion: "service.dns.extensions.gardener.cloud/v1alpha1",
+				},
+			}
 			_, _, err := decoder.Decode(ext.ProviderConfig.Raw, nil, dnsConfig)
 			Expect(err).To(BeNil())
 			return dnsConfig

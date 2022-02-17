@@ -75,14 +75,14 @@ func (s *shoot) mutateShoot(_ context.Context, _, new *gardencorev1beta1.Shoot) 
 	if dnsConfig != nil && dnsConfig.SyncProvidersFromShootSpecDNS != nil {
 		syncProviders = *dnsConfig.SyncProvidersFromShootSpecDNS
 	}
+	if !syncProviders {
+		return nil
+	}
 
 	if dnsConfig == nil {
 		dnsConfig = &servicev1alpha1.DNSConfig{}
 	}
 	dnsConfig.SyncProvidersFromShootSpecDNS = &syncProviders
-	if !syncProviders {
-		return s.updateDNSConfig(new, dnsConfig)
-	}
 
 	oldNamedResources := map[string]int{}
 	for i, r := range new.Spec.Resources {
