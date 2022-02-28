@@ -15,28 +15,31 @@
 package cmd
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/healthcheck"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/lifecycle"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/replication"
-
 	"github.com/gardener/gardener/extensions/pkg/controller/cmd"
 	extensionshealthcheckcontroller "github.com/gardener/gardener/extensions/pkg/controller/healthcheck"
 	healthcheckconfig "github.com/gardener/gardener/extensions/pkg/controller/healthcheck/config"
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // DNSServiceOptions holds options related to the dns service.
 type DNSServiceOptions struct {
-	SeedID                string
-	DNSClass              string
-	ManageDNSProviders    bool
-	ReplicateDNSProviders bool
-	OwnerDNSActivation    bool
-	config                *DNSServiceConfig
+	SeedID                    string
+	DNSClass                  string
+	ManageDNSProviders        bool
+	ReplicateDNSProviders     bool
+	OwnerDNSActivation        bool
+	RemoteDefaultDomainSecret string
+	config                    *DNSServiceConfig
 }
 
 // HealthOptions holds options for health checks.
@@ -52,6 +55,7 @@ func (o *DNSServiceOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&o.ManageDNSProviders, "manage-dns-providers", false, "enables management of DNSProviders in control plane (must only be enable if Gardenlet has disabled it)")
 	fs.BoolVar(&o.ReplicateDNSProviders, "replicate-dns-providers", false, "enables replication of DNSProviders from shoot cluster to seed cluster")
 	fs.BoolVar(&o.OwnerDNSActivation, "enable-owner-dns-activation", false, "enables DNS activation of the shootdns DNSOwner")
+	fs.StringVar(&o.RemoteDefaultDomainSecret, "remote-default-domain-secret", "", "secret name for default 'external' DNSProvider DNS class used to filter DNS source resources in shoot clusters")
 }
 
 // AddFlags implements Flagger.AddFlags.
@@ -61,12 +65,25 @@ func (o *HealthOptions) AddFlags(fs *pflag.FlagSet) {
 
 // Complete implements Completer.Complete.
 func (o *DNSServiceOptions) Complete() error {
+	var remoteDefaultDomainSecret *types.NamespacedName
+	if o.RemoteDefaultDomainSecret != "" {
+		parts := strings.Split(o.RemoteDefaultDomainSecret, "/")
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid format for remote-default-domain-secret: %s (expected '<namespace>/<name>')", o.RemoteDefaultDomainSecret)
+		}
+		remoteDefaultDomainSecret = &types.NamespacedName{
+			Namespace: parts[0],
+			Name:      parts[1],
+		}
+	}
+
 	o.config = &DNSServiceConfig{
-		SeedID:                o.SeedID,
-		DNSClass:              o.DNSClass,
-		ManageDNSProviders:    o.ManageDNSProviders,
-		ReplicateDNSProviders: o.ReplicateDNSProviders,
-		OwnerDNSActivation:    o.OwnerDNSActivation,
+		SeedID:                    o.SeedID,
+		DNSClass:                  o.DNSClass,
+		ManageDNSProviders:        o.ManageDNSProviders,
+		ReplicateDNSProviders:     o.ReplicateDNSProviders,
+		OwnerDNSActivation:        o.OwnerDNSActivation,
+		RemoteDefaultDomainSecret: remoteDefaultDomainSecret,
 	}
 	return nil
 }
@@ -89,11 +106,12 @@ func (o *HealthOptions) Completed() *HealthConfig {
 
 // DNSServiceConfig contains configuration information about the dns service.
 type DNSServiceConfig struct {
-	SeedID                string
-	DNSClass              string
-	ManageDNSProviders    bool
-	ReplicateDNSProviders bool
-	OwnerDNSActivation    bool
+	SeedID                    string
+	DNSClass                  string
+	ManageDNSProviders        bool
+	ReplicateDNSProviders     bool
+	OwnerDNSActivation        bool
+	RemoteDefaultDomainSecret *types.NamespacedName
 }
 
 // Apply applies the DNSServiceOptions to the passed ControllerOptions instance.
@@ -103,6 +121,7 @@ func (c *DNSServiceConfig) Apply(cfg *config.DNSServiceConfig) {
 	cfg.ReplicateDNSProviders = c.ReplicateDNSProviders
 	cfg.ManageDNSProviders = c.ManageDNSProviders
 	cfg.OwnerDNSActivation = c.OwnerDNSActivation
+	cfg.RemoteDefaultDomainSecret = c.RemoteDefaultDomainSecret
 }
 
 // HealthConfig contains configuration information about the health check controller.

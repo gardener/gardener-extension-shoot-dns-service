@@ -52,6 +52,9 @@ spec:
         {{- if .Values.gardener.version }}
         - --gardener-version={{ .Values.gardener.version }}
         {{- end }}
+        {{- if .Values.remoteDefaultDomainSecret.enabled }}
+        - --remote-default-domain-secret={{ .Release.Namespace }}/remote-default-domain
+        {{- end }}
         env:
         - name: LEADER_ELECTION_NAMESPACE
           valueFrom:

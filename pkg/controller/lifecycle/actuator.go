@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	apisservice "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service"
@@ -28,6 +29,7 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/imagevector"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
+	"github.com/gardener/gardener/pkg/controllerutils"
 
 	dnsv1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 
@@ -92,6 +94,8 @@ const (
 	ShootDNSServiceMaintainerAnnotation = "service.dns.extensions.gardener.cloud/maintainer"
 	// ExternalDNSProviderName is the name of the external DNS provider
 	ExternalDNSProviderName = "external"
+	// ShootDNSServiceUseRemoteDefaultDomainAnnotation is the annotation key for marking a seed to use the remote DNS-provider for the default domain
+	ShootDNSServiceUseRemoteDefaultDomainAnnotation = "service.dns.extensions.gardener.cloud/use-remote-default-domain"
 )
 
 // dnsAnnotationCRD contains the contents of the dnsAnnotationCRD.yaml file.
@@ -595,6 +599,21 @@ func (a *actuator) prepareDefaultExternalDNSProvider(ctx context.Context, dnscon
 		}
 	}
 
+	if a.useRemoteDefaultDomain(cluster) {
+		secretName, err := a.copyRemoteDefaultDomainSecret(ctx, namespace)
+		if err != nil {
+			return nil, err
+		}
+		remoteType := "remote"
+		return &apisservice.DNSProvider{
+			Domains: &apisservice.DNSIncludeExclude{
+				Include: []string{*cluster.Shoot.Spec.DNS.Domain},
+			},
+			SecretName: &secretName,
+			Type:       &remoteType,
+		}, nil
+	}
+
 	secretRef, providerType, err := GetSecretRefFromDNSRecordExternal(ctx, a.Client(), namespace, cluster.Shoot.Name)
 	if err != nil || secretRef == nil {
 		return nil, err
@@ -606,6 +625,35 @@ func (a *actuator) prepareDefaultExternalDNSProvider(ctx context.Context, dnscon
 		SecretName: &secretRef.Name,
 		Type:       &providerType,
 	}, nil
+}
+
+func (a *actuator) useRemoteDefaultDomain(cluster *controller.Cluster) bool {
+	if a.Config().RemoteDefaultDomainSecret != nil && cluster.Seed.Annotations != nil {
+		annot, ok := cluster.Seed.Annotations[ShootDNSServiceUseRemoteDefaultDomainAnnotation]
+		b, err := strconv.ParseBool(annot)
+		return ok && err == nil && b
+	}
+	return false
+}
+
+func (a *actuator) copyRemoteDefaultDomainSecret(ctx context.Context, namespace string) (string, error) {
+	secretOrg := &corev1.Secret{}
+	err := a.Client().Get(ctx, *a.Config().RemoteDefaultDomainSecret, secretOrg)
+	if err != nil {
+		return "", err
+	}
+
+	secret := &corev1.Secret{}
+	secret.Namespace = namespace
+	secret.Name = "shoot-dns-service-remote-default-domains"
+	_, err = controllerutils.CreateOrGetAndMergePatch(ctx, a.Client(), secret, func() error {
+		secret.Data = secretOrg.Data
+		return nil
+	})
+	if err != nil {
+		return "", err
+	}
+	return secret.Name, err
 }
 
 func (a *actuator) replicateDNSProviders(dnsconfig *apisservice.DNSConfig) bool {
