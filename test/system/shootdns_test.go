@@ -31,7 +31,6 @@ import (
 	"github.com/gardener/gardener/pkg/client/kubernetes"
 	"github.com/gardener/gardener/pkg/extensions"
 	"github.com/gardener/gardener/test/framework"
-	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -227,7 +226,7 @@ func awaitDNSRecord(domainName string, timeout time.Duration) error {
 		return err
 	}, 3*time.Second, timeout)
 	if err != nil {
-		return errors.Wrapf(err, "lookup host %s failed", domainName)
+		return fmt.Errorf("lookup host %s failed: %w", domainName, err)
 	}
 	return nil
 }
@@ -237,11 +236,11 @@ func runHttpRequest(domainName string, timeout time.Duration) error {
 		url := fmt.Sprintf("http://%s", domainName)
 		resp, err := http.Get(url)
 		if err != nil {
-			return errors.Wrapf(err, "get request failed for %s", url)
+			return fmt.Errorf("get request failed for %s: %w", url, err)
 		}
 		err = resp.Body.Close()
 		if err != nil {
-			return errors.Wrapf(err, "resp.Body.Close failed")
+			return fmt.Errorf("resp.Body.Close failed: %w", err)
 		}
 		if resp.StatusCode != 200 {
 			return fmt.Errorf("unexpected status code: %d %s", resp.StatusCode, resp.Status)

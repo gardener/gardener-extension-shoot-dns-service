@@ -60,11 +60,14 @@ rules:
   - "dns.gardener.cloud"
   resources:
   - "dnsentries"
+  - "dnsproviders"
   verbs:
   - create
   - get
   - list
   - watch
+  - update
+  - patch
   - delete
   - deletecollection
 - apiGroups:

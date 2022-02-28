@@ -14,6 +14,7 @@
 
 EXTENSION_PREFIX            := gardener-extension
 NAME                        := shoot-dns-service
+ADMISSION_NAME              := admission-shoot-dns-service
 REGISTRY                    := eu.gcr.io/gardener-project/gardener
 IMAGE_PREFIX                := $(REGISTRY)/extensions
 REPO_ROOT                   := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
@@ -38,6 +39,15 @@ start:
 		--seed-id=seed \
 		--gardener-version="v1.39.0"
 
+.PHONY: start-admission
+start-admission:
+	@LEADER_ELECTION_NAMESPACE=garden GO111MODULE=on go run \
+		-mod=vendor \
+		-ldflags $(LD_FLAGS) \
+		./cmd/$(EXTENSION_PREFIX)-$(ADMISSION_NAME) \
+		--webhook-config-server-host=0.0.0.0 \
+		--webhook-config-server-port=9443 \
+		--webhook-config-cert-dir=./example/admission-shoot-dns-service-certs
 #################################################################
 # Rules related to binary build, Docker image build and release #
 #################################################################
@@ -54,6 +64,7 @@ docker-login:
 .PHONY: docker-images
 docker-images:
 	@docker build -t $(IMAGE_PREFIX)/$(NAME):$(VERSION) -t $(IMAGE_PREFIX)/$(NAME):latest -f Dockerfile -m 6g --target $(EXTENSION_PREFIX)-$(NAME) .
+	@docker build -t $(IMAGE_PREFIX)/$(ADMISSION_NAME):$(VERSION) -t $(IMAGE_PREFIX)/$(ADMISSION_NAME):latest -f Dockerfile -m 6g --target $(EXTENSION_PREFIX)-$(ADMISSION_NAME) .
 
 #####################################################################
 # Rules for verification, formatting, linting, testing and cleaning #
