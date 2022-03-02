@@ -55,3 +55,13 @@ controllers:
 #     sourceRepository: github.com/gardener/external-dns-management
 #     repository: eu.gcr.io/gardener-project/dns-controller-manager
 #     tag: "0.7.1"
+
+remoteDefaultDomainSecret:
+  enabled: false
+#  data:
+#    NAMESPACE: ...(base64 encoded)
+#    OVERRIDE_SERVER_NAME: ...(base64 encoded)
+#    REMOTE_ENDPOINT: ...(base64 encoded)
+#    ca.crt: LS0tLS1...
+#    tls.crt: LS0tLS1...
+#    tls.key: LS0tLS1...
