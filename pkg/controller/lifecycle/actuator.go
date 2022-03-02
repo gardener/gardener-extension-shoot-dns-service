@@ -372,6 +372,7 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 			"dnsName": dnsActivationName,
 			"value":   ownerID,
 		},
+		"useProjectedTokenMount": a.useProjectedTokenMount,
 	}
 
 	var secretNameToDelete string
