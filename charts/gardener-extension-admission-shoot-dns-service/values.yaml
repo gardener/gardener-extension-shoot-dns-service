@@ -20,9 +20,10 @@ global:
       -----BEGIN CERTIFICATE-----
       ...
       -----END CERTIFICATE-----
-    #objectSelector:
-    #  matchLabels:
-    #    foo: bar
+    # Please make sure you are running `gardener@v1.42` or later before enabling this object selector.
+    # objectSelector:
+    #   matchLabels:
+    #     extensions.extensions.gardener.cloud/shoot-dns-service: "true"
     serverPort: 10250
     tls:
       crt: |
