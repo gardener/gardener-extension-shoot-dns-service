@@ -16,7 +16,10 @@ webhooks:
     resources:
     - shoots
   failurePolicy: Fail
-  objectSelector: {}
+  # Please make sure you are running `gardener@v1.42` or later before enabling this object selector.
+  objectSelector:
+    matchLabels:
+      extensions.extensions.gardener.cloud/shoot-dns-service: "true"
   namespaceSelector: {}
   sideEffects: None
   admissionReviewVersions:
