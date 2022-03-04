@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"time"
 
 	apisservice "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service"
@@ -94,8 +93,8 @@ const (
 	ShootDNSServiceMaintainerAnnotation = "service.dns.extensions.gardener.cloud/maintainer"
 	// ExternalDNSProviderName is the name of the external DNS provider
 	ExternalDNSProviderName = "external"
-	// ShootDNSServiceUseRemoteDefaultDomainAnnotation is the annotation key for marking a seed to use the remote DNS-provider for the default domain
-	ShootDNSServiceUseRemoteDefaultDomainAnnotation = "service.dns.extensions.gardener.cloud/use-remote-default-domain"
+	// ShootDNSServiceUseRemoteDefaultDomainLabel is the label key for marking a seed to use the remote DNS-provider for the default domain
+	ShootDNSServiceUseRemoteDefaultDomainLabel = "service.dns.extensions.gardener.cloud/use-remote-default-domain"
 )
 
 // dnsAnnotationCRD contains the contents of the dnsAnnotationCRD.yaml file.
@@ -629,10 +628,9 @@ func (a *actuator) prepareDefaultExternalDNSProvider(ctx context.Context, dnscon
 }
 
 func (a *actuator) useRemoteDefaultDomain(cluster *controller.Cluster) bool {
-	if a.Config().RemoteDefaultDomainSecret != nil && cluster.Seed.Annotations != nil {
-		annot, ok := cluster.Seed.Annotations[ShootDNSServiceUseRemoteDefaultDomainAnnotation]
-		b, err := strconv.ParseBool(annot)
-		return ok && err == nil && b
+	if a.Config().RemoteDefaultDomainSecret != nil && cluster.Seed.Labels != nil {
+		annot, ok := cluster.Seed.Labels[ShootDNSServiceUseRemoteDefaultDomainLabel]
+		return ok && annot == "true"
 	}
 	return false
 }
