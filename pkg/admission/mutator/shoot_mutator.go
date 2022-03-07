@@ -132,6 +132,10 @@ func (s *shoot) isDisabled(shoot *gardencorev1beta1.Shoot) bool {
 	if shoot.Spec.DNS == nil {
 		return true
 	}
+	if shoot.DeletionTimestamp != nil {
+		// don't mutate shoots in deletion
+		return true
+	}
 	ext := s.findExtension(shoot)
 	if ext == nil {
 		return false
