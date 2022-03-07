@@ -15,7 +15,7 @@ COPY charts /charts
 COPY --from=builder /go/bin/gardener-extension-shoot-dns-service /gardener-extension-shoot-dns-service
 ENTRYPOINT ["/gardener-extension-shoot-dns-service"]
 
-############# gardener-extension-admission-aws
+############# gardener-extension-admission-shoot-dns-service
 FROM base AS gardener-extension-admission-shoot-dns-service
 
 COPY --from=builder /go/bin/gardener-extension-admission-shoot-dns-service /gardener-extension-admission-shoot-dns-service
