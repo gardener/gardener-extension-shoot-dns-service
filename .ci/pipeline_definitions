@@ -12,6 +12,11 @@ gardener-extension-shoot-dns-service:
             image: 'eu.gcr.io/gardener-project/gardener/extensions/shoot-dns-service'
             dockerfile: 'Dockerfile'
             target: gardener-extension-shoot-dns-service
+          gardener-extension-admission-shoot-dns-service:
+            registry: 'gcr-readwrite'
+            image: 'eu.gcr.io/gardener-project/gardener/extensions/admission-shoot-dns-service'
+            dockerfile: 'Dockerfile'
+            target: gardener-extension-admission-shoot-dns-service
   jobs:
     head-update:
       traits:
@@ -43,4 +48,6 @@ gardener-extension-shoot-dns-service:
         publish:
           dockerimages:
             gardener-extension-shoot-dns-service:
+              tag_as_latest: true
+            gardener-extension-admission-shoot-dns-service:
               tag_as_latest: true
