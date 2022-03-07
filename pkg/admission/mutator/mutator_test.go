@@ -16,6 +16,7 @@ package mutator_test
 
 import (
 	"context"
+	"time"
 
 	admissionmutator "github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/mutator"
 	serviceinstall "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/install"
@@ -109,6 +110,14 @@ var _ = Describe("Shoot Mutator", func() {
 						},
 						Disabled: &bfalse,
 					},
+				},
+			},
+		}
+		shootInDeletion = &gardencorev1beta1.Shoot{
+			ObjectMeta: metav1.ObjectMeta{DeletionTimestamp: &metav1.Time{Time: time.Now()}},
+			Spec: gardencorev1beta1.ShootSpec{
+				DNS: &gardencorev1beta1.DNS{
+					Domain: &domain,
 				},
 			},
 		}
@@ -231,6 +240,7 @@ var _ = Describe("Shoot Mutator", func() {
 		Entry("disabled sync", dnsStyleEnabled, shootWithDisabledSync, []gardencorev1beta1.DNSProvider{additional}, BeNil(), modifyCopy(dnsConfig, func(cfg *servicev1alpha1.DNSConfig) {
 			cfg.SyncProvidersFromShootSpecDNS = &bfalse
 		}), nil),
+		Entry("shoot in deletion", dnsStyleEnabled, shootInDeletion, []gardencorev1beta1.DNSProvider{additional}, BeNil(), nil, nil),
 	)
 })
 
