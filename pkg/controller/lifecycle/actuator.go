@@ -304,6 +304,10 @@ func (a *actuator) isManagingDNSProviders(dns *gardencorev1beta1.DNS) bool {
 	return a.Config().ManageDNSProviders && dns != nil && dns.Domain != nil
 }
 
+func (a *actuator) isHibernated(hibernation *gardencorev1beta1.Hibernation) bool {
+	return hibernation != nil && hibernation.Enabled != nil && *hibernation.Enabled
+}
+
 func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *apisservice.DNSConfig, cluster *controller.Cluster, ex *extensionsv1alpha1.Extension,
 	refresh bool, deploymentEnabled bool) error {
 	var err error
@@ -413,28 +417,31 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 }
 
 func (a *actuator) createOrUpdateDNSProviders(ctx context.Context, dnsconfig *apisservice.DNSConfig, namespace string, cluster *controller.Cluster) error {
-	var result error
-	external, err := a.prepareDefaultExternalDNSProvider(ctx, dnsconfig, namespace, cluster)
-	if err != nil {
-		result = multierror.Append(result, err)
-	}
-
-	resources := cluster.Shoot.Spec.Resources
-	providers := map[string]*dnsv1alpha1.DNSProvider{}
-	providers[ExternalDNSProviderName] = nil // remember for deletion
-	if external != nil {
-		providers[ExternalDNSProviderName] = buildDNSProvider(external, namespace, ExternalDNSProviderName, false, "")
-	}
-
-	result = a.addAdditionalDNSProviders(providers, ctx, result, dnsconfig, namespace, resources)
-
+	var err, result error
 	deployers := map[string]component.DeployWaiter{}
-	for name, p := range providers {
-		var dw component.DeployWaiter
-		if p != nil {
-			dw = NewProviderDeployWaiter(a.deprecatedLogger, a.Client(), p)
+
+	if !a.isHibernated(cluster.Shoot.Spec.Hibernation) {
+		external, err := a.prepareDefaultExternalDNSProvider(ctx, dnsconfig, namespace, cluster)
+		if err != nil {
+			result = multierror.Append(result, err)
 		}
-		deployers[name] = dw
+
+		resources := cluster.Shoot.Spec.Resources
+		providers := map[string]*dnsv1alpha1.DNSProvider{}
+		providers[ExternalDNSProviderName] = nil // remember for deletion
+		if external != nil {
+			providers[ExternalDNSProviderName] = buildDNSProvider(external, namespace, ExternalDNSProviderName, "")
+		}
+
+		result = a.addAdditionalDNSProviders(providers, ctx, result, dnsconfig, namespace, resources)
+
+		for name, p := range providers {
+			var dw component.DeployWaiter
+			if p != nil {
+				dw = NewProviderDeployWaiter(a.deprecatedLogger, a.Client(), p)
+			}
+			deployers[name] = dw
+		}
 	}
 
 	err = a.addCleanupOfOldAdditionalProviders(deployers, ctx, namespace)
@@ -529,12 +536,12 @@ func (a *actuator) addAdditionalDNSProviders(providers map[string]*dnsv1alpha1.D
 			continue
 		}
 
-		providers[providerName] = buildDNSProvider(&p, namespace, providerName, true, mappedSecretName)
+		providers[providerName] = buildDNSProvider(&p, namespace, providerName, mappedSecretName)
 	}
 	return result
 }
 
-func buildDNSProvider(p *apisservice.DNSProvider, namespace, name string, isAdditional bool, mappedSecretName string) *dnsv1alpha1.DNSProvider {
+func buildDNSProvider(p *apisservice.DNSProvider, namespace, name string, mappedSecretName string) *dnsv1alpha1.DNSProvider {
 	var includeDomains, excludeDomains, includeZones, excludeZones []string
 	if domains := p.Domains; domains != nil {
 		includeDomains = domains.Include
@@ -544,11 +551,7 @@ func buildDNSProvider(p *apisservice.DNSProvider, namespace, name string, isAddi
 		includeZones = zones.Include
 		excludeZones = zones.Exclude
 	}
-	var labels map[string]string
 	secretName := *p.SecretName
-	if isAdditional {
-		labels = map[string]string{v1beta1constants.GardenRole: DNSProviderRoleAdditional}
-	}
 	if mappedSecretName != "" {
 		secretName = mappedSecretName
 	}
@@ -556,7 +559,7 @@ func buildDNSProvider(p *apisservice.DNSProvider, namespace, name string, isAddi
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   namespace,
-			Labels:      labels,
+			Labels:      map[string]string{v1beta1constants.GardenRole: DNSProviderRoleAdditional},
 			Annotations: enableDNSProviderForShootDNSEntries(namespace),
 		},
 		Spec: dnsv1alpha1.DNSProviderSpec{
