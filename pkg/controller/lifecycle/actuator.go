@@ -196,7 +196,10 @@ func (a *actuator) Reconcile(ctx context.Context, ex *extensionsv1alpha1.Extensi
 	if err := a.createOrUpdateShootResources(ctx, dnsConfig, cluster, ex.Namespace); err != nil {
 		return err
 	}
-	return a.createOrUpdateSeedResources(ctx, dnsConfig, cluster, ex, !resurrection, true)
+	if err := a.createOrUpdateSeedResources(ctx, dnsConfig, cluster, ex, !resurrection, true); err != nil {
+		return err
+	}
+	return a.createOrUpdateDNSProviders(ctx, dnsConfig, cluster, ex)
 }
 
 func (a *actuator) extractDNSConfig(ex *extensionsv1alpha1.Extension) (*apisservice.DNSConfig, error) {
@@ -304,17 +307,15 @@ func (a *actuator) isManagingDNSProviders(dns *gardencorev1beta1.DNS) bool {
 	return a.Config().ManageDNSProviders && dns != nil && dns.Domain != nil
 }
 
+func (a *actuator) isHibernated(cluster *controller.Cluster) bool {
+	hibernation := cluster.Shoot.Spec.Hibernation
+	return hibernation != nil && hibernation.Enabled != nil && *hibernation.Enabled
+}
+
 func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *apisservice.DNSConfig, cluster *controller.Cluster, ex *extensionsv1alpha1.Extension,
 	refresh bool, deploymentEnabled bool) error {
 	var err error
 	namespace := ex.Namespace
-
-	if a.isManagingDNSProviders(cluster.Shoot.Spec.DNS) {
-		err = a.createOrUpdateDNSProviders(ctx, dnsconfig, namespace, cluster)
-		if err != nil {
-			return err
-		}
-	}
 
 	handler, err := common.NewStateHandler(ctx, a.Env, ex, refresh)
 	if err != nil {
@@ -340,7 +341,7 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 	}
 
 	replicas := 1
-	if !deploymentEnabled {
+	if !deploymentEnabled || a.isHibernated(cluster) {
 		replicas = 0
 	}
 	shootActive := !common.IsMigrating(ex)
@@ -412,29 +413,43 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 	return a.createOrUpdateManagedResource(ctx, namespace, SeedResourcesName, "seed", a.renderer, service.SeedChartName, chartValues, nil)
 }
 
-func (a *actuator) createOrUpdateDNSProviders(ctx context.Context, dnsconfig *apisservice.DNSConfig, namespace string, cluster *controller.Cluster) error {
-	var result error
-	external, err := a.prepareDefaultExternalDNSProvider(ctx, dnsconfig, namespace, cluster)
-	if err != nil {
-		result = multierror.Append(result, err)
+func (a *actuator) createOrUpdateDNSProviders(ctx context.Context, dnsconfig *apisservice.DNSConfig,
+	cluster *controller.Cluster, ex *extensionsv1alpha1.Extension) error {
+	if !a.isManagingDNSProviders(cluster.Shoot.Spec.DNS) {
+		return nil
 	}
 
-	resources := cluster.Shoot.Spec.Resources
-	providers := map[string]*dnsv1alpha1.DNSProvider{}
-	providers[ExternalDNSProviderName] = nil // remember for deletion
-	if external != nil {
-		providers[ExternalDNSProviderName] = buildDNSProvider(external, namespace, ExternalDNSProviderName, false, "")
-	}
-
-	result = a.addAdditionalDNSProviders(providers, ctx, result, dnsconfig, namespace, resources)
-
+	var err, result error
+	namespace := ex.Namespace
 	deployers := map[string]component.DeployWaiter{}
-	for name, p := range providers {
-		var dw component.DeployWaiter
-		if p != nil {
-			dw = NewProviderDeployWaiter(a.deprecatedLogger, a.Client(), p)
+
+	if !a.isHibernated(cluster) {
+		external, err := a.prepareDefaultExternalDNSProvider(ctx, dnsconfig, namespace, cluster)
+		if err != nil {
+			result = multierror.Append(result, err)
 		}
-		deployers[name] = dw
+
+		resources := cluster.Shoot.Spec.Resources
+		providers := map[string]*dnsv1alpha1.DNSProvider{}
+		providers[ExternalDNSProviderName] = nil // remember for deletion
+		if external != nil {
+			providers[ExternalDNSProviderName] = buildDNSProvider(external, namespace, ExternalDNSProviderName, "")
+		}
+
+		result = a.addAdditionalDNSProviders(providers, ctx, result, dnsconfig, namespace, resources)
+
+		for name, p := range providers {
+			var dw component.DeployWaiter
+			if p != nil {
+				dw = NewProviderDeployWaiter(a.deprecatedLogger, a.Client(), p)
+			}
+			deployers[name] = dw
+		}
+	} else {
+		err := a.deleteManagedDNSEntries(ctx, ex)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = a.addCleanupOfOldAdditionalProviders(deployers, ctx, namespace)
@@ -529,12 +544,12 @@ func (a *actuator) addAdditionalDNSProviders(providers map[string]*dnsv1alpha1.D
 			continue
 		}
 
-		providers[providerName] = buildDNSProvider(&p, namespace, providerName, true, mappedSecretName)
+		providers[providerName] = buildDNSProvider(&p, namespace, providerName, mappedSecretName)
 	}
 	return result
 }
 
-func buildDNSProvider(p *apisservice.DNSProvider, namespace, name string, isAdditional bool, mappedSecretName string) *dnsv1alpha1.DNSProvider {
+func buildDNSProvider(p *apisservice.DNSProvider, namespace, name string, mappedSecretName string) *dnsv1alpha1.DNSProvider {
 	var includeDomains, excludeDomains, includeZones, excludeZones []string
 	if domains := p.Domains; domains != nil {
 		includeDomains = domains.Include
@@ -544,11 +559,7 @@ func buildDNSProvider(p *apisservice.DNSProvider, namespace, name string, isAddi
 		includeZones = zones.Include
 		excludeZones = zones.Exclude
 	}
-	var labels map[string]string
 	secretName := *p.SecretName
-	if isAdditional {
-		labels = map[string]string{v1beta1constants.GardenRole: DNSProviderRoleAdditional}
-	}
 	if mappedSecretName != "" {
 		secretName = mappedSecretName
 	}
@@ -556,7 +567,7 @@ func buildDNSProvider(p *apisservice.DNSProvider, namespace, name string, isAddi
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   namespace,
-			Labels:      labels,
+			Labels:      map[string]string{v1beta1constants.GardenRole: DNSProviderRoleAdditional},
 			Annotations: enableDNSProviderForShootDNSEntries(namespace),
 		},
 		Spec: dnsv1alpha1.DNSProviderSpec{
@@ -673,24 +684,9 @@ func (a *actuator) deleteSeedResources(ctx context.Context, cluster *controller.
 	a.Info("Component is being deleted", "component", service.ExtensionServiceName, "namespace", namespace)
 
 	if !migrate {
-		entriesHelper := common.NewShootDNSEntriesHelper(ctx, a.Client(), ex)
-		list, err := entriesHelper.List()
+		err := a.deleteManagedDNSEntries(ctx, ex)
 		if err != nil {
 			return err
-		}
-		if len(list) > 0 {
-			// need to wait until all shoot DNS entries have been deleted
-			// for robustness scale deployment of shoot-dns-service-seed down to 0
-			// and delete all shoot DNS entries
-			err := a.cleanupShootDNSEntries(entriesHelper)
-			if err != nil {
-				return fmt.Errorf("cleanupShootDNSEntries failed: %w", err)
-			}
-			a.Info("Waiting until all shoot DNS entries have been deleted", "component", service.ExtensionServiceName, "namespace", namespace)
-			return &reconcilerutils.RequeueAfterError{
-				Cause:        fmt.Errorf("waiting until shoot DNS entries have been deleted"),
-				RequeueAfter: 20 * time.Second,
-			}
 		}
 	}
 
@@ -716,6 +712,39 @@ func (a *actuator) deleteSeedResources(ctx context.Context, cluster *controller.
 	)
 }
 
+func (a *actuator) deleteManagedDNSEntries(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
+	entriesHelper := common.NewShootDNSEntriesHelper(ctx, a.Client(), ex)
+	list, err := entriesHelper.List()
+	if err != nil {
+		return err
+	}
+	if len(list) > 0 {
+		// need to wait until all shoot DNS entries have been deleted
+		// for robustness scale deployment of shoot-dns-service-seed down to 0
+		// and delete all shoot DNS entries
+		err := a.cleanupShootDNSEntries(entriesHelper)
+		if err != nil {
+			return fmt.Errorf("cleanupShootDNSEntries failed: %w", err)
+		}
+		a.Info("Waiting until all shoot DNS entries have been deleted", "component", service.ExtensionServiceName, "namespace", ex.Namespace)
+		for i := 0; i < 6; i++ {
+			time.Sleep(5 * time.Second)
+			list, err = entriesHelper.List()
+			if err != nil {
+				break
+			}
+			if len(list) == 0 {
+				return nil
+			}
+		}
+		return &reconcilerutils.RequeueAfterError{
+			Cause:        fmt.Errorf("waiting until shoot DNS entries have been deleted"),
+			RequeueAfter: 15 * time.Second,
+		}
+	}
+	return nil
+}
+
 // deleteDNSProviders deletes the external and additional providers
 func (a *actuator) deleteDNSProviders(ctx context.Context, namespace string) error {
 	dnsProviders := map[string]component.DeployWaiter{}
@@ -724,6 +753,7 @@ func (a *actuator) deleteDNSProviders(ctx context.Context, namespace string) err
 		return err
 	}
 
+	// TODO: can be removed in release >= v1.20 as external DNS provider is marked as additional provider now
 	dnsProviders[ExternalDNSProviderName] = component.OpDestroy(NewProviderDeployWaiter(
 		a.deprecatedLogger,
 		a.Client(),
@@ -751,11 +781,8 @@ func (a *actuator) cleanupShootDNSEntries(helper *common.ShootDNSEntriesHelper) 
 	if err != nil {
 		return err
 	}
-	err = helper.DeleteAll()
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return helper.DeleteAll()
 }
 
 func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *apisservice.DNSConfig, cluster *controller.Cluster, namespace string) error {
