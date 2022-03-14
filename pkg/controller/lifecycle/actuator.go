@@ -614,17 +614,23 @@ func (a *actuator) prepareDefaultExternalDNSProvider(ctx context.Context, dnscon
 		}, nil
 	}
 
-	secretRef, providerType, err := GetSecretRefFromDNSRecordExternal(ctx, a.Client(), namespace, cluster.Shoot.Name)
+	secretRef, providerType, zone, err := GetSecretRefFromDNSRecordExternal(ctx, a.Client(), namespace, cluster.Shoot.Name)
 	if err != nil || secretRef == nil {
 		return nil, err
 	}
-	return &apisservice.DNSProvider{
+	provider := &apisservice.DNSProvider{
 		Domains: &apisservice.DNSIncludeExclude{
 			Include: []string{*cluster.Shoot.Spec.DNS.Domain},
 		},
 		SecretName: &secretRef.Name,
 		Type:       &providerType,
-	}, nil
+	}
+	if zone != nil {
+		provider.Zones = &apisservice.DNSIncludeExclude{
+			Include: []string{*zone},
+		}
+	}
+	return provider, nil
 }
 
 func (a *actuator) useRemoteDefaultDomain(cluster *controller.Cluster) bool {
