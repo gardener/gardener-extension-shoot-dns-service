@@ -1,3 +1,7 @@
+---
+title: DNS Providers
+---
+
 # DNS Providers
 
 ## Introduction

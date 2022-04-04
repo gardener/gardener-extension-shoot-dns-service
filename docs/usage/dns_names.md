@@ -1,3 +1,7 @@
+---
+title: DNS Names
+---
+
 # Request DNS Names in Shoot Clusters
 
 ## Introduction
