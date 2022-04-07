@@ -128,7 +128,12 @@ var _ = Describe("Shoot Mutator", func() {
 			},
 			SyncProvidersFromShootSpecDNS: &btrue,
 		}
-		awsType = "aws-route53"
+		awsType        = "aws-route53"
+		primaryDefault = gardencorev1beta1.DNSProvider{
+			Type:       &awsType,
+			SecretName: &secretName1,
+			Primary:    &btrue,
+		}
 		primary = gardencorev1beta1.DNSProvider{
 			Domains:    &gardencorev1beta1.DNSIncludeExclude{Include: []string{"my.domain.test"}, Exclude: []string{"private.my.domain.test"}},
 			Type:       &awsType,
@@ -204,6 +209,18 @@ var _ = Describe("Shoot Mutator", func() {
 		Entry("extension enabled - default domain", dnsStyleEnabled, shoot, nil, BeNil(), modifyCopy(dnsConfig, func(cfg *servicev1alpha1.DNSConfig) {
 			cfg.SyncProvidersFromShootSpecDNS = &btrue
 		}), nil),
+		Entry("primaryDefault", dnsStyleEnabled, shoot, []gardencorev1beta1.DNSProvider{primaryDefault}, BeNil(), modifyCopy(dnsConfig, func(cfg *servicev1alpha1.DNSConfig) {
+			cfg.SyncProvidersFromShootSpecDNS = &btrue
+			cfg.Providers = []servicev1alpha1.DNSProvider{
+				{
+					Domains: &servicev1alpha1.DNSIncludeExclude{
+						Include: []string{domain},
+					},
+					SecretName: &secretMappedName1,
+					Type:       &awsType,
+				},
+			}
+		}), []gardencorev1beta1.NamedResourceReference{primaryResource}),
 		Entry("primary", dnsStyleEnabled, shoot, []gardencorev1beta1.DNSProvider{primary}, BeNil(), modifyCopy(dnsConfig, func(cfg *servicev1alpha1.DNSConfig) {
 			cfg.SyncProvidersFromShootSpecDNS = &btrue
 			cfg.Providers = []servicev1alpha1.DNSProvider{
