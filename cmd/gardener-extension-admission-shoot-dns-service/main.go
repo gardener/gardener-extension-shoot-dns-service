@@ -15,13 +15,14 @@
 package main
 
 import (
+	"os"
+
+	runtimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/cmd/gardener-extension-admission-shoot-dns-service/app"
 
-	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
 	"github.com/gardener/gardener/pkg/logger"
-	runtimelog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func main() {
@@ -29,6 +30,7 @@ func main() {
 	cmd := app.NewAdmissionCommand(signals.SetupSignalHandler())
 
 	if err := cmd.Execute(); err != nil {
-		controllercmd.LogErrAndExit(err, "error executing the main command")
+		runtimelog.Log.Error(err, "error executing the main command")
+		os.Exit(1)
 	}
 }
