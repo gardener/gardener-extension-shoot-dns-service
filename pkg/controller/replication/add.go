@@ -19,9 +19,9 @@ package replication
 import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/common"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
-	predutils "github.com/gardener/gardener/pkg/controllerutils/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -46,14 +46,20 @@ type AddOptions struct {
 
 // ForService returns a predicate that matches the given name of a resource.
 func ForService(labelKey string) predicate.Predicate {
-	return predutils.FromMapper(predutils.MapperFunc(func(e event.GenericEvent) bool {
-		for k := range e.Object.GetLabels() {
+	triggerFunc := func(obj client.Object) bool {
+		for k := range obj.GetLabels() {
 			if k == labelKey {
 				return true
 			}
 		}
 		return false
-	}), predutils.CreateTrigger, predutils.UpdateNewTrigger, predutils.DeleteTrigger, predutils.GenericTrigger)
+	}
+	return predicate.Funcs{
+		CreateFunc:  func(e event.CreateEvent) bool { return triggerFunc(e.Object) },
+		DeleteFunc:  func(e event.DeleteEvent) bool { return triggerFunc(e.Object) },
+		UpdateFunc:  func(e event.UpdateEvent) bool { return triggerFunc(e.ObjectNew) },
+		GenericFunc: func(e event.GenericEvent) bool { return triggerFunc(e.Object) },
+	}
 }
 
 // AddToManager adds a DNS Service replication controller to the given Controller Manager.

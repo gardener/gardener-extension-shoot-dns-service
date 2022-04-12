@@ -16,6 +16,13 @@ package app
 
 import (
 	"context"
+	"os"
+
+	"github.com/spf13/cobra"
+	componentbaseconfig "k8s.io/component-base/config"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	runtimelog "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	admissioncmd "github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/cmd"
 	serviceinstall "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/install"
@@ -23,10 +30,6 @@ import (
 	"github.com/gardener/gardener/extensions/pkg/util"
 	webhookcmd "github.com/gardener/gardener/extensions/pkg/webhook/cmd"
 	"github.com/gardener/gardener/pkg/apis/core/install"
-	"github.com/spf13/cobra"
-	componentbaseconfig "k8s.io/component-base/config"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 var log = logf.Log.WithName("gardener-extension-admission-shoot-dns-service")
@@ -53,7 +56,8 @@ func NewAdmissionCommand(ctx context.Context) *cobra.Command {
 
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := aggOption.Complete(); err != nil {
-				controllercmd.LogErrAndExit(err, "Error completing options")
+				runtimelog.Log.Error(err, "Error completing options")
+				os.Exit(1)
 			}
 
 			util.ApplyClientConnectionConfigurationToRESTConfig(&componentbaseconfig.ClientConnectionConfiguration{
@@ -63,13 +67,15 @@ func NewAdmissionCommand(ctx context.Context) *cobra.Command {
 
 			mgr, err := manager.New(restOpts.Completed().Config, mgrOpts.Completed().Options())
 			if err != nil {
-				controllercmd.LogErrAndExit(err, "Could not instantiate manager")
+				runtimelog.Log.Error(err, "Could not instantiate manager")
+				os.Exit(1)
 			}
 
 			install.Install(mgr.GetScheme())
 
 			if err := serviceinstall.AddToScheme(mgr.GetScheme()); err != nil {
-				controllercmd.LogErrAndExit(err, "Could not update manager scheme")
+				runtimelog.Log.Error(err, "Could not update manager scheme")
+				os.Exit(1)
 			}
 
 			log.Info("Setting up webhook server")
