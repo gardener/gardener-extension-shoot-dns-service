@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/common"
@@ -88,6 +89,7 @@ func (s *shoot) mutateShoot(_ context.Context, _, new *gardencorev1beta1.Shoot) 
 	for i, r := range new.Spec.Resources {
 		oldNamedResources[r.Name] = i
 	}
+	newNamedResources := map[string]struct{}{}
 
 	dnsConfig.Providers = nil
 	for _, p := range new.Spec.DNS.Providers {
@@ -115,6 +117,7 @@ func (s *shoot) mutateShoot(_ context.Context, _, new *gardencorev1beta1.Shoot) 
 					APIVersion: "v1",
 				},
 			}
+			newNamedResources[secretName] = struct{}{}
 			if index, ok := oldNamedResources[secretName]; ok {
 				new.Spec.Resources[index].ResourceRef = resource.ResourceRef
 			} else {
@@ -122,6 +125,25 @@ func (s *shoot) mutateShoot(_ context.Context, _, new *gardencorev1beta1.Shoot) 
 			}
 		}
 		dnsConfig.Providers = append(dnsConfig.Providers, np)
+	}
+
+	outdated := map[string]struct{}{}
+	for key := range oldNamedResources {
+		if !strings.HasPrefix(key, pkgservice.ExtensionType+"-") {
+			continue
+		}
+		if _, ok := newNamedResources[key]; !ok {
+			outdated[key] = struct{}{}
+		}
+	}
+	if len(outdated) > 0 {
+		newResources := []gardencorev1beta1.NamedResourceReference{}
+		for _, resource := range new.Spec.Resources {
+			if _, ok := outdated[resource.Name]; !ok {
+				newResources = append(newResources, resource)
+			}
+		}
+		new.Spec.Resources = newResources
 	}
 
 	return s.updateDNSConfig(new, dnsConfig)
