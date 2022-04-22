@@ -487,6 +487,22 @@ func (a *actuator) addCleanupOfOldAdditionalProviders(dnsProviders map[string]co
 		}
 	}
 
+	if dw, ok := dnsProviders[ExternalDNSProviderName]; dw == nil && ok {
+		// delete non-migrated non-default external DNS provider if it exists
+		provider := &dnsv1alpha1.DNSProvider{}
+		if err := a.Client().Get(
+			ctx,
+			kutil.Key(namespace, ExternalDNSProviderName),
+			provider,
+		); err == nil {
+			dnsProviders[provider.Name] = component.OpDestroy(NewProviderDeployWaiter(
+				a.deprecatedLogger,
+				a.Client(),
+				provider,
+			))
+		}
+	}
+
 	return nil
 }
 

@@ -104,6 +104,11 @@ func (s *shoot) mutateShoot(_ context.Context, _, new *gardencorev1beta1.Shoot) 
 				Exclude: p.Zones.Exclude,
 			}
 		}
+		if p.Primary != nil && *p.Primary && p.Domains == nil && p.Zones == nil && new.Spec.DNS.Domain != nil {
+			np.Domains = &servicev1alpha1.DNSIncludeExclude{
+				Include: []string{*new.Spec.DNS.Domain},
+			}
+		}
 		if p.SecretName != nil {
 			secretName := pkgservice.ExtensionType + "-" + *p.SecretName
 			np.SecretName = &secretName
@@ -136,6 +141,13 @@ func (s *shoot) isDisabled(shoot *gardencorev1beta1.Shoot) bool {
 		// don't mutate shoots in deletion
 		return true
 	}
+	if shoot.Status.LastOperation != nil &&
+		shoot.Status.LastOperation.Type != gardencorev1beta1.LastOperationTypeReconcile &&
+		shoot.Status.LastOperation.State != gardencorev1beta1.LastOperationStateProcessing {
+		// don't mutate shoots if not in reconcile processing state
+		return true
+	}
+
 	ext := s.findExtension(shoot)
 	if ext == nil {
 		return false
