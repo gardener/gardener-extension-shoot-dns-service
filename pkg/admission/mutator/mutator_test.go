@@ -86,10 +86,34 @@ var _ = Describe("Shoot Mutator", func() {
 				},
 				Resources: []gardencorev1beta1.NamedResourceReference{
 					{
+						Name: "shoot-dns-service-my-secret-obsolete1",
+						ResourceRef: v1.CrossVersionObjectReference{
+							Kind:       "Secret",
+							Name:       "foo",
+							APIVersion: "v1",
+						},
+					},
+					{
 						Name: secretMappedName2,
 						ResourceRef: v1.CrossVersionObjectReference{
 							Kind:       "Secret",
 							Name:       "foo",
+							APIVersion: "v1",
+						},
+					},
+					{
+						Name: "shoot-dns-service-my-secret-obsolete2",
+						ResourceRef: v1.CrossVersionObjectReference{
+							Kind:       "Secret",
+							Name:       "foo",
+							APIVersion: "v1",
+						},
+					},
+					{
+						Name: "other",
+						ResourceRef: v1.CrossVersionObjectReference{
+							Kind:       "Secret",
+							Name:       "other",
 							APIVersion: "v1",
 						},
 					},
@@ -144,6 +168,14 @@ var _ = Describe("Shoot Mutator", func() {
 			ResourceRef: v1.CrossVersionObjectReference{
 				Kind:       "Secret",
 				Name:       secretName1,
+				APIVersion: "v1",
+			},
+		}
+		otherResource = gardencorev1beta1.NamedResourceReference{
+			Name: "other",
+			ResourceRef: v1.CrossVersionObjectReference{
+				Kind:       "Secret",
+				Name:       "other",
 				APIVersion: "v1",
 			},
 		}
@@ -252,7 +284,7 @@ var _ = Describe("Shoot Mutator", func() {
 					},
 				},
 			}
-		}), []gardencorev1beta1.NamedResourceReference{additionalResource, primaryResource}),
+		}), []gardencorev1beta1.NamedResourceReference{additionalResource, otherResource, primaryResource}),
 		Entry("disabled sync", dnsStyleEnabled, shootWithDisabledSync, []gardencorev1beta1.DNSProvider{additional}, BeNil(), modifyCopy(dnsConfig, func(cfg *servicev1alpha1.DNSConfig) {
 			cfg.SyncProvidersFromShootSpecDNS = &bfalse
 		}), nil),
