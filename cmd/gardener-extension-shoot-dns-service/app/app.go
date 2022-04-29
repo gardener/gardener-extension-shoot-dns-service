@@ -81,18 +81,6 @@ func (o *Options) run(ctx context.Context) error {
 		return fmt.Errorf("could not update manager scheme: %s", err)
 	}
 
-	useTokenRequestor, err := extensionscontroller.UseTokenRequestor(o.generalOptions.Completed().GardenerVersion)
-	if err != nil {
-		return fmt.Errorf("could not determine whether token requestor should be used: %s", err)
-	}
-	lifecycle.DefaultAddOptions.UseTokenRequestor = useTokenRequestor
-
-	useProjectedTokenMount, err := extensionscontroller.UseServiceAccountTokenVolumeProjection(o.generalOptions.Completed().GardenerVersion)
-	if err != nil {
-		return fmt.Errorf("could not determine whether service account token volume projection should be used: %s", err)
-	}
-	lifecycle.DefaultAddOptions.UseProjectedTokenMount = useProjectedTokenMount
-
 	mgrOpts := o.managerOptions.Completed().Options()
 	mgrOpts.Scheme = mgrScheme
 	mgrOpts.ClientDisableCacheFor = []client.Object{
