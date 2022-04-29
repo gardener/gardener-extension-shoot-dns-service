@@ -10,6 +10,8 @@ images:
 targetClusterSecret: "target-cluster"
 podAnnotations: {}
 
+genericTokenKubeconfigSecretName: generic-token-kubeconfig
+
 creatorLabelValue: "4711-abc"
 shootId: "4711"
 seedId: "3141"

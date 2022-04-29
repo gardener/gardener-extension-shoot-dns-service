@@ -350,12 +350,13 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 	}
 
 	chartValues := map[string]interface{}{
-		"serviceName":       service.ServiceName,
-		"replicas":          controller.GetReplicas(cluster, replicas),
-		"creatorLabelValue": creatorLabelValue,
-		"shootId":           shootID,
-		"seedId":            seedID,
-		"dnsClass":          a.Config().DNSClass,
+		"serviceName":                      service.ServiceName,
+		"genericTokenKubeconfigSecretName": extensions.GenericTokenKubeconfigSecretNameFromCluster(cluster),
+		"replicas":                         controller.GetReplicas(cluster, replicas),
+		"creatorLabelValue":                creatorLabelValue,
+		"shootId":                          shootID,
+		"seedId":                           seedID,
+		"dnsClass":                         a.Config().DNSClass,
 		"dnsProviderReplication": map[string]interface{}{
 			"enabled": a.replicateDNSProviders(dnsconfig),
 		},
