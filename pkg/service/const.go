@@ -29,12 +29,6 @@ const (
 	// ImageName is the name of the dns controller manager.
 	ImageName = "dns-controller-manager"
 
-	// UserName is the name of the user  used to connect to the target cluster.
-	UserName = "dns.gardener.cloud:system:" + ServiceName
-
-	// SecretName is the name of the secret used to store the access data for the shoot cluster.
-	SecretName = ExtensionServiceName
-
 	// ShootAccessSecretName is the name of the shoot access secret in the seed.
 	ShootAccessSecretName = "extension-shoot-dns-service"
 	// ShootAccessServiceAccountName is the name of the service account used for accessing the shoot.

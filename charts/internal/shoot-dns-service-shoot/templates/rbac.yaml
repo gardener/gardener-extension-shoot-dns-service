@@ -74,15 +74,9 @@ roleRef:
   kind: ClusterRole
   name: extensions.gardener.cloud:extension-{{ .Values.serviceName }}:{{ .Values.serviceName }}
 subjects:
-{{- if .Values.useTokenRequestor }}
 - kind: ServiceAccount
   name: {{ .Values.shootAccessServiceAccountName }}
   namespace: kube-system
-{{- else }}
-- apiGroup: rbac.authorization.k8s.io
-  kind: User
-  name: {{ .Values.userName }}
-{{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -129,15 +123,9 @@ metadata:
   name: extensions.gardener.cloud:extension-{{ .Values.serviceName }}:{{ .Values.serviceName }}
   namespace: kube-system
 subjects:
-{{- if .Values.useTokenRequestor }}
 - kind: ServiceAccount
   name: {{ .Values.shootAccessServiceAccountName }}
   namespace: kube-system
-{{- else }}
-- apiGroup: rbac.authorization.k8s.io
-  kind: User
-  name: {{ .Values.userName }}
-{{- end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role

@@ -6,11 +6,11 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/ahmetb/gen-crd-api-reference-docs v0.2.0
 	github.com/gardener/external-dns-management v0.11.4
-	github.com/gardener/gardener v1.44.1
+	github.com/gardener/gardener v1.45.0
 	github.com/go-logr/logr v1.2.0
 	github.com/golang/mock v1.6.0
 	github.com/hashicorp/go-multierror v1.1.0
-	github.com/onsi/ginkgo/v2 v2.1.0
+	github.com/onsi/ginkgo/v2 v2.1.3
 	github.com/onsi/gomega v1.18.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
@@ -23,7 +23,7 @@ require (
 	k8s.io/code-generator v0.23.3
 	k8s.io/component-base v0.23.3
 	k8s.io/utils v0.0.0-20211116205334-6203023598ed
-	sigs.k8s.io/controller-runtime v0.11.0
+	sigs.k8s.io/controller-runtime v0.11.1
 )
 
 replace (

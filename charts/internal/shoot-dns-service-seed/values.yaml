@@ -9,8 +9,8 @@ images:
 
 targetClusterSecret: "target-cluster"
 podAnnotations: {}
-useTokenRequestor: false
-useProjectedTokenMount: false
+
+genericTokenKubeconfigSecretName: generic-token-kubeconfig
 
 creatorLabelValue: "4711-abc"
 shootId: "4711"

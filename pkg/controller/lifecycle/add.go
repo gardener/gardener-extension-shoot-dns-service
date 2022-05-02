@@ -41,11 +41,6 @@ type AddOptions struct {
 	Controller controller.Options
 	// IgnoreOperationAnnotation specifies whether to ignore the operation annotation or not.
 	IgnoreOperationAnnotation bool
-	// UseTokenRequestor specifies whether the token requestor shall be used for the dns-controller.
-	UseTokenRequestor bool
-	// UseProjectedTokenMount specifies whether the projected token mount shall be used for the
-	// dns-controller.
-	UseProjectedTokenMount bool
 }
 
 // AddToManager adds a controller with the default Options to the given Controller Manager.
@@ -56,7 +51,7 @@ func AddToManager(mgr manager.Manager) error {
 // AddToManagerWithOptions adds a DNS Service Lifecycle controller to the given Controller Manager.
 func AddToManagerWithOptions(mgr manager.Manager, opts AddOptions) error {
 	return extension.Add(mgr, extension.AddArgs{
-		Actuator:          NewActuator(config.DNSService, opts.UseTokenRequestor, opts.UseProjectedTokenMount),
+		Actuator:          NewActuator(config.DNSService),
 		ControllerOptions: opts.Controller,
 		Name:              Name,
 		FinalizerSuffix:   FinalizerSuffix,

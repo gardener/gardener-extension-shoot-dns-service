@@ -28,10 +28,8 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/imagevector"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
-	"github.com/gardener/gardener/pkg/controllerutils"
 
 	dnsv1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
-
 	"github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
 	"github.com/gardener/gardener/extensions/pkg/util"
@@ -39,29 +37,25 @@ import (
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
-
 	resourcesv1alpha1 "github.com/gardener/gardener/pkg/apis/resources/v1alpha1"
 	"github.com/gardener/gardener/pkg/chartrenderer"
 	"github.com/gardener/gardener/pkg/client/kubernetes"
+	"github.com/gardener/gardener/pkg/controllerutils"
 	reconcilerutils "github.com/gardener/gardener/pkg/controllerutils/reconciler"
 	"github.com/gardener/gardener/pkg/extensions"
 	"github.com/gardener/gardener/pkg/operation/botanist/component"
-	"github.com/gardener/gardener/pkg/utils"
 	"github.com/gardener/gardener/pkg/utils/chart"
 	"github.com/gardener/gardener/pkg/utils/flow"
 	gutil "github.com/gardener/gardener/pkg/utils/gardener"
 	kutil "github.com/gardener/gardener/pkg/utils/kubernetes"
 	"github.com/gardener/gardener/pkg/utils/managedresources"
-	"github.com/gardener/gardener/pkg/utils/secrets"
 	versionutils "github.com/gardener/gardener/pkg/utils/version"
-
-	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-
 	"github.com/hashicorp/go-multierror"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -102,7 +96,7 @@ const (
 var dnsAnnotationCRD string
 
 // NewActuator returns an actuator responsible for Extension resources.
-func NewActuator(config config.DNSServiceConfig, useTokenRequestor bool, useProjectedTokenMount bool) extension.Actuator {
+func NewActuator(config config.DNSServiceConfig) extension.Actuator {
 	fieldMap := logrus.FieldMap{
 		logrus.FieldKeyTime:  "ts",
 		logrus.FieldKeyLevel: "level",
@@ -118,20 +112,16 @@ func NewActuator(config config.DNSServiceConfig, useTokenRequestor bool, useProj
 	}
 
 	return &actuator{
-		Env:                    common.NewEnv(ActuatorName, config),
-		deprecatedLogger:       logger,
-		useTokenRequestor:      useTokenRequestor,
-		useProjectedTokenMount: useProjectedTokenMount,
+		Env:              common.NewEnv(ActuatorName, config),
+		deprecatedLogger: logger,
 	}
 }
 
 type actuator struct {
 	*common.Env
-	applier                kubernetes.ChartApplier
-	renderer               chartrenderer.Interface
-	decoder                runtime.Decoder
-	useTokenRequestor      bool
-	useProjectedTokenMount bool
+	applier  kubernetes.ChartApplier
+	renderer chartrenderer.Interface
+	decoder  runtime.Decoder
 
 	deprecatedLogger logrus.FieldLogger
 }
@@ -360,12 +350,13 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 	}
 
 	chartValues := map[string]interface{}{
-		"serviceName":       service.ServiceName,
-		"replicas":          controller.GetReplicas(cluster, replicas),
-		"creatorLabelValue": creatorLabelValue,
-		"shootId":           shootID,
-		"seedId":            seedID,
-		"dnsClass":          a.Config().DNSClass,
+		"serviceName":                      service.ServiceName,
+		"genericTokenKubeconfigSecretName": extensions.GenericTokenKubeconfigSecretNameFromCluster(cluster),
+		"replicas":                         controller.GetReplicas(cluster, replicas),
+		"creatorLabelValue":                creatorLabelValue,
+		"shootId":                          shootID,
+		"seedId":                           seedID,
+		"dnsClass":                         a.Config().DNSClass,
 		"dnsProviderReplication": map[string]interface{}{
 			"enabled": a.replicateDNSProviders(dnsconfig),
 		},
@@ -376,33 +367,12 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 			"dnsName": dnsActivationName,
 			"value":   ownerID,
 		},
-		"useProjectedTokenMount": a.useProjectedTokenMount,
 	}
 
-	var secretNameToDelete string
-	if a.useTokenRequestor {
-		if err := gutil.NewShootAccessSecret(service.ShootAccessSecretName, namespace).Reconcile(ctx, a.Client()); err != nil {
-			return err
-		}
-
-		chartValues["targetClusterSecret"] = gutil.SecretNamePrefixShootAccess + service.ShootAccessSecretName
-		chartValues["useTokenRequestor"] = true
-		secretNameToDelete = service.SecretName
-	} else {
-		shootKubeconfig, err := a.createKubeconfig(ctx, namespace)
-		if err != nil {
-			return err
-		}
-
-		chartValues["targetClusterSecret"] = service.SecretName
-		chartValues["podAnnotations"] = map[string]interface{}{"checksum/secret-kubeconfig": utils.ComputeChecksum(shootKubeconfig.Data)}
-		secretNameToDelete = gutil.SecretNamePrefixShootAccess + service.ShootAccessSecretName
-	}
-
-	// TODO(rfranzke): Remove in a future release.
-	if err := kutil.DeleteObject(ctx, a.Client(), &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretNameToDelete, Namespace: namespace}}); err != nil {
+	if err := gutil.NewShootAccessSecret(service.ShootAccessSecretName, namespace).Reconcile(ctx, a.Client()); err != nil {
 		return err
 	}
+	chartValues["targetClusterSecret"] = gutil.SecretNamePrefixShootAccess + service.ShootAccessSecretName
 
 	chartValues, err = chart.InjectImages(chartValues, imagevector.ImageVector(), []string{service.ImageName})
 	if err != nil {
@@ -722,10 +692,7 @@ func (a *actuator) deleteSeedResources(ctx context.Context, cluster *controller.
 		return err
 	}
 
-	return kutil.DeleteObjects(ctx, a.Client(),
-		&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: service.SecretName, Namespace: namespace}},
-		&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: gutil.SecretNamePrefixShootAccess + service.ShootAccessSecretName, Namespace: namespace}},
-	)
+	return kutil.DeleteObject(ctx, a.Client(), &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: gutil.SecretNamePrefixShootAccess + service.ShootAccessSecretName, Namespace: namespace}})
 }
 
 func (a *actuator) deleteManagedDNSEntries(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
@@ -853,15 +820,9 @@ func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *
 		"dnsProviderReplication": map[string]interface{}{
 			"enabled": replicateDNSProviders,
 		},
+		"shootAccessServiceAccountName": service.ShootAccessServiceAccountName,
 	}
 	injectedLabels := map[string]string{v1beta1constants.ShootNoCleanup: "true"}
-
-	if a.useTokenRequestor {
-		chartValues["useTokenRequestor"] = true
-		chartValues["shootAccessServiceAccountName"] = service.ShootAccessServiceAccountName
-	} else {
-		chartValues["userName"] = service.UserName
-	}
 
 	return a.createOrUpdateManagedResource(ctx, namespace, ShootResourcesName, "", renderer, service.ShootChartName, chartValues, injectedLabels)
 }
@@ -883,14 +844,6 @@ func (a *actuator) deleteShootResources(ctx context.Context, namespace string) e
 	timeoutCtx2, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 	return managedresources.WaitUntilDeleted(timeoutCtx2, a.Client(), namespace, KeptShootResourcesName)
-}
-
-func (a *actuator) createKubeconfig(ctx context.Context, namespace string) (*corev1.Secret, error) {
-	certConfig := secrets.CertificateSecretConfig{
-		Name:       service.SecretName,
-		CommonName: service.UserName,
-	}
-	return util.GetOrCreateShootKubeconfig(ctx, a.Client(), certConfig, namespace)
 }
 
 func (a *actuator) createOrUpdateManagedResource(ctx context.Context, namespace, name, class string, renderer chartrenderer.Interface, chartName string, chartValues map[string]interface{}, injectedLabels map[string]string) error {
