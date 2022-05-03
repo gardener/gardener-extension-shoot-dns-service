@@ -8,7 +8,7 @@ title: DNS Names
 Within a shoot cluster, it is possible to request DNS records via the following resource types:
 - [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/)
 - [Service](https://kubernetes.io/docs/concepts/services-networking/service/)
-- [DNSEntry](https://github.com/gardener/external-dns-management/blob/master/examples/40-entry-dns.yaml)
+- [DNSEntry](https://github.com/gardener/external-dns-management/blob/master/README.md#the-model)
 
 It is necessary that the Gardener installation your shoot cluster runs in is equipped with a `shoot-dns-service` extension. This extension uses the seed's dns management infrastructure to maintain DNS names for shoot clusters. Please ask your Gardener operator if the extension is available in your environment.
 
@@ -35,6 +35,37 @@ To request a DNS name for an Ingress or Service object in the shoot cluster
 it must be annotated with the DNS class `garden` and an annotation denoting
 the desired DNS names.
 
+Example for an annotated Ingress resource:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    dns.gardener.cloud/dnsnames: '*' # collects domains names from .spec.rules[].host
+    dns.gardener.cloud/class: garden
+    # If you are delegating the certificate management to Gardener, uncomment the following line
+    #cert.gardener.cloud/purpose: managed
+  name: test-ingress
+  namespace: default
+spec:
+  rules:
+    - host: test.ingress.my-dns-domain.com
+      http:
+        paths:
+          - backend:
+              service:
+                name: my-service
+                port:
+                  number: 9000
+            path: /
+            pathType: Prefix
+  tls:
+    - hosts:
+        - test.ingress.my-dns-domain.com
+      secretName: my-cert-secret-name
+```
+
 For a Service (it must have the type `LoadBalancer`) this looks like this:
 
 ```yaml
@@ -43,7 +74,7 @@ kind: Service
 metadata:
   annotations:
     dns.gardener.cloud/class: garden
-    dns.gardener.cloud/dnsnames: my.subdomain.for.shootsomain.cloud
+    dns.gardener.cloud/dnsnames: my.subdomain.for.some.domain.cloud
   name: my-service
   namespace: default
 spec:
@@ -67,6 +98,8 @@ domain, this is already handled by the standard wildcard entry for the ingress
 domain. Therefore this name should be excluded from the *dnsnames* list in the
 annotation. If only this dns name is configured in the ingress, no explicit 
 dns entry is required, and the dns annotations should be omitted at all.
+
+More examples can be found [here](https://github.com/gardener/external-dns-management/blob/master/examples/)
 
 ## Request DNS records via DNSEntry resources
 
