@@ -175,7 +175,7 @@ var _ = Describe("ShootDNS test", func() {
 		ResourceDir: "../resources",
 	})
 
-	BeforeEach(f.prepareClientsAndCluster, 60)
+	BeforeEach(f.prepareClientsAndCluster)
 
 	framework.CIt("Create and delete echoheaders service with type LoadBalancer", func(ctx context.Context) {
 		f.createEchoheaders(ctx, true, true, 360*time.Second, 420*time.Second)
