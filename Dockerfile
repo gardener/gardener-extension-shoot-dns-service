@@ -1,12 +1,12 @@
 ############# builder
-FROM golang:1.17.8 AS builder
+FROM golang:1.18.2 AS builder
 
 WORKDIR /go/src/github.com/gardener/gardener-extension-shoot-dns-service
 COPY . .
 RUN make install
 
 ############# base
-FROM alpine:3.15.3 AS base
+FROM alpine:3.15.4 AS base
 
 ############# gardener-extension-shoot-dns-service
 FROM base AS gardener-extension-shoot-dns-service
