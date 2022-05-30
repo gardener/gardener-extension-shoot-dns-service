@@ -8,6 +8,7 @@ spec:
   resourcePolicy:
     containerPolicies:
       - containerName: '*'
+        controlledValues: RequestsOnly
         minAllowed:
           cpu: {{ .Values.vpa.minAllowed.cpu }}
           memory: {{ .Values.vpa.minAllowed.memory }}
