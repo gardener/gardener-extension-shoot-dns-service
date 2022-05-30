@@ -31,8 +31,7 @@ resources:
     memory: "64Mi"
     cpu: "20m"
   limits:
-    memory: "128Mi"
-    cpu: "50m"
+    memory: "700Mi"
 
 vpa:
   enabled: true
