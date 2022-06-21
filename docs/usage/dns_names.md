@@ -88,18 +88,69 @@ spec:
 The *dnsnames* annotation accepts a comma-separated list of DNS names, if
 multiple names are required.
 
-For an Ingress, the dns names are already declared in the specification.
+For an Ingress, the DNS names are already declared in the specification.
 Nevertheless the *dnsnames* annotation must be present. Here a subset of the 
-dns names of the ingress can be specified. If DNS names for all names are
+DNS names of the ingress can be specified. If DNS names for all names are
 desired, the value `all` can be used.
 
-If one of the accepted dns names is a direct subname of the shoot's ingress
+If one of the accepted DNS names is a direct subname of the shoot's ingress
 domain, this is already handled by the standard wildcard entry for the ingress
 domain. Therefore this name should be excluded from the *dnsnames* list in the
-annotation. If only this dns name is configured in the ingress, no explicit 
-dns entry is required, and the dns annotations should be omitted at all.
+annotation. If only this DNS name is configured in the ingress, no explicit 
+DNS entry is required, and the DNS annotations should be omitted at all.
 
 More examples can be found [here](https://github.com/gardener/external-dns-management/blob/master/examples/)
+
+### Request DNS records for Service/Ingress resources using a DNSAnnotation resource
+
+In rare cases it may not be possible to add annotations to a `Service` or `Ingress` resource object.
+E.g. the helm chart used to deploy the resource may no be adaptable for some reasons or some automation is used,
+which always restores the original content of the resource object by dropping any additional annotations.
+
+In these cases you may use an additional `DNSAnnotation` resource.
+
+The `DNSAnnotation` resource makes the DNS shoot service behave as if annotations have been added to the referenced 
+resource.
+
+For the Ingress example shown above, you can create a `DNSAnnotation` resource alternatively to provide
+the annotations.
+
+```yaml
+apiVersion: dns.gardener.cloud/v1alpha1
+kind: DNSAnnotation
+metadata:
+  annotations:
+    dns.gardener.cloud/class: garden
+  name: test-ingress-annotation
+  namespace: default
+spec:
+  resourceRef:
+    kind: Ingress
+    apiVersion: networking.k8s.io/v1
+    name: test-ingress
+    namespace: default
+  annotations:
+    dns.gardener.cloud/dnsnames: '*'
+    dns.gardener.cloud/class: garden    
+```
+
+Note that the DNSAnnotation resource itself needs the `dns.gardener.cloud/class=garden` annotation.
+
+No annotations in the Ingress resource would be needed.s
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: test-ingress
+  namespace: default
+spec:
+  ...
+```
+
+Please note this only works for anotations known to the DNS shoot service, i.e with keys `dns.gardener.cloud/...`.
+
+For more details, see also [DNSAnnotation objects](https://github.com/gardener/external-dns-management#dnsannotation-objects)
 
 ## Request DNS records via DNSEntry resources
 
