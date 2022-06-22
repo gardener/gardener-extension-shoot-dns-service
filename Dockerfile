@@ -6,7 +6,7 @@ COPY . .
 RUN make install
 
 ############# base
-FROM alpine:3.15.4 AS base
+FROM gcr.io/distroless/static-debian11:nonroot AS base
 
 ############# gardener-extension-shoot-dns-service
 FROM base AS gardener-extension-shoot-dns-service
