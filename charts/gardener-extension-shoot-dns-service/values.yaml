@@ -23,13 +23,7 @@ gardener:
 leaderElection:
   resourceLock: leases
 
-resources:
-  requests:
-   cpu: "50m"
-   memory: "64Mi"
-  limits:
-   cpu: "50m"
-   memory: "128Mi"
+resources: {}
 
 vpa:
   enabled: true
