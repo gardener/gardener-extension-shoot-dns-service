@@ -16,7 +16,6 @@ package cmd
 
 import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/mutator"
-	extensionswebhook "github.com/gardener/gardener/extensions/pkg/webhook"
 	webhookcmd "github.com/gardener/gardener/extensions/pkg/webhook/cmd"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/validator"
@@ -25,7 +24,7 @@ import (
 // GardenWebhookSwitchOptions are the webhookcmd.SwitchOptions for the admission webhooks.
 func GardenWebhookSwitchOptions() *webhookcmd.SwitchOptions {
 	return webhookcmd.NewSwitchOptions(
-		webhookcmd.Switch(extensionswebhook.ValidatorName, validator.New),
+		webhookcmd.Switch(validator.ValidatorName, validator.New),
 		webhookcmd.Switch(mutator.MutatorName, mutator.New),
 	)
 }

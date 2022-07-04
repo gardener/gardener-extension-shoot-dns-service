@@ -21,16 +21,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
+const (
+	// ValidatorName is a common name for a validation webhook.
+	ValidatorName = "validator"
+	// ValidatorPath is a common path for a validation webhook.
+	ValidatorPath = "/webhooks/validate"
+)
+
 var logger = log.Log.WithName("shoot-dns-service-validator-webhook")
 
 // New creates a new webhook that validates Shoot resources.
 func New(mgr manager.Manager) (*extensionswebhook.Webhook, error) {
-	logger.Info("Setting up webhook", "name", extensionswebhook.ValidatorName)
+	logger.Info("Setting up webhook", "name", ValidatorName)
 
 	return extensionswebhook.New(mgr, extensionswebhook.Args{
 		Provider: "shoot-dns-service",
-		Name:     extensionswebhook.ValidatorName,
-		Path:     extensionswebhook.ValidatorPath,
+		Name:     ValidatorName,
+		Path:     ValidatorPath,
 		Validators: map[extensionswebhook.Validator][]extensionswebhook.Type{
 			NewShootValidator(): {{Obj: &core.Shoot{}}},
 		},
