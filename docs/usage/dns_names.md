@@ -51,6 +51,7 @@ Managed external DNS records are supported with the following DNS provider types
 - google-clouddns
 - openstack-designate
 - alicloud-dns
+- cloudflare-dns
 
 ### Request DNS records for Ingress resources
 
@@ -59,7 +60,7 @@ To request a DNS name for an Ingress or Service object in the shoot cluster it m
 Example for an annotated Ingress resource:
 
 ```yaml
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: amazing-ingress
@@ -68,15 +69,28 @@ metadata:
     dns.gardener.cloud/dnsnames: special.example.com # Use "*" to collects domains names from .spec.rules[].host
     dns.gardener.cloud/ttl: "600"
     dns.gardener.cloud/class: garden
+    # If you are delegating the certificate management to Gardener, uncomment the following line
+    #cert.gardener.cloud/purpose: managed
 spec:
   rules:
   - host: special.example.com
     http:
       paths:
-      - backend:
-        serviceName: amazing-svc
-        servicePort: 8080
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: amazing-svc
+            port:
+              number: 8080
+  # Uncomment the following part if you are delegating the certificate management to Gardener
+  #tls:
+  #  - hosts:
+  #      - special.example.com
+  #    secretName: my-cert-secret-name
 ```
+
+For an Ingress, the DNS names are already declared in the specification. Nevertheless the *dnsnames* annotation must be present. Here a subset of the DNS names of the ingress can be specified. If DNS names for all names are desired, the value `all` can be used.
 
 Keep in mind that ingress resources are ignored unless an ingress controller is set up. Gardener does not provide an ingress controller by default. See the [Kubernetes documentation](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/) and [Gardener documentation](https://github.com/gardener/documentation/blob/master/website/documentation/guides/applications/service-access/_index.md#loadbalancer-vs-ingress) for more details.
 
@@ -121,7 +135,9 @@ spec:
   - 1.2.3.4
 ```
 
-You can check the status of the `DNSentry` with
+If one of the accepted DNS names is a direct subname of the shoot's ingress domain, this is already handled by the standard wildcard entry for the ingress domain. Therefore this name should be excluded from the *dnsnames* list in the annotation. If only this DNS name is configured in the ingress, no explicit DNS entry is required, and the DNS annotations should be omitted at all.
+
+You can check the status of the `DNSEntry` with
 ```bash
 $ kubectl get dnsentry
 NAME          DNS                                                            TYPE          PROVIDER      STATUS    AGE
