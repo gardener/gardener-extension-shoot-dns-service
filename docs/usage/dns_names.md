@@ -25,15 +25,37 @@ spec:
 ...
 ```
 
-## DNS providers, domain scope
+## Before you start
+You should :
+- Have created a shoot cluster
+- Have created and correctly configured a DNS Provider (Please consult [this page](./dns_providers.md) for more information)
+- Have a basic understanding of DNS (see link under [References](#references))
 
-Gardener can only manage DNS records on your behalf if you have proper DNS providers in place. Please consult [this page](./dns_providers.md) for more information.
+There are 2 types of DNS that you can use within Kubernetes : 
+- internal (usually managed by coreDNS)
+- external (managed by a public DNS provider). 
 
-## Request DNS records via Service/Ingress resources
+This page, and the extension, exclusively works for external DNS handling.
 
-To request a DNS name for an Ingress or Service object in the shoot cluster
-it must be annotated with the DNS class `garden` and an annotation denoting
-the desired DNS names.
+Gardener allows 2 way of managing your external DNS:
+- Manually, which means you are in charge of creating / maintaining your Kubernetes related DNS entries
+- Via the Gardener DNS extension
+
+## Gardener DNS extension
+The managed external DNS records feature of the Gardener clusters makes all this easier. You do not need DNS service provider specific knowledge, and in fact you do not need to leave your cluster at all to achieve that. You simply annotate the Ingress / Service that needs its DNS records managed and it will be automatically created / managed by Gardener.
+
+Managed external DNS records are supported with the following DNS provider types:
+- aws-route53
+- azure-dns
+- azure-private-dns
+- google-clouddns
+- openstack-designate
+- alicloud-dns
+- cloudflare-dns
+
+### Request DNS records for Ingress resources
+
+To request a DNS name for an Ingress or Service object in the shoot cluster it must be annotated with the DNS class `garden` and an annotation denoting the desired DNS names.
 
 Example for an annotated Ingress resource:
 
@@ -41,79 +63,99 @@ Example for an annotated Ingress resource:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  name: amazing-ingress
   annotations:
-    dns.gardener.cloud/dnsnames: '*' # collects domains names from .spec.rules[].host
+    # Let Gardener manage external DNS records for this Ingress.
+    dns.gardener.cloud/dnsnames: special.example.com # Use "*" to collects domains names from .spec.rules[].host
+    dns.gardener.cloud/ttl: "600"
     dns.gardener.cloud/class: garden
     # If you are delegating the certificate management to Gardener, uncomment the following line
     #cert.gardener.cloud/purpose: managed
-  name: test-ingress
-  namespace: default
 spec:
   rules:
-    - host: test.ingress.my-dns-domain.com
-      http:
-        paths:
-          - backend:
-              service:
-                name: my-service
-                port:
-                  number: 9000
-            path: /
-            pathType: Prefix
-  tls:
-    - hosts:
-        - test.ingress.my-dns-domain.com
-      secretName: my-cert-secret-name
+  - host: special.example.com
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: amazing-svc
+            port:
+              number: 8080
+  # Uncomment the following part if you are delegating the certificate management to Gardener
+  #tls:
+  #  - hosts:
+  #      - special.example.com
+  #    secretName: my-cert-secret-name
 ```
 
-For a Service (it must have the type `LoadBalancer`) this looks like this:
+For an Ingress, the DNS names are already declared in the specification. Nevertheless the *dnsnames* annotation must be present. Here a subset of the DNS names of the ingress can be specified. If DNS names for all names are desired, the value `all` can be used.
 
+Keep in mind that ingress resources are ignored unless an ingress controller is set up. Gardener does not provide an ingress controller by default. See the [Kubernetes documentation](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/) and [Gardener documentation](https://github.com/gardener/documentation/blob/master/website/documentation/guides/applications/service-access/_index.md#loadbalancer-vs-ingress) for more details.
+
+### Request DNS records for service type LoadBalancer
+
+Example for an annotated Service (it must have the type `LoadBalancer`) resource:
 ```yaml
 apiVersion: v1
 kind: Service
 metadata:
+  name: amazing-svc
   annotations:
+    # Let Gardener manage external DNS records for this Service.
+    dns.gardener.cloud/dnsnames: special.example.com
+    dns.gardener.cloud/ttl: "600"
     dns.gardener.cloud/class: garden
-    dns.gardener.cloud/dnsnames: my.subdomain.for.some.domain.cloud
-  name: my-service
-  namespace: default
 spec:
+  selector:
+    app: amazing-app
   ports:
-    - port: 80
-      protocol: TCP
-      targetPort: 80
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
   type: LoadBalancer
 ```
 
-The *dnsnames* annotation accepts a comma-separated list of DNS names, if
-multiple names are required.
+#### Creating a DNSEntry resource explicitly
+It is also possible to create a DNS entry via the Kubernetes resource called `DNSEntry`:
+```yaml
+apiVersion: dns.gardener.cloud/v1alpha1
+kind: DNSEntry
+metadata:
+  annotations:
+    # Let Gardener manage this DNS entry.
+    dns.gardener.cloud/class: garden
+  name: special-dnsentry
+  namespace: default
+spec:
+  dnsName: special.example.com
+  ttl: 600
+  targets:
+  - 1.2.3.4
+```
 
-For an Ingress, the DNS names are already declared in the specification.
-Nevertheless the *dnsnames* annotation must be present. Here a subset of the 
-DNS names of the ingress can be specified. If DNS names for all names are
-desired, the value `all` can be used.
+If one of the accepted DNS names is a direct subname of the shoot's ingress domain, this is already handled by the standard wildcard entry for the ingress domain. Therefore this name should be excluded from the *dnsnames* list in the annotation. If only this DNS name is configured in the ingress, no explicit DNS entry is required, and the DNS annotations should be omitted at all.
 
-If one of the accepted DNS names is a direct subname of the shoot's ingress
-domain, this is already handled by the standard wildcard entry for the ingress
-domain. Therefore this name should be excluded from the *dnsnames* list in the
-annotation. If only this DNS name is configured in the ingress, no explicit 
-DNS entry is required, and the DNS annotations should be omitted at all.
+You can check the status of the `DNSEntry` with
+```bash
+$ kubectl get dnsentry
+NAME          DNS                                                            TYPE          PROVIDER      STATUS    AGE
+mydnsentry    special.example.com     aws-route53   default/aws   Ready     24s
+```
+As soon as the status of the entry is `Ready`, the provider has accepted the new DNS record. Depending on the provider and your DNS settings and cache, **it may take up to 24 hours for the new entry to be propagated over all internet**.
 
 More examples can be found [here](https://github.com/gardener/external-dns-management/blob/master/examples/)
 
 ### Request DNS records for Service/Ingress resources using a DNSAnnotation resource
 
-In rare cases it may not be possible to add annotations to a `Service` or `Ingress` resource object.
-E.g. the helm chart used to deploy the resource may no be adaptable for some reasons or some automation is used,
-which always restores the original content of the resource object by dropping any additional annotations.
+In rare cases it may not be possible to add annotations to a `Service` or `Ingress` resource object. 
 
-In these cases you may use an additional `DNSAnnotation` resource.
+E.g.: the helm chart used to deploy the resource may not be adaptable for some reasons or some automation is used, which always restores the original content of the resource object by dropping any additional annotations.
 
-The `DNSAnnotation` resource makes the DNS shoot service behave as if annotations have been added to the referenced 
-resource.
+In these cases, it is recommended to use an additional `DNSAnnotation` resource in order to have more flexibility that `DNSentry resources`. The `DNSAnnotation` resource makes the DNS shoot service behave as if annotations have been added to the referenced resource.
 
-For the Ingress example shown above, you can create a `DNSAnnotation` resource alternatively to provide
-the annotations.
+For the Ingress example shown above, you can create a `DNSAnnotation` resource alternatively to provide the annotations.
 
 ```yaml
 apiVersion: dns.gardener.cloud/v1alpha1
@@ -134,64 +176,56 @@ spec:
     dns.gardener.cloud/class: garden    
 ```
 
-Note that the DNSAnnotation resource itself needs the `dns.gardener.cloud/class=garden` annotation.
-
-No annotations in the Ingress resource would be needed.s
-
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: test-ingress
-  namespace: default
-spec:
-  ...
-```
-
-Please note this only works for anotations known to the DNS shoot service, i.e with keys `dns.gardener.cloud/...`.
+Note that the DNSAnnotation resource itself needs the `dns.gardener.cloud/class=garden` annotation. This also only works for annotations known to the DNS shoot service (see [Accepted External DNS Records Annotations](#accepted-external-dns-records-annotations)).
 
 For more details, see also [DNSAnnotation objects](https://github.com/gardener/external-dns-management#dnsannotation-objects)
 
-## Request DNS records via DNSEntry resources
+### Accepted External DNS Records Annotations
 
-```yaml
-apiVersion: dns.gardener.cloud/v1alpha1
-kind: DNSEntry
-metadata:
-  annotations:
-    dns.gardener.cloud/class: garden
-  name: dns
-  namespace: default
-spec:
-  dnsName: "my.subdomain.for.shootsomain.cloud"
-  ttl: 600
-  # txt records, either text or targets must be specified
-# text:
-# - foo-bar
-  targets:
-  # target records (CNAME or A records)
-  - 8.8.8.8
+Here are all of the accepted annotation related to the DNS extension:
+```bash
+- dns.gardener.cloud/dnsnames # Mandatory, accepts a comma-separated list of DNS names if multiple names are required
+- dns.gardener.cloud/class # Mandatory, DNS extension class name (usually "garden")
+- dns.gardener.cloud/ttl # Recommended, Time-To-Live of the DNS record
+- dns.gardener.cloud/cname-lookup-interval # Optional, lookup interval for CNAMEs that must be resolved to IP (in seconds)
+- dns.gardener.cloud/realms # Optional, for restricting provider access for shoot DNS entries
 ```
 
-## DNS record events
+If one of the accepted DNS names is a direct subdomain of the shoot's ingress domain, this is already handled by the standard wildcard entry for the ingress domain. Therefore, this name should be excluded from the *dnsnames* list in the annotation. If only this DNS name is configured in the ingress, no explicit DNS entry is required, and the DNS annotations should be omitted at all.
+
+## Troubleshooting
+### General DNS tools
+To check the DNS resolution, use the `nslookup` or ``dig`` command.
+```bash
+$ nslookup special.your-domain.com
+```
+or with dig
+```bash
+$ dig +short special.example.com
+Depending on your network settings, you may get a successful response faster using a public DNS server (e.g. 8.8.8.8, 8.8.4.4, or 1.1.1.1)
+
+dig @8.8.8.8 +short special.example.com
+```
+
+### DNS record events
 
 The DNS controller publishes Kubernetes events for the resource which requested the DNS record (Ingress, Service, DNSEntry). These events reveal more information about the DNS requests being processed and are especially useful to check any kind of misconfiguration, e.g. requests for a domain you don't own.
 
 Events for a successfully created DNS record:
 ```
-$ kubectl -n default describe service my-service
+$ kubectl describe service my-service
 
 Events:
   Type    Reason          Age                From                    Message
   ----    ------          ----               ----                    -------
-  Normal  dns-annotation  19s                dns-controller-manager  my.subdomain.for.shootsomain.cloud: dns entry is pending
-  Normal  dns-annotation  19s (x3 over 19s)  dns-controller-manager  my.subdomain.for.shootsomain.cloud: dns entry pending: waiting for dns reconciliation
-  Normal  dns-annotation  9s (x3 over 10s)   dns-controller-manager  my.subdomain.for.shootsomain.cloud: dns entry active
+  Normal  dns-annotation  19s                dns-controller-manager  special.example.com: dns entry is pending
+  Normal  dns-annotation  19s (x3 over 19s)  dns-controller-manager  special.example.com: dns entry pending: waiting for dns reconciliation
+  Normal  dns-annotation  9s (x3 over 10s)   dns-controller-manager  special.example.com: dns entry active
 ```
 
 Please note, events vanish after their retention period (usually `1h`).
 
-## DNSEntry status
+### DNSEntry status
 
 `DNSEntry` resources offer a `.status` sub-resource which can be used to check the current state of the object.
 
@@ -203,3 +237,10 @@ Status of a erroneous `DNSEntry`.
     provider: remote
     state: Error
 ```
+
+## References
+- [DNSEntry and DNSProvider](https://github.com/gardener/gardener/blob/master/docs/extensions/dns.md)
+- [Understanding DNS](https://www.cloudflare.com/en-ca/learning/dns/what-is-dns)
+- [Kubernetes Internal DNS](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/)
+- [DNSEntry API (Golang)](https://github.com/gardener/external-dns-management/blob/master/pkg/apis/dns/v1alpha1/dnsentry.go)
+- [Managing Certificates with Gardener](https://github.com/gardener/gardener-extension-shoot-cert-service/blob/master/docs/usage/request_cert.md)
