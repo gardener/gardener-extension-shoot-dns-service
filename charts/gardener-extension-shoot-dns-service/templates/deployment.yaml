@@ -4,16 +4,13 @@ metadata:
   name: gardener-extension-{{ .Values.serviceName }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: gardener-extension-{{ .Values.serviceName }}
-    helm.sh/chart: gardener-extension-{{ .Values.serviceName }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+{{ include "labels" . | indent 4 }}
 spec:
   revisionHistoryLimit: 0
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: gardener-extension-{{ .Values.serviceName }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
+{{ include "labels" . | indent 6 }}
   template:
     metadata:
       {{- if .Values.imageVectorOverwrite }}
@@ -21,8 +18,7 @@ spec:
         checksum/configmap-extension-imagevector-overwrite: {{ include (print $.Template.BasePath "/configmap-imagevector-overwrite.yaml") . | sha256sum }}
       {{- end }}
       labels:
-        app.kubernetes.io/name: gardener-extension-{{ .Values.serviceName }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
+{{ include "labels" . | indent 8 }}
     spec:
       priorityClassName: gardener-system-900
       serviceAccountName: gardener-extension-{{ .Values.serviceName }}

@@ -5,8 +5,7 @@ metadata:
   name: gardener-extension-{{ .Values.serviceName }}-imagevector-overwrite
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: gardener-extension-{{ .Values.serviceName }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+{{ include "labels" . | indent 4 }}
 data:
   images_overwrite.yaml: |
 {{ .Values.imageVectorOverwrite | indent 4 }}

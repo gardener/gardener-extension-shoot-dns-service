@@ -1,0 +1,23 @@
+{{- if and .Values.dnsControllerManager.deploy .Values.dnsControllerManager.remoteaccess.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  {{- if .Values.dnsControllerManager.remoteaccess.service.annotations }}
+  annotations:
+    {{- toYaml .Values.dnsControllerManager.remoteaccess.service.annotations | nindent 4 }}
+  {{- end }}
+  name: dns-controller-manager-remoteaccess
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "dnsmanLabels" . | indent 4 }}
+spec:
+  type: {{ .Values.dnsControllerManager.remoteaccess.service.type | default "ClusterIP" }}
+  ports:
+    - name: service
+      port: {{ .Values.dnsControllerManager.remoteaccess.port }}
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: gardener-extension-{{ .Values.serviceName }}
+    app.kubernetes.io/component: dns-controller-manager
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

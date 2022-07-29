@@ -4,6 +4,8 @@ kind: VerticalPodAutoscaler
 metadata:
   name: gardener-extension-shoot-dns-service-vpa
   namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "labels" . | indent 4 }}
 spec:
   resourcePolicy:
     containerPolicies:

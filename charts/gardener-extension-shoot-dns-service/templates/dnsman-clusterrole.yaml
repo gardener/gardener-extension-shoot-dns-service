@@ -1,0 +1,87 @@
+{{- if .Values.dnsControllerManager.deploy }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: extensions.gardener.cloud:{{ .Values.serviceName }}:dns-controller-manager
+  labels:
+{{ include "dnsmanLabels" . | indent 4 }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - services
+  - services/finalizers
+  - secrets
+  verbs:
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - extensions
+  - "networking.k8s.io"
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - dns.gardener.cloud
+  resources:
+  - dnsproviders
+  - dnsproviders/status
+  - dnsentries
+  - dnsentries/status
+  - dnsannotations
+  - dnsannotations/status
+  - dnsowners
+  - dnsowners/status
+  - dnshostedzonepolicies
+  - dnshostedzonepolicies/status
+  - dnslocks
+  - dnslocks/status
+  - remoteaccesscertificates
+  - remoteaccesscertificates/status
+  verbs:
+  - get
+  - list
+  - update
+  - watch
+  - create
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - get
+  - list
+  - update
+  - create
+- apiGroups:
+  - policy
+  resources:
+  - podsecuritypolicies
+  resourceNames:
+  - extensions.gardener.cloud:{{ .Values.serviceName }}:dns-controller-manager
+  verbs:
+  - use
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  resourceNames:
+  - "cluster-identity"
+  verbs:
+  - get
+{{- end }}
