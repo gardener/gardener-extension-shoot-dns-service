@@ -1,0 +1,27 @@
+{{- if .Values.dnsControllerManager.deploy }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: extensions.gardener.cloud:{{ .Values.serviceName }}:dns-controller-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "dnsmanLabels" . | indent 4 }}
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+   - leases
+  resourceNames:
+  - dns-controller-manager-controllers
+  verbs:
+  - get
+  - watch
+  - update
+{{- end }}

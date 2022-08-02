@@ -10,13 +10,15 @@ dnsProviderReplication:
   enabled: false
 
 dnsProviderManagement:
-  enabled: false
+  enabled: true
 
 ownerDnsActivation:
   enabled: true
 
 gardener:
   version: ""
+  garden:
+    clusterIdentity: garden
   seed:
     identity: ""
 
@@ -59,3 +61,84 @@ remoteDefaultDomainSecret:
 #    ca.crt: LS0tLS1...
 #    tls.crt: LS0tLS1...
 #    tls.key: LS0tLS1...
+
+dnsControllerManager:
+  deploy: false
+  image:
+    repository: eu.gcr.io/gardener-project/dns-controller-manager
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  replicaCount: 1
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      memory: 3Gi
+
+  createCRDs: false
+
+  security:
+    apparmorEnabled: false
+    seccompEnabled: false
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  #serviceAccountAnnotations:
+  #  annotkey1: annotvalue1
+  #  annotkey2: annotvalue2
+
+  ## optionally deploy predefined DNSHostedZonePolicy
+  #hostedZonePolicies:
+  #  - name: policy1
+  #    selector:
+  #      domainNames:
+  #      - domain.of.my.first.zone.com
+  #      - domain.of.my.second.zone.org
+  #      #providerTypes:
+  #      #- aws-route53
+  #      #zoneIDs:
+  #      #- z12345
+  #    policy:
+  #      zoneStateCacheTTL: 2h
+
+  configuration:
+    controllers: all
+    leaseDuration: 30s
+    serverPortHttp: 8080
+
+  additionalConfiguration: []
+  env: []
+  custom: {}
+
+  remoteaccess:
+    enabled: false
+  #  service:
+  #    annotations:
+  #      #dns.gardener.cloud/class: garden
+  #      dns.gardener.cloud/dnsnames: my.foo.bar.com
+  #      #cert.gardener.cloud/purpose: managed
+  #      #cert.gardener.cloud/secretname: remoteaccess-service
+  #    type: LoadBalancer
+  #  certs:
+  #    ca:
+  #      cert: LS0t... # CA used for client certs
+  #      #key: LS0t... # only needed if remoteaccesscertificates controller is enabled
+  #    server:
+  #      #secretName: remoteaccess-service # if managed server certificate is used
+  #      cert: LS0t... # only needed if certificate is not managed
+  #      key: LS0t...  # only needed if certificate is not managed
+  #  port: 7777
+
+  vpa:
+    enabled: true
+    controlledValues: RequestsOnly
+    minAllowed:
+      cpu: 50m
+      memory: 50Mi
+    updatePolicy:
+      updateMode: "Auto"
