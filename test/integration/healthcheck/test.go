@@ -37,9 +37,9 @@ import (
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/lifecycle"
 
-	healthcheckoperation "github.com/gardener/gardener/extensions/test/testmachinery/healthcheck"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/gardener/gardener/test/framework"
+	healthcheckoperation "github.com/gardener/gardener/test/testmachinery/extensions/healthcheck"
 	"github.com/onsi/ginkgo/v2"
 )
 
