@@ -20,7 +20,7 @@ import (
 	"time"
 
 	kutil "github.com/gardener/gardener/pkg/utils/kubernetes"
-	"github.com/sirupsen/logrus"
+	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -39,7 +39,7 @@ var TimeNow = time.Now
 
 // NewProviderDeployWaiter creates a new instance of DeployWaiter for a specific DNSProvider.
 func NewProviderDeployWaiter(
-	logger logrus.FieldLogger,
+	logger logr.Logger,
 	client client.Client,
 	new *dnsv1alpha1.DNSProvider,
 ) component.DeployWaiter {
@@ -58,7 +58,7 @@ func NewProviderDeployWaiter(
 }
 
 type provider struct {
-	logger logrus.FieldLogger
+	logger logr.Logger
 	client client.Client
 	new    *dnsv1alpha1.DNSProvider
 
