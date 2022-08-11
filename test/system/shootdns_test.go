@@ -113,7 +113,7 @@ func (f *shootDNSFramework) prepareClientsAndCluster() {
 }
 
 func (f *shootDNSFramework) createNamespace(ctx context.Context, namespace string) *v1.Namespace {
-	f.Logger.Printf("using namespace %s", namespace)
+	f.Logger.Info("using namespace %s", namespace)
 	ns := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: namespace,
@@ -127,12 +127,12 @@ func (f *shootDNSFramework) createNamespace(ctx context.Context, namespace strin
 }
 
 func (f *shootDNSFramework) deleteNamespaceAndWait(ctx context.Context, ns *v1.Namespace) {
-	f.Logger.Printf("deleting namespace %s", ns.Name)
+	f.Logger.Info("deleting namespace %s", ns.Name)
 	err := f.shootClient.Client().Delete(ctx, ns)
 	framework.ExpectNoError(err)
 	err = f.WaitUntilNamespaceIsDeleted(ctx, f.shootClient, ns.Name)
 	framework.ExpectNoError(err)
-	f.Logger.Printf("deleted namespace %s", ns.Name)
+	f.Logger.Info("deleted namespace %s", ns.Name)
 }
 
 func (f *shootDNSFramework) createEchoheaders(ctx context.Context, svcLB, delete bool,
@@ -165,7 +165,7 @@ func (f *shootDNSFramework) createEchoheaders(ctx context.Context, svcLB, delete
 	if delete {
 		f.deleteNamespaceAndWait(ctx, ns)
 	} else {
-		f.Logger.Printf("no cleanup of namespace %s", ns.Name)
+		f.Logger.Info("no cleanup of namespace %s", ns.Name)
 	}
 }
 
