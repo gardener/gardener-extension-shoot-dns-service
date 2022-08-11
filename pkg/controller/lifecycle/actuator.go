@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/gardener/gardener-extension-shoot-dns-service/charts"
 	apisservice "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/validation"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/common"
@@ -830,7 +831,7 @@ func (a *actuator) deleteShootResources(ctx context.Context, namespace string) e
 
 func (a *actuator) createOrUpdateManagedResource(ctx context.Context, namespace, name, class string, renderer chartrenderer.Interface, chartName string, chartValues map[string]interface{}, injectedLabels map[string]string) error {
 	chartPath := filepath.Join(service.ChartsPath, chartName)
-	chart, err := renderer.Render(chartPath, chartName, namespace, chartValues)
+	chart, err := renderer.RenderEmbeddedFS(charts.Internal, chartPath, chartName, namespace, chartValues)
 	if err != nil {
 		return err
 	}
