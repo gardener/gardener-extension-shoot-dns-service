@@ -26,3 +26,6 @@ var ImagesYAML string
 // Internal contains the internal charts
 //go:embed internal
 var Internal embed.FS
+
+// ChartsPath is the path to the charts
+const ChartsPath = "internal"

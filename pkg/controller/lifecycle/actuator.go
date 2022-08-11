@@ -830,7 +830,7 @@ func (a *actuator) deleteShootResources(ctx context.Context, namespace string) e
 }
 
 func (a *actuator) createOrUpdateManagedResource(ctx context.Context, namespace, name, class string, renderer chartrenderer.Interface, chartName string, chartValues map[string]interface{}, injectedLabels map[string]string) error {
-	chartPath := filepath.Join(service.ChartsPath, chartName)
+	chartPath := filepath.Join(charts.ChartsPath, chartName)
 	chart, err := renderer.RenderEmbeddedFS(charts.Internal, chartPath, chartName, namespace, chartValues)
 	if err != nil {
 		return err

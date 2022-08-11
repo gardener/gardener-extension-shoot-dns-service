@@ -17,8 +17,6 @@
 
 package service
 
-import "path/filepath"
-
 const (
 	ExtensionType        = "shoot-dns-service"
 	ServiceName          = ExtensionType
@@ -34,6 +32,3 @@ const (
 	// ShootAccessServiceAccountName is the name of the service account used for accessing the shoot.
 	ShootAccessServiceAccountName = ShootAccessSecretName
 )
-
-// ChartsPath is the path to the charts
-var ChartsPath = filepath.Join("charts", "internal")
