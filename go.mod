@@ -156,9 +156,3 @@ replace (
 	k8s.io/metrics => k8s.io/metrics v0.23.3
 	sigs.k8s.io/controller-tools => sigs.k8s.io/controller-tools v0.8.0
 )
-
-// workaround for https://github.com/gardener/hvpa-controller/issues/92, remove once it's fixed
-replace (
-	github.com/gardener/hvpa-controller => github.com/gardener/hvpa-controller v0.4.0
-	github.com/gardener/hvpa-controller/api => github.com/gardener/hvpa-controller/api v0.4.0
-)
