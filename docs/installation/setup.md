@@ -31,6 +31,43 @@ spec:
       globallyEnabled: true
 ```
 
+### Deployment of DNS controller manager
+
+If you are using Gardener version >= `1.54`, please make sure to deploy the DNS controller manager by 
+adding the `dnsControllerManager` section to the `providerConfig.values` section.
+
+For example:
+
+```yaml
+apiVersion: core.gardener.cloud/v1beta1
+kind: ControllerDeployment
+metadata:
+  name: extension-shoot-dns-service
+type: helm
+providerConfig:
+  chart: ...
+  values:
+    image:
+      ...
+  dnsControllerManager:
+    configuration:
+      cacheTtl: 300
+      controllers: dnscontrollers,dnssources
+      dnsPoolResyncPeriod: 30m
+      #poolSize: 20
+      #providersPoolResyncPeriod: 24h
+      serverPortHttp: 8080
+    createCRDs: false
+    deploy: true
+    replicaCount: 1
+    #resources:
+    #  limits:
+    #    memory: 1Gi
+    #  requests:
+    #    cpu: 50m
+    #    memory: 500Mi
+```
+
 ### Providing Base Domains usable for a Shoot
 
 So, far only the external DNS domain of a shoot already used
@@ -122,3 +159,4 @@ providerConfig:
     ownerDnsActivation:
       enabled: false
 ```
+
