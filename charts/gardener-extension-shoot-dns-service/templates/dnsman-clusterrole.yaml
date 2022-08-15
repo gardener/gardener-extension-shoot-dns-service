@@ -73,7 +73,7 @@ rules:
   resources:
   - podsecuritypolicies
   resourceNames:
-  - extensions.gardener.cloud:{{ .Values.serviceName }}:dns-controller-manager
+  - extensions.gardener.cloud.{{ .Values.serviceName }}.dns-controller-manager
   verbs:
   - use
 - apiGroups:
