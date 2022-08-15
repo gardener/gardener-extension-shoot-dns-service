@@ -89,16 +89,14 @@ func (f *shootDNSFramework) technicalShootId() string {
 
 func (f *shootDNSFramework) prepareClientsAndCluster() {
 	var err error
-	f.seedClient, err = kubernetes.NewClientFromFile("", f.config.SeedKubeconfig, kubernetes.WithClientOptions(
-		client.Options{
-			Scheme: kubernetes.SeedScheme,
-		}),
+	f.seedClient, err = kubernetes.NewClientFromFile("", f.config.SeedKubeconfig,
+		kubernetes.WithClientOptions(client.Options{Scheme: kubernetes.SeedScheme}),
+		kubernetes.WithDisabledCachedClient(),
 	)
 	framework.ExpectNoError(err)
-	f.shootClient, err = kubernetes.NewClientFromFile("", f.config.ShootKubeconfig, kubernetes.WithClientOptions(
-		client.Options{
-			Scheme: kubernetes.ShootScheme,
-		}),
+	f.shootClient, err = kubernetes.NewClientFromFile("", f.config.ShootKubeconfig,
+		kubernetes.WithClientOptions(client.Options{Scheme: kubernetes.ShootScheme}),
+		kubernetes.WithDisabledCachedClient(),
 	)
 	framework.ExpectNoError(err)
 
@@ -113,7 +111,7 @@ func (f *shootDNSFramework) prepareClientsAndCluster() {
 }
 
 func (f *shootDNSFramework) createNamespace(ctx context.Context, namespace string) *v1.Namespace {
-	f.Logger.Info("using namespace %s", namespace)
+	f.Logger.Info("Using namespace", "namespaceName", namespace)
 	ns := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: namespace,
@@ -127,12 +125,12 @@ func (f *shootDNSFramework) createNamespace(ctx context.Context, namespace strin
 }
 
 func (f *shootDNSFramework) deleteNamespaceAndWait(ctx context.Context, ns *v1.Namespace) {
-	f.Logger.Info("deleting namespace %s", ns.Name)
+	f.Logger.Info("Deleting namespace", "namespaceName", ns.Name)
 	err := f.shootClient.Client().Delete(ctx, ns)
 	framework.ExpectNoError(err)
 	err = f.WaitUntilNamespaceIsDeleted(ctx, f.shootClient, ns.Name)
 	framework.ExpectNoError(err)
-	f.Logger.Info("deleted namespace %s", ns.Name)
+	f.Logger.Info("Deleted namespace", "namespaceName", ns.Name)
 }
 
 func (f *shootDNSFramework) createEchoheaders(ctx context.Context, svcLB, delete bool,
@@ -165,7 +163,7 @@ func (f *shootDNSFramework) createEchoheaders(ctx context.Context, svcLB, delete
 	if delete {
 		f.deleteNamespaceAndWait(ctx, ns)
 	} else {
-		f.Logger.Info("no cleanup of namespace %s", ns.Name)
+		f.Logger.Info("No cleanup of namespace", "namespaceName", ns.Name)
 	}
 }
 
