@@ -19,6 +19,7 @@ import (
 	_ "embed"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/charts"
@@ -29,6 +30,7 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/imagevector"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 	"github.com/go-logr/logr"
+	"k8s.io/utils/pointer"
 
 	dnsv1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	"github.com/gardener/gardener/extensions/pkg/controller"
@@ -92,6 +94,7 @@ const (
 )
 
 // dnsAnnotationCRD contains the contents of the dnsAnnotationCRD.yaml file.
+//
 //go:embed dnsAnnotationCRD.yaml
 var dnsAnnotationCRD string
 
@@ -703,12 +706,45 @@ func (a *actuator) deleteManagedDNSEntries(ctx context.Context, ex *extensionsv1
 				return nil
 			}
 		}
+		details := a.collectProviderDetailsOnDeletingDNSEntries(ctx, list)
 		return &reconcilerutils.RequeueAfterError{
-			Cause:        fmt.Errorf("waiting until shoot DNS entries have been deleted"),
+			Cause:        fmt.Errorf("waiting until shoot DNS entries have been deleted: %s", details),
 			RequeueAfter: 15 * time.Second,
 		}
 	}
 	return nil
+}
+
+func (a *actuator) collectProviderDetailsOnDeletingDNSEntries(ctx context.Context, list []dnsv1alpha1.DNSEntry) string {
+	providers := sets.NewString()
+	for _, item := range list {
+		if item.DeletionTimestamp != nil && item.DeletionTimestamp.Time.Add(1*time.Minute).Before(time.Now()) {
+			if item.Status.Provider != nil {
+				providers.Insert(*item.Status.Provider)
+			} else {
+				providers.Insert("")
+			}
+		}
+	}
+	var status []string
+	for k := range providers {
+		if k == "" {
+			status = append(status, "no suitable provider")
+			continue
+		}
+		namespace, name := kutil.ParseObjectName(k)
+		if namespace == "" {
+			status = append(status, fmt.Sprintf("unknown provider name: %s", k))
+			continue
+		}
+		provider := &dnsv1alpha1.DNSProvider{}
+		if err := a.Client().Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, provider); err != nil {
+			status = append(status, fmt.Sprintf("error on retrieving status of provider %s: %s", k, err))
+			continue
+		}
+		status = append(status, fmt.Sprintf("provider %s has status: %s", name, pointer.StringDeref(provider.Status.Message, "unknwon")))
+	}
+	return strings.Join(status, ", ")
 }
 
 // deleteDNSProviders deletes the external and additional providers
