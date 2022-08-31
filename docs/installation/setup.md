@@ -49,23 +49,23 @@ providerConfig:
   values:
     image:
       ...
-  dnsControllerManager:
-    configuration:
-      cacheTtl: 300
-      controllers: dnscontrollers,dnssources
-      dnsPoolResyncPeriod: 30m
-      #poolSize: 20
-      #providersPoolResyncPeriod: 24h
-      serverPortHttp: 8080
-    createCRDs: false
-    deploy: true
-    replicaCount: 1
-    #resources:
-    #  limits:
-    #    memory: 1Gi
-    #  requests:
-    #    cpu: 50m
-    #    memory: 500Mi
+    dnsControllerManager:
+      configuration:
+        cacheTtl: 300
+        controllers: dnscontrollers,dnssources
+        dnsPoolResyncPeriod: 30m
+        #poolSize: 20
+        #providersPoolResyncPeriod: 24h
+        serverPortHttp: 8080
+      createCRDs: false
+      deploy: true
+      replicaCount: 1
+      #resources:
+      #  limits:
+      #    memory: 1Gi
+      #  requests:
+      #    cpu: 50m
+      #    memory: 500Mi
 ```
 
 ### Providing Base Domains usable for a Shoot
