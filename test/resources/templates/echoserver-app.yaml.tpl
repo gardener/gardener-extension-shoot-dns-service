@@ -96,8 +96,10 @@ spec:
         app: echoserver
     spec:
       containers:
-      - image: eu.gcr.io/gardener-project/3rd/hashicorp/http-echo:0.2.3
-        args: ["-listen=:8080", "-text='Hello World'"]
+      - image: registry.k8s.io/e2e-test-images/agnhost:2.40
+        args:
+        - test-webserver
+        - --port=8080
         name: echoserver
         ports:
         - containerPort: 8080
