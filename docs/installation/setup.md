@@ -11,9 +11,6 @@ for managed DNS names.
 
 ## Configuration
 
-A general description for configuring the DNS management of the
-gardener can be found [here](https://github.com/gardener/gardener/blob/master/docs/extensions/dns.md).
-
 To generally enable the DNS management for shoot objects the 
 `shoot-dns-service` extension must be registered by providing an
 appropriate [extension registration](https://github.com/gardener/gardener-extension-shoot-dns-service/blob/master/example/controller-registration.yaml) in the garden cluster.
@@ -21,7 +18,7 @@ appropriate [extension registration](https://github.com/gardener/gardener-extens
 Here it is possible to decide whether the extension should be always available
 for all shoots or whether the extension must be separately enabled per shoot.
 
-If the extension should be used for all shoots the registration must set the *globallyEnabled* flag to `true`.
+If the extension should be used for all shoots, the registration must set the *globallyEnabled* flag to `true`.
 
 ```yaml
 spec:
@@ -159,4 +156,3 @@ providerConfig:
     ownerDnsActivation:
       enabled: false
 ```
-
