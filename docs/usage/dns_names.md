@@ -92,7 +92,7 @@ spec:
 
 For an Ingress, the DNS names are already declared in the specification. Nevertheless the *dnsnames* annotation must be present. Here a subset of the DNS names of the ingress can be specified. If DNS names for all names are desired, the value `all` can be used.
 
-Keep in mind that ingress resources are ignored unless an ingress controller is set up. Gardener does not provide an ingress controller by default. See the [Kubernetes documentation](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/) and [Gardener documentation](https://github.com/gardener/documentation/blob/master/website/documentation/guides/applications/service-access/_index.md#loadbalancer-vs-ingress) for more details.
+Keep in mind that ingress resources are ignored unless an ingress controller is set up. Gardener does not provide an ingress controller by default. For more details, see [Ingress Controllers](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/) and [Service](https://kubernetes.io/docs/concepts/services-networking/service/) in the Kubernetes documentation.
 
 ### Request DNS records for service type LoadBalancer
 
@@ -239,7 +239,6 @@ Status of a erroneous `DNSEntry`.
 ```
 
 ## References
-- [DNSEntry and DNSProvider](https://github.com/gardener/gardener/blob/master/docs/extensions/dns.md)
 - [Understanding DNS](https://www.cloudflare.com/en-ca/learning/dns/what-is-dns)
 - [Kubernetes Internal DNS](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/)
 - [DNSEntry API (Golang)](https://github.com/gardener/external-dns-management/blob/master/pkg/apis/dns/v1alpha1/dnsentry.go)
