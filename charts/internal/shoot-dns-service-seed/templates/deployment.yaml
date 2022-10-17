@@ -62,6 +62,7 @@ spec:
           - --lease-resource-lock=leases
           resources:
 {{ toYaml .Values.resources | indent 12 }}
+      priorityClassName: gardener-system-200
       volumes:
       - name: kubeconfig
         projected:
