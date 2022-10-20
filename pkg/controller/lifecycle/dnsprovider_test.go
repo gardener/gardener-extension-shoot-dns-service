@@ -216,7 +216,7 @@ var _ = Describe("#DNSProvider", func() {
 				mc.EXPECT().Get(gomock.Any(), client.ObjectKeyFromObject(expected), gomock.AssignableToTypeOf(expected)).
 					Return(apierrors.NewNotFound(extensionsv1alpha1.Resource("dnsproviders"), expected.Name)),
 				mc.EXPECT().Get(gomock.Any(), client.ObjectKeyFromObject(expected), gomock.AssignableToTypeOf(expected)).
-					DoAndReturn(func(ctx context.Context, key client.ObjectKey, obj *dnsv1alpha1.DNSProvider) error {
+					DoAndReturn(func(ctx context.Context, key client.ObjectKey, obj *dnsv1alpha1.DNSProvider, opts ...client.GetOption) error {
 						expected.DeepCopyInto(obj)
 						return nil
 					}),
