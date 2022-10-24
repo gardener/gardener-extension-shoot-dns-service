@@ -47,6 +47,9 @@ providerConfig:
     image:
       ...
     dnsControllerManager:
+      image:
+        repository: eu.gcr.io/gardener-project/dns-controller-manager
+        tag: v0.13.3
       configuration:
         cacheTtl: 300
         controllers: dnscontrollers,dnssources
@@ -63,6 +66,8 @@ providerConfig:
       #  requests:
       #    cpu: 50m
       #    memory: 500Mi
+    dnsProviderManagement:
+      enabled: true
 ```
 
 ### Providing Base Domains usable for a Shoot
