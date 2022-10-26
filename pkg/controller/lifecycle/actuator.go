@@ -875,7 +875,7 @@ func (a *actuator) createOrUpdateManagedResource(ctx context.Context, namespace,
 	data := map[string][]byte{chartName: chart.Manifest()}
 	keepObjects := false
 	forceOverwriteAnnotations := false
-	return managedresources.Create(ctx, a.Client(), namespace, name, false, class, data, &keepObjects, injectedLabels, &forceOverwriteAnnotations)
+	return managedresources.Create(ctx, a.Client(), namespace, name, nil, false, class, data, &keepObjects, injectedLabels, &forceOverwriteAnnotations)
 }
 
 // seedSettingShootDNSEnabled returns true if the 'shoot dns' setting is enabled.

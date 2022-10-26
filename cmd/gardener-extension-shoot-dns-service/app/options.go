@@ -19,6 +19,7 @@ import (
 
 	dnsservicecmd "github.com/gardener/gardener-extension-shoot-dns-service/pkg/cmd"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
+	heartbeatcmd "github.com/gardener/gardener/extensions/pkg/controller/heartbeat/cmd"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 
 	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
@@ -36,6 +37,7 @@ type Options struct {
 	managerOptions               *controllercmd.ManagerOptions
 	lifecycleControllerOptions   *controllercmd.ControllerOptions
 	healthControllerOptions      *controllercmd.ControllerOptions
+	heartbeatControllerOptions   *heartbeatcmd.Options
 	replicationControllerOptions *controllercmd.ControllerOptions
 	controllerSwitches           *controllercmd.SwitchOptions
 	reconcileOptions             *controllercmd.ReconcilerOptions
@@ -64,6 +66,12 @@ func NewOptions() *Options {
 			// This is a default value.
 			MaxConcurrentReconciles: 5,
 		},
+		heartbeatControllerOptions: &heartbeatcmd.Options{
+			// This is a default value.
+			ExtensionName:        ExtensionName,
+			RenewIntervalSeconds: 30,
+			Namespace:            os.Getenv("LEADER_ELECTION_NAMESPACE"),
+		},
 		replicationControllerOptions: &controllercmd.ControllerOptions{
 			// This is a default value.
 			MaxConcurrentReconciles: 5,
@@ -81,6 +89,7 @@ func NewOptions() *Options {
 		controllercmd.PrefixOption("lifecycle-", options.lifecycleControllerOptions),
 		controllercmd.PrefixOption("healthcheck-", options.healthControllerOptions),
 		controllercmd.PrefixOption("replication-", options.replicationControllerOptions),
+		controllercmd.PrefixOption("heartbeat-", options.heartbeatControllerOptions),
 		options.controllerSwitches,
 		options.reconcileOptions,
 	)
