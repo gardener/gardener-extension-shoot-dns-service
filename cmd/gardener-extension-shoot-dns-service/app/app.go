@@ -24,6 +24,7 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/lifecycle"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/replication"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
+	"github.com/gardener/gardener/extensions/pkg/controller/heartbeat"
 
 	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
@@ -49,6 +50,10 @@ func NewServiceControllerCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := options.optionAggregator.Complete(); err != nil {
 				return fmt.Errorf("error completing options: %s", err)
+			}
+
+			if err := options.heartbeatControllerOptions.Validate(); err != nil {
+				return err
 			}
 			cmd.SilenceUsage = true
 			return options.run(cmd.Context())
@@ -99,6 +104,7 @@ func (o *Options) run(ctx context.Context) error {
 	o.lifecycleControllerOptions.Completed().Apply(&lifecycle.DefaultAddOptions.Controller)
 	o.replicationControllerOptions.Completed().Apply(&replication.DefaultAddOptions.Controller)
 	o.reconcileOptions.Completed().Apply(&lifecycle.DefaultAddOptions.IgnoreOperationAnnotation)
+	o.heartbeatControllerOptions.Completed().Apply(&heartbeat.DefaultAddOptions)
 
 	if err := o.controllerSwitches.Completed().AddToManager(mgr); err != nil {
 		return fmt.Errorf("could not add controllers to manager: %s", err)

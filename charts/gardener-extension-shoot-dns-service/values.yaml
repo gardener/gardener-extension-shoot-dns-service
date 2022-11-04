@@ -41,6 +41,8 @@ controllers:
     concurrentSyncs: 5
   healthcheck:
     concurrentSyncs: 5
+  heartbeat: 
+    renewIntervalSeconds: 30 
   replication:
     concurrentSyncs: 5
   ignoreOperationAnnotation: false
