@@ -8,6 +8,7 @@ metadata:
     chart: {{ template "service.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    high-availability-config.resources.gardener.cloud/type: controller
 spec:
   revisionHistoryLimit: 2
   replicas: {{ .Values.replicas }}
