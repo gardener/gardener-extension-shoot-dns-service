@@ -45,9 +45,6 @@ spec:
         {{- if .Values.dnsProviderReplication.enabled }}
         - --replicate-dns-providers
         {{- end }}
-        {{- if .Values.ownerDnsActivation.enabled }}
-        - --enable-owner-dns-activation
-        {{- end }}
         - --gardener-version={{ .Values.gardener.version }}
         {{- if .Values.remoteDefaultDomainSecret.enabled }}
         - --remote-default-domain-secret={{ .Release.Namespace }}/remote-default-domain

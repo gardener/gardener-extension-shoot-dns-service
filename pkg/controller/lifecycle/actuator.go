@@ -321,19 +321,6 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 		replicas = 0
 	}
 	shootActive := !common.IsMigrating(ex)
-	enableDNSActivation := shootActive && a.Config().OwnerDNSActivation
-	dnsActivationName := ""
-	ownerID := ""
-	if enableDNSActivation {
-		dnsActivationName, ownerID, err = extensions.GetOwnerNameAndID(ctx, a.Client(), namespace, cluster.Shoot.Name)
-		if err != nil {
-			return err
-		}
-		if dnsActivationName == "" {
-			shootActive = false // owner should not be active if owner DNSRecord is not found
-			enableDNSActivation = false
-		}
-	}
 
 	chartValues := map[string]interface{}{
 		"serviceName":                      service.ServiceName,
@@ -348,11 +335,6 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 		},
 		"dnsOwner":    a.OwnerName(namespace),
 		"shootActive": shootActive,
-		"dnsActivation": map[string]interface{}{
-			"enabled": enableDNSActivation,
-			"dnsName": dnsActivationName,
-			"value":   ownerID,
-		},
 	}
 
 	if err := gutil.NewShootAccessSecret(service.ShootAccessSecretName, namespace).Reconcile(ctx, a.Client()); err != nil {

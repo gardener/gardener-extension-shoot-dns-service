@@ -136,28 +136,3 @@ spec:
           enabled: true
 ...
 ```
-
-### DNSActivation for DNSOwner
-
-To support migration of the control plane of shoots, the `DNSOwner` created and used for all `DNSEntries` created by the
-Shoot-DNS-Service can optionally be activated and deactivated by a DNS record.
-If the DNSActivation feature is enabled, the `DNSOwner` will be only be active if the value of the owner DNS record 
-managed by Gardener matches the cluster identity of the seed hosting the control plane.
-This feature must only be enabled if the Gardener feature gate `UseDNSRecords` is enabled for all seeds. 
-
-By default this feature is enabled and can be disabled in the controller deployment:
-
-```yaml
-apiVersion: core.gardener.cloud/v1beta1
-kind: ControllerDeployment
-metadata:
-  name: extension-shoot-dns-service
-type: helm
-providerConfig:
-  chart: ...
-  values:
-    image:
-      ...
-    ownerDnsActivation:
-      enabled: false
-```
