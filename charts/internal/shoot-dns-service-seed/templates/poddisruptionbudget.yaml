@@ -5,12 +5,14 @@ apiVersion: policy/v1beta1
 {{- end }}
 kind: PodDisruptionBudget
 metadata:
-  name: {{ include "name" . }}
+  name: {{ template "service.name" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-{{ include "labels" . | indent 4 }}
+    app: {{ template "service.name" . }}
+    release: {{ .Release.Name }}
 spec:
   maxUnavailable: 1
   selector:
     matchLabels:
-{{ include "labels" . | indent 6 }}
+      app: {{ template "service.name" . }}
+      release: {{ .Release.Name }}

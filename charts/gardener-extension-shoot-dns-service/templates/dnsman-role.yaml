@@ -17,7 +17,7 @@ rules:
 - apiGroups:
   - coordination.k8s.io
   resources:
-   - leases
+  - leases
   resourceNames:
   - dns-controller-manager-controllers
   verbs:

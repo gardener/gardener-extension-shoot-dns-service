@@ -69,20 +69,20 @@ rules:
   - delete
   - deletecollection
 - apiGroups:
-    - "dns.gardener.cloud"
+  - "dns.gardener.cloud"
   resources:
-    - "dnsowners"
+  - "dnsowners"
   verbs:
-    - get
-    - list
+  - get
+  - list
 - apiGroups:
     - "extensions.gardener.cloud"
   resources:
     - "dnsrecords"
   verbs:
-    - get
-    - list
-    - watch
+  - get
+  - list
+  - watch
 - apiGroups:
   - ""
   resources:
@@ -90,23 +90,35 @@ rules:
   verbs:
   - "*"
 - apiGroups:
-    - coordination.k8s.io
+  - coordination.k8s.io
   resources:
-    - leases
+  - leases
   verbs:
-    - create
-    - list
-    - watch
+  - create
+  - list
+  - watch
 - apiGroups:
-    - coordination.k8s.io
+  - coordination.k8s.io
   resources:
-    - leases
+  - leases
   resourceNames:
-    - {{ include "leaderelectionid" . }}
-    - gardener-extension-heartbeat
+  - {{ include "leaderelectionid" . }}
+  - gardener-extension-heartbeat
   verbs:
-    - update
-    - get
+  - update
+  - get
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - patch
+  - update
+  - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
