@@ -134,7 +134,6 @@ spec:
         - --ignore-operation-annotation=true
         - --seed-id=0815
         - --dns-class=garden
-        - --enable-owner-dns-activation
         env:
         - name: LEADER_ELECTION_NAMESPACE
           valueFrom:

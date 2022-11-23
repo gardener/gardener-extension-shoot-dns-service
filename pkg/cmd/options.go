@@ -38,7 +38,6 @@ type DNSServiceOptions struct {
 	DNSClass                  string
 	ManageDNSProviders        bool
 	ReplicateDNSProviders     bool
-	OwnerDNSActivation        bool
 	RemoteDefaultDomainSecret string
 	config                    *DNSServiceConfig
 }
@@ -55,7 +54,6 @@ func (o *DNSServiceOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.DNSClass, "dns-class", "garden", "DNS class used to filter DNS source resources in shoot clusters")
 	fs.BoolVar(&o.ManageDNSProviders, "manage-dns-providers", false, "enables management of DNSProviders in control plane (must only be enable if Gardenlet has disabled it)")
 	fs.BoolVar(&o.ReplicateDNSProviders, "replicate-dns-providers", false, "enables replication of DNSProviders from shoot cluster to seed cluster")
-	fs.BoolVar(&o.OwnerDNSActivation, "enable-owner-dns-activation", false, "enables DNS activation of the shootdns DNSOwner")
 	fs.StringVar(&o.RemoteDefaultDomainSecret, "remote-default-domain-secret", "", "secret name for default 'external' DNSProvider DNS class used to filter DNS source resources in shoot clusters")
 }
 
@@ -83,7 +81,6 @@ func (o *DNSServiceOptions) Complete() error {
 		DNSClass:                  o.DNSClass,
 		ManageDNSProviders:        o.ManageDNSProviders,
 		ReplicateDNSProviders:     o.ReplicateDNSProviders,
-		OwnerDNSActivation:        o.OwnerDNSActivation,
 		RemoteDefaultDomainSecret: remoteDefaultDomainSecret,
 	}
 	return nil
@@ -111,7 +108,6 @@ type DNSServiceConfig struct {
 	DNSClass                  string
 	ManageDNSProviders        bool
 	ReplicateDNSProviders     bool
-	OwnerDNSActivation        bool
 	RemoteDefaultDomainSecret *types.NamespacedName
 }
 
@@ -121,7 +117,6 @@ func (c *DNSServiceConfig) Apply(cfg *config.DNSServiceConfig) {
 	cfg.DNSClass = c.DNSClass
 	cfg.ReplicateDNSProviders = c.ReplicateDNSProviders
 	cfg.ManageDNSProviders = c.ManageDNSProviders
-	cfg.OwnerDNSActivation = c.OwnerDNSActivation
 	cfg.RemoteDefaultDomainSecret = c.RemoteDefaultDomainSecret
 }
 

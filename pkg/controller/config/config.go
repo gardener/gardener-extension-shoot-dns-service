@@ -29,5 +29,4 @@ type DNSServiceConfig struct {
 	RemoteDefaultDomainSecret *types.NamespacedName
 	ManageDNSProviders        bool
 	ReplicateDNSProviders     bool
-	OwnerDNSActivation        bool
 }

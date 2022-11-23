@@ -10,8 +10,3 @@ metadata:
 spec:
   ownerId: {{ .Values.shootId }}-shootdns
   active: {{ .Values.shootActive }}
-  {{- if .Values.dnsActivation.enabled }}
-  dnsActivation:
-    dnsName:   {{ .Values.dnsActivation.dnsName }}
-    value:     {{ .Values.dnsActivation.value }}
-  {{- end }}

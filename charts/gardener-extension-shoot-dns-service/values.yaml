@@ -12,9 +12,6 @@ dnsProviderReplication:
 dnsProviderManagement:
   enabled: true
 
-ownerDnsActivation:
-  enabled: true
-
 gardener:
   version: ""
   garden:

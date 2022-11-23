@@ -18,11 +18,6 @@ seedId: "3141"
 dnsClass: ""
 shootActive: true
 
-dnsActivation:
-  enabled: false
-#  dnsName: shoot.foo.bar.com
-#  value: my-cluster-id
-
 dnsProviderReplication:
   enabled: false
 
