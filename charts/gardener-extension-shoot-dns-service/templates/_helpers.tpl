@@ -25,6 +25,5 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 {{- define "dnsmanLabels" -}}
 app.kubernetes.io/name: gardener-extension-{{ .Values.serviceName }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/component: dns-controller-manager
+app.kubernetes.io/instance: dns-controller-manager
 {{- end -}}
