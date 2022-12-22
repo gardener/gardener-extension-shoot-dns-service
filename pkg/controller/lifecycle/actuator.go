@@ -52,7 +52,6 @@ import (
 	gutil "github.com/gardener/gardener/pkg/utils/gardener"
 	kutil "github.com/gardener/gardener/pkg/utils/kubernetes"
 	"github.com/gardener/gardener/pkg/utils/managedresources"
-	versionutils "github.com/gardener/gardener/pkg/utils/version"
 	"github.com/hashicorp/go-multierror"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
@@ -557,7 +556,7 @@ func lookupReference(resources []gardencorev1beta1.NamedResourceReference, secre
 	return "", fmt.Errorf("dns provider[%d] secretName %s not found in referenced resources", index, *secretName)
 }
 
-func (a *actuator) prepareDefaultExternalDNSProvider(ctx context.Context, dnsconfig *apisservice.DNSConfig, namespace string, cluster *controller.Cluster) (*apisservice.DNSProvider, error) {
+func (a *actuator) prepareDefaultExternalDNSProvider(ctx context.Context, _ *apisservice.DNSConfig, namespace string, cluster *controller.Cluster) (*apisservice.DNSProvider, error) {
 	for _, provider := range cluster.Shoot.Spec.DNS.Providers {
 		if provider.Primary != nil && *provider.Primary {
 			return nil, nil
@@ -737,18 +736,6 @@ func (a *actuator) deleteDNSProviders(ctx context.Context, log logr.Logger, name
 		return err
 	}
 
-	// TODO: can be removed in release >= v1.20 as external DNS provider is marked as additional provider now
-	dnsProviders[ExternalDNSProviderName] = component.OpDestroy(NewProviderDeployWaiter(
-		log,
-		a.Client(),
-		&dnsv1alpha1.DNSProvider{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      ExternalDNSProviderName,
-				Namespace: namespace,
-			},
-		},
-	))
-
 	return a.deployDNSProviders(ctx, dnsProviders)
 }
 
@@ -770,10 +757,8 @@ func (a *actuator) cleanupShootDNSEntries(helper *common.ShootDNSEntriesHelper) 
 }
 
 func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *apisservice.DNSConfig, cluster *controller.Cluster, namespace string) error {
-	k8sVersionLessThan116, _ := versionutils.CompareVersions(cluster.Shoot.Spec.Kubernetes.Version, "<", "1.16")
-
 	crd := &unstructured.Unstructured{}
-	// assuming k8s version of seed is always >= 1.16
+	// assuming k8s version of seed is always >= 1.20
 	crd.SetAPIVersion(apiextensionsv1.SchemeGroupVersion.String())
 	crd.SetKind("CustomResourceDefinition")
 	if err := a.Client().Get(ctx, client.ObjectKey{Name: "dnsentries.dns.gardener.cloud"}, crd); err != nil {
@@ -799,12 +784,6 @@ func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *
 		}
 		cleanCRD(crd3)
 		objs = append(objs, crd3)
-	}
-	if k8sVersionLessThan116 {
-		objs, err = a.convertToV1beta1(objs)
-		if err != nil {
-			return err
-		}
 	}
 
 	if err = managedresources.CreateFromUnstructured(ctx, a.Client(), namespace, KeptShootResourcesName, false, "", objs, true, nil); err != nil {

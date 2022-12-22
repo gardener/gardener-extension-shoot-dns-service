@@ -25,7 +25,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver"
 	"github.com/gardener/gardener-extension-shoot-dns-service/test/resources/templates"
 	"github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/pkg/client/kubernetes"
@@ -73,7 +72,7 @@ type shootDNSFramework struct {
 	cluster     *extensions.Cluster
 }
 
-func newShootDNSFramework(cfg *framework.CommonConfig) *shootDNSFramework {
+func newShootDNSFramework(_ *framework.CommonConfig) *shootDNSFramework {
 	return &shootDNSFramework{
 		CommonFramework: framework.NewCommonFramework(&framework.CommonConfig{
 			ResourceDir: "../resources",
@@ -142,16 +141,13 @@ func (f *shootDNSFramework) createEchoheaders(ctx context.Context, svcLB, delete
 	namespace := fmt.Sprintf("shootdns-test-echoserver-%s", suffix)
 	ns := f.createNamespace(ctx, namespace)
 
-	old, err := semverCompare("< 1.19", f.shootClient.Version())
-	framework.ExpectNoError(err)
 	values := map[string]interface{}{
 		"EchoName":                fmt.Sprintf("echo-%s", suffix),
 		"Namespace":               namespace,
 		"ShootDnsName":            *f.cluster.Shoot.Spec.DNS.Domain,
 		"ServiceTypeLoadBalancer": svcLB,
-		"OldIngress":              old,
 	}
-	err = f.RenderAndDeployTemplate(ctx, f.shootClient, templates.EchoserverApp, values)
+	err := f.RenderAndDeployTemplate(ctx, f.shootClient, templates.EchoserverApp, values)
 	framework.ExpectNoError(err)
 
 	domainName := fmt.Sprintf("%s.%s", values["EchoName"], values["ShootDnsName"])
@@ -259,18 +255,4 @@ func lookupHost(host, dnsServer string) ([]string, error) {
 		},
 	}
 	return r.LookupHost(context.Background(), host)
-}
-
-func semverCompare(constraint, version string) (bool, error) {
-	c, err := semver.NewConstraint(constraint)
-	if err != nil {
-		return false, err
-	}
-
-	v, err := semver.NewVersion(version)
-	if err != nil {
-		return false, err
-	}
-
-	return c.Check(v), nil
 }

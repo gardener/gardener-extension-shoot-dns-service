@@ -38,25 +38,6 @@ spec:
   selector:
     app: echoserver
 ---
-{{- if .OldIngress }}
-apiVersion: networking.k8s.io/v1beta1
-kind: Ingress
-metadata:
-  annotations:
-    dns.gardener.cloud/dnsnames: '*'
-    dns.gardener.cloud/class: garden
-  name: echoserver
-  namespace: {{ .Namespace }}
-spec:
-  rules:
-    - host: {{ .EchoName }}.{{ .ShootDnsName }}
-      http:
-        paths:
-          - backend:
-              serviceName: echoserver
-              servicePort: 80
-            path: /
-{{- else }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -77,7 +58,6 @@ spec:
                   number: 80
             path: /
             pathType: Prefix
-{{- end }}
 {{- end }}
 ---
 apiVersion: apps/v1
