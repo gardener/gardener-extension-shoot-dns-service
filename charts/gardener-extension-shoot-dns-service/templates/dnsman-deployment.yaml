@@ -5,6 +5,8 @@ kind: Deployment
 metadata:
   name: dns-controller-manager
   namespace: {{ .Release.Namespace }}
+  annotations:
+    resources.gardener.cloud/delete-on-invalid-update: "true"
   labels:
 {{ include "dnsmanLabels" . | indent 4 }}
     high-availability-config.resources.gardener.cloud/type: server
