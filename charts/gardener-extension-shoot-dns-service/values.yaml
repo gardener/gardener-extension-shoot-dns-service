@@ -62,7 +62,7 @@ remoteDefaultDomainSecret:
 #    tls.key: LS0tLS1...
 
 dnsControllerManager:
-  deploy: false
+  deploy: true
   image:
     repository: eu.gcr.io/gardener-project/dns-controller-manager
     tag: latest
