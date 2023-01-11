@@ -17,7 +17,7 @@ gardener:
   garden:
     clusterIdentity: garden
   seed:
-    identity: ""
+    identity: "test-id"
 
 leaderElection:
   resourceLock: leases
@@ -65,7 +65,7 @@ dnsControllerManager:
   deploy: true
   image:
     repository: eu.gcr.io/gardener-project/dns-controller-manager
-    tag: "v0.14.2" # marker-for-image-tag-dns-controller-manager (please keep this comment for automated update by set_dependency_version_dnsman)
+    tag: latest
     pullPolicy: IfNotPresent
 
   replicaCount: 1
