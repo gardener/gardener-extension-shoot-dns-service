@@ -1,0 +1,13 @@
+apiVersion: fluentbit.fluent.io/v1alpha2
+kind: ClusterFilter
+metadata:
+  labels:
+    fluentbit.gardener/type: "seed"
+  name: shoot-dns-service-shoot-dns-service
+spec:
+  filters:
+  - parser:
+      keyName: log
+      parser: shoot-dns-service-parser
+      reserveData: true
+  match: kubernetes.*shoot-dns-service*shoot-dns-service*
