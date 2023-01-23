@@ -159,12 +159,9 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ex *extension
 		}
 	}
 
-	// Shoots that don't specify a DNS domain or that are scheduled to a seed that is tainted with "DNS disabled"
-	// don't get an DNS service
-
-	if !seedSettingShootDNSEnabled(cluster.Seed.Spec.Settings) ||
-		cluster.Shoot.Spec.DNS == nil {
-		log.Info("DNS domain is not specified, the seed .spec.settings.shootDNS.enabled=false, therefore no shoot dns service is installed", "shoot", ex.Namespace)
+	// Shoots that don't specify a DNS domain don't get an DNS service
+	if cluster.Shoot.Spec.DNS == nil {
+		log.Info("DNS domain is not specified, therefore no shoot dns service is installed", "shoot", ex.Namespace)
 		return a.Delete(ctx, log, ex)
 	}
 
@@ -416,7 +413,7 @@ func (a *actuator) addCleanupOfOldAdditionalProviders(dnsProviders map[string]co
 	for _, provider := range providerList.Items {
 		if _, ok := dnsProviders[provider.Name]; !ok {
 			p := provider
-			dnsProviders[provider.Name] = component.OpDestroy(NewProviderDeployWaiter(
+			dnsProviders[provider.Name] = component.OpDestroyAndWait(NewProviderDeployWaiter(
 				log,
 				a.Client(),
 				&p,
@@ -432,7 +429,7 @@ func (a *actuator) addCleanupOfOldAdditionalProviders(dnsProviders map[string]co
 			kutil.Key(namespace, ExternalDNSProviderName),
 			provider,
 		); err == nil {
-			dnsProviders[provider.Name] = component.OpDestroy(NewProviderDeployWaiter(
+			dnsProviders[provider.Name] = component.OpDestroyAndWait(NewProviderDeployWaiter(
 				log,
 				a.Client(),
 				provider,
@@ -454,7 +451,7 @@ func (a *actuator) deployDNSProviders(ctx context.Context, dnsProviders map[stri
 		if p != nil {
 			deployWaiter := p
 			fns = append(fns, func(ctx context.Context) error {
-				return component.OpWaiter(deployWaiter).Deploy(ctx)
+				return component.OpWait(deployWaiter).Deploy(ctx)
 			})
 		}
 	}
@@ -837,11 +834,6 @@ func (a *actuator) createOrUpdateManagedResource(ctx context.Context, namespace,
 	keepObjects := false
 	forceOverwriteAnnotations := false
 	return managedresources.Create(ctx, a.Client(), namespace, name, nil, false, class, data, &keepObjects, injectedLabels, &forceOverwriteAnnotations)
-}
-
-// seedSettingShootDNSEnabled returns true if the 'shoot dns' setting is enabled.
-func seedSettingShootDNSEnabled(settings *gardencorev1beta1.SeedSettings) bool {
-	return settings == nil || settings.ShootDNS == nil || settings.ShootDNS.Enabled
 }
 
 func (a *actuator) OwnerName(namespace string) string {
