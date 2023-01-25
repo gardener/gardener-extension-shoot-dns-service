@@ -3,3 +3,5 @@
 "$(dirname $0)"/../vendor/github.com/gardener/gardener/hack/.ci/set_dependency_version
 
 "$(dirname $0)"/../hack/.ci/set_dependency_version_dnsman
+
+make generate
