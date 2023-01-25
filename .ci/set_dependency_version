@@ -4,4 +4,16 @@
 
 "$(dirname $0)"/../hack/.ci/set_dependency_version_dnsman
 
-make generate
+## need to update example/controller-registration.yaml
+## as 'make generate' is not possible easily, we hav some duplicate steps here
+
+# download helm
+curl -sSfL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | HELM_INSTALL_DIR=/tmp USE_SUDO=false VERIFY_CHECKSUM=false bash -s -- --version v3.6.3
+export PATH=/tmp:$PATH
+
+# install gnutar
+apk add tar
+
+# generate example/controller-registration.yaml
+cd charts/gardener-extension-shoot-dns-service
+../../vendor/github.com/gardener/gardener/hack/generate-controller-registration.sh extension-shoot-dns-service . $(cat ../../VERSION) ../../example/controller-registration.yaml Extension:shoot-dns-service
