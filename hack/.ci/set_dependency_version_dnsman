@@ -29,7 +29,7 @@ values_file = pathlib.Path(
 )
 temp_file = values_file.parent.joinpath('~values.yaml.tmp~')
 
-if dependency_name == 'external-dns-management':
+if dependency_name == 'github.com/gardener/external-dns-management':
   print(f'updating tag for dnsControllerManager to "{dependency_version}"')
   with open(temp_file, 'w') as fout:
     with open(values_file, 'r') as fin:
