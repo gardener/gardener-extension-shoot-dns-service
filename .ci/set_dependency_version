@@ -15,5 +15,5 @@ export PATH=/tmp:$PATH
 apk add tar
 
 # generate example/controller-registration.yaml
-cd charts/gardener-extension-shoot-dns-service
+cd "$(dirname $0)"/../charts/gardener-extension-shoot-dns-service
 ../../vendor/github.com/gardener/gardener/hack/generate-controller-registration.sh extension-shoot-dns-service . $(cat ../../VERSION) ../../example/controller-registration.yaml Extension:shoot-dns-service
