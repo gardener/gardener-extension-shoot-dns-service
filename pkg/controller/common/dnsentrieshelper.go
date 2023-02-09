@@ -20,12 +20,11 @@ import (
 	"context"
 	"fmt"
 
+	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	"github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 )
 
 ////////////////////////////////////////////////////////////////////////////////

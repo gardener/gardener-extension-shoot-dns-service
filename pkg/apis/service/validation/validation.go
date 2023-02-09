@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gardener/gardener/pkg/apis/core"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service"
 	service2 "github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
-	"github.com/gardener/gardener/pkg/apis/core"
-
-	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 var supportedProviderTypes = []string{

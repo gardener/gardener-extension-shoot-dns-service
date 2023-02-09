@@ -15,9 +15,9 @@
 package cmd
 
 import (
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/mutator"
 	webhookcmd "github.com/gardener/gardener/extensions/pkg/webhook/cmd"
 
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/mutator"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/validator"
 )
 

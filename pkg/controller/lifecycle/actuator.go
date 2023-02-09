@@ -22,16 +22,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gardener/gardener-extension-shoot-dns-service/charts"
-	apisservice "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/validation"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/common"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/imagevector"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
-	"github.com/go-logr/logr"
-	"k8s.io/utils/pointer"
-
 	dnsv1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	"github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
@@ -52,6 +42,7 @@ import (
 	gutil "github.com/gardener/gardener/pkg/utils/gardener"
 	kutil "github.com/gardener/gardener/pkg/utils/kubernetes"
 	"github.com/gardener/gardener/pkg/utils/managedresources"
+	"github.com/go-logr/logr"
 	"github.com/hashicorp/go-multierror"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
@@ -66,7 +57,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/gardener-extension-shoot-dns-service/charts"
+	apisservice "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/validation"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/common"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/imagevector"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 )
 
 const (

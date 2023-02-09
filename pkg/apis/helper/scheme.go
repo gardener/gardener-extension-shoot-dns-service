@@ -19,11 +19,10 @@ package helper
 import (
 	"fmt"
 
+	extapi "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-
-	extapi "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 
 	api "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/install"

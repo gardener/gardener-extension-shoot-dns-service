@@ -17,11 +17,11 @@
 package install
 
 import (
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/v1alpha1"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/v1alpha1"
 )
 
 var (

@@ -19,10 +19,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/healthcheck"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/lifecycle"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/replication"
 	healthcheckconfig "github.com/gardener/gardener/extensions/pkg/apis/config"
 	"github.com/gardener/gardener/extensions/pkg/controller/cmd"
 	extensionshealthcheckcontroller "github.com/gardener/gardener/extensions/pkg/controller/healthcheck"
@@ -30,6 +26,11 @@ import (
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/healthcheck"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/lifecycle"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/replication"
 )
 
 // DNSServiceOptions holds options related to the dns service.

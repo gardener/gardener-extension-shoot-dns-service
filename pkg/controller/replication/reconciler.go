@@ -21,14 +21,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/common"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
-	"k8s.io/apimachinery/pkg/util/wait"
-
 	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	extapi "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/common"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 )
 
 type reconciler struct {

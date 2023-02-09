@@ -21,15 +21,15 @@ import (
 	"strings"
 	"sync"
 
+	extensionswebhook "github.com/gardener/gardener/extensions/pkg/webhook"
+	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/common"
 	servicev1alpha1 "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/v1alpha1"
 	pkgservice "github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
-	extensionswebhook "github.com/gardener/gardener/extensions/pkg/webhook"
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"k8s.io/apimachinery/pkg/runtime"
-
-	autoscalingv1 "k8s.io/api/autoscaling/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // NewShootMutator returns a new instance of a shoot mutator.

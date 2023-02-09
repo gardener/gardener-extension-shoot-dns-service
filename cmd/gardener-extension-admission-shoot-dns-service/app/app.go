@@ -19,6 +19,11 @@ import (
 	"fmt"
 	"os"
 
+	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
+	"github.com/gardener/gardener/extensions/pkg/util"
+	webhookcmd "github.com/gardener/gardener/extensions/pkg/webhook/cmd"
+	"github.com/gardener/gardener/pkg/apis/core/install"
+	gardenerhealthz "github.com/gardener/gardener/pkg/healthz"
 	"github.com/spf13/cobra"
 	componentbaseconfig "k8s.io/component-base/config"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -28,11 +33,6 @@ import (
 
 	admissioncmd "github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/cmd"
 	serviceinstall "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/install"
-	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
-	"github.com/gardener/gardener/extensions/pkg/util"
-	webhookcmd "github.com/gardener/gardener/extensions/pkg/webhook/cmd"
-	"github.com/gardener/gardener/pkg/apis/core/install"
-	gardenerhealthz "github.com/gardener/gardener/pkg/healthz"
 )
 
 var log = logf.Log.WithName("gardener-extension-admission-shoot-dns-service")

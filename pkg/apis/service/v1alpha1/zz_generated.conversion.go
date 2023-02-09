@@ -24,9 +24,10 @@ package v1alpha1
 import (
 	unsafe "unsafe"
 
-	service "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+
+	service "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service"
 )
 
 func init() {

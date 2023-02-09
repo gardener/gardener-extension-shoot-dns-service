@@ -17,12 +17,12 @@ package app
 import (
 	"os"
 
-	dnsservicecmd "github.com/gardener/gardener-extension-shoot-dns-service/pkg/cmd"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
+	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
 	heartbeatcmd "github.com/gardener/gardener/extensions/pkg/controller/heartbeat/cmd"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 
-	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
+	dnsservicecmd "github.com/gardener/gardener-extension-shoot-dns-service/pkg/cmd"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 )
 
 // ExtensionName is the name of the extension.

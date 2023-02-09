@@ -18,16 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	serviceinstall "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/install"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/healthcheck"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/lifecycle"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/replication"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
-	"github.com/gardener/gardener/extensions/pkg/controller/heartbeat"
-
 	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
+	"github.com/gardener/gardener/extensions/pkg/controller/heartbeat"
 	"github.com/gardener/gardener/extensions/pkg/util"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -36,6 +29,13 @@ import (
 	componentbaseconfig "k8s.io/component-base/config"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	serviceinstall "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/install"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/healthcheck"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/lifecycle"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/replication"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 )
 
 // NewServiceControllerCommand creates a new command that is used to start the DNS Service controller.
