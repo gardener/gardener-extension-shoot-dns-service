@@ -15,10 +15,10 @@
 package v1alpha1
 
 import (
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 )
 
 const (
@@ -56,6 +56,9 @@ const (
 	// ManagedBy is a constant for a label on an object managed by a ManagedResource.
 	// It is set by the ManagedResource controller depending on its configuration. By default it is set to "gardener".
 	ManagedBy = "resources.gardener.cloud/managed-by"
+
+	// GardenerManager is a constant for the default value of the 'ManagedBy' label.
+	GardenerManager = "gardener"
 
 	// StaticTokenSkip is a constant for a label on a ServiceAccount which indicates that this ServiceAccount should not
 	// be considered by this controller.
@@ -117,6 +120,9 @@ const (
 	// HighAvailabilityConfigZones is a constant for an annotation on a Namespace which describes the availability
 	// zones are used.
 	HighAvailabilityConfigZones = "high-availability-config.resources.gardener.cloud/zones"
+	// HighAvailabilityConfigZonePinning is a constant for an annotation on a Namespace which enables pinning of
+	// workload to the specified zones.
+	HighAvailabilityConfigZonePinning = "high-availability-config.resources.gardener.cloud/zone-pinning"
 	// HighAvailabilityConfigType is a constant for a label on a resource which describes which component type it is.
 	HighAvailabilityConfigType = "high-availability-config.resources.gardener.cloud/type"
 	// HighAvailabilityConfigTypeController is a constant for a label value on a resource describing it's a controller.
@@ -131,6 +137,10 @@ const (
 	// SeccompProfileSkip is a constant for a label on a Pod which indicates that this Pod should not be considered for
 	// defaulting of its seccomp profile.
 	SeccompProfileSkip = "seccompprofile.resources.gardener.cloud/skip"
+
+	// SystemComponentsConfigSkip is a constant for a label on a Pod which indicates that this Pod should not be considered for
+	// adding default node selector and tolerations.
+	SystemComponentsConfigSkip = "system-components-config.resources.gardener.cloud/skip"
 
 	// PodTopologySpreadConstraintsSkip is a constant for a label on a Pod which indicates that this Pod should not be considered for
 	// adding the pod-template-hash selector to the topology spread constraint.

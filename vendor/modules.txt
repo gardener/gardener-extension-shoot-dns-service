@@ -71,7 +71,7 @@ github.com/gardener/etcd-druid/api/v1alpha1
 ## explicit; go 1.19
 github.com/gardener/external-dns-management/pkg/apis/dns
 github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1
-# github.com/gardener/gardener v1.62.1
+# github.com/gardener/gardener v1.63.1
 ## explicit; go 1.19
 github.com/gardener/gardener/.github
 github.com/gardener/gardener/.github/ISSUE_TEMPLATE
@@ -154,6 +154,7 @@ github.com/gardener/gardener/pkg/utils/retry
 github.com/gardener/gardener/pkg/utils/retry/fake
 github.com/gardener/gardener/pkg/utils/secrets
 github.com/gardener/gardener/pkg/utils/secrets/manager
+github.com/gardener/gardener/pkg/utils/sets
 github.com/gardener/gardener/pkg/utils/test
 github.com/gardener/gardener/pkg/utils/test/matchers
 github.com/gardener/gardener/pkg/utils/timewindow
@@ -163,6 +164,7 @@ github.com/gardener/gardener/test/framework/config
 github.com/gardener/gardener/test/framework/reporter
 github.com/gardener/gardener/test/testmachinery/extensions/healthcheck
 github.com/gardener/gardener/test/testmachinery/extensions/operation
+github.com/gardener/gardener/test/utils/shoots/access
 # github.com/gardener/hvpa-controller/api v0.5.0
 ## explicit; go 1.15
 github.com/gardener/hvpa-controller/api/v1alpha1
@@ -780,7 +782,6 @@ k8s.io/apimachinery/third_party/forked/golang/reflect
 ## explicit; go 1.19
 k8s.io/apiserver/pkg/apis/config
 k8s.io/apiserver/pkg/apis/config/v1
-k8s.io/apiserver/pkg/authentication/user
 # k8s.io/autoscaler/vertical-pod-autoscaler v0.12.0
 ## explicit; go 1.19
 k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1
@@ -907,9 +908,11 @@ k8s.io/client-go/tools/record
 k8s.io/client-go/tools/record/util
 k8s.io/client-go/tools/reference
 k8s.io/client-go/tools/remotecommand
+k8s.io/client-go/tools/watch
 k8s.io/client-go/transport
 k8s.io/client-go/transport/spdy
 k8s.io/client-go/util/cert
+k8s.io/client-go/util/certificate/csr
 k8s.io/client-go/util/connrotation
 k8s.io/client-go/util/exec
 k8s.io/client-go/util/flowcontrol
