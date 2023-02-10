@@ -17,11 +17,11 @@
 package common
 
 import (
+	v1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	v1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	api "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis"
 )
 

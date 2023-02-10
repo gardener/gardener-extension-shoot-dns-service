@@ -24,9 +24,6 @@ package v1alpha1
 import (
 	unsafe "unsafe"
 
-	core "github.com/gardener/gardener/pkg/apis/core"
-	v1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	config "github.com/gardener/gardener/pkg/gardenlet/apis/config"
 	corev1 "k8s.io/api/core/v1"
 	resource "k8s.io/apimachinery/pkg/api/resource"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,6 +31,10 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	componentbaseconfig "k8s.io/component-base/config"
 	configv1alpha1 "k8s.io/component-base/config/v1alpha1"
+
+	core "github.com/gardener/gardener/pkg/apis/core"
+	v1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	config "github.com/gardener/gardener/pkg/gardenlet/apis/config"
 )
 
 func init() {
@@ -1540,6 +1541,7 @@ func autoConvert_v1alpha1_ShootCareControllerConfiguration_To_config_ShootCareCo
 	out.ConcurrentSyncs = (*int)(unsafe.Pointer(in.ConcurrentSyncs))
 	out.SyncPeriod = (*v1.Duration)(unsafe.Pointer(in.SyncPeriod))
 	out.StaleExtensionHealthChecks = (*config.StaleExtensionHealthChecks)(unsafe.Pointer(in.StaleExtensionHealthChecks))
+	out.ManagedResourceProgressingThreshold = (*v1.Duration)(unsafe.Pointer(in.ManagedResourceProgressingThreshold))
 	out.ConditionThresholds = *(*[]config.ConditionThreshold)(unsafe.Pointer(&in.ConditionThresholds))
 	out.WebhookRemediatorEnabled = (*bool)(unsafe.Pointer(in.WebhookRemediatorEnabled))
 	return nil
@@ -1554,6 +1556,7 @@ func autoConvert_config_ShootCareControllerConfiguration_To_v1alpha1_ShootCareCo
 	out.ConcurrentSyncs = (*int)(unsafe.Pointer(in.ConcurrentSyncs))
 	out.SyncPeriod = (*v1.Duration)(unsafe.Pointer(in.SyncPeriod))
 	out.StaleExtensionHealthChecks = (*StaleExtensionHealthChecks)(unsafe.Pointer(in.StaleExtensionHealthChecks))
+	out.ManagedResourceProgressingThreshold = (*v1.Duration)(unsafe.Pointer(in.ManagedResourceProgressingThreshold))
 	out.ConditionThresholds = *(*[]ConditionThreshold)(unsafe.Pointer(&in.ConditionThresholds))
 	out.WebhookRemediatorEnabled = (*bool)(unsafe.Pointer(in.WebhookRemediatorEnabled))
 	return nil

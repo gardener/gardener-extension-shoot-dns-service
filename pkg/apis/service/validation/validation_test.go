@@ -15,18 +15,17 @@
 package validation_test
 
 import (
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/validation"
 	"github.com/gardener/gardener/pkg/apis/core"
 	"github.com/gardener/gardener/pkg/utils/test/matchers"
-
-	v1 "k8s.io/api/autoscaling/v1"
-	"k8s.io/apimachinery/pkg/util/validation/field"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	gomegatypes "github.com/onsi/gomega/types"
+	v1 "k8s.io/api/autoscaling/v1"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/validation"
 )
 
 var _ = Describe("Validation", func() {

@@ -138,6 +138,11 @@ const (
 	// DeploymentNameVPAUpdater is a constant for the name of the VPA updater deployment.
 	DeploymentNameVPAUpdater = "vpa-updater"
 
+	// DeploymentNameKubernetesDashboard is a constant for the name of the kubernetes dashboard deployment.
+	DeploymentNameKubernetesDashboard = "kubernetes-dashboard"
+	// DeploymentNameDashboardMetricsScraper is a constant for the name of the dashboard metrics scraper deployment.
+	DeploymentNameDashboardMetricsScraper = "dashboard-metrics-scraper"
+
 	// DeploymentNameMachineControllerManager is a constant for the name of a Kubernetes deployment object that contains
 	// the machine-controller-manager pod.
 	DeploymentNameMachineControllerManager = "machine-controller-manager"
@@ -523,6 +528,8 @@ const (
 	// AnnotationShootSkipCleanup is a key for an annotation on a Shoot resource that declares that the clean up steps should be skipped when the
 	// cluster is deleted. Concretely, this will skip everything except the deletion of (load balancer) services and persistent volume resources.
 	AnnotationShootSkipCleanup = "shoot.gardener.cloud/skip-cleanup"
+	// AnnotationShootSkipReadiness is a key for an annotation on a Shoot resource that instructs the shoot flow to skip readiness steps during reconciliation.
+	AnnotationShootSkipReadiness = "shoot.gardener.cloud/skip-readiness"
 	// AnnotationShootCleanupWebhooksFinalizeGracePeriodSeconds is a key for an annotation on a Shoot resource that
 	// declares the grace period in seconds for finalizing the resources handled in the 'cleanup webhooks' step.
 	// Concretely, after the specified seconds, all the finalizers of the affected resources are forcefully removed.
@@ -557,8 +564,6 @@ const (
 	AnnotationShootCloudConfigExecutionMaxDelaySeconds = "shoot.gardener.cloud/cloud-config-execution-max-delay-seconds"
 	// AnnotationShootForceRestore is a key for an annotation on a Shoot or BackupEntry resource to trigger a forceful restoration to a different seed.
 	AnnotationShootForceRestore = "shoot.gardener.cloud/force-restore"
-	// AnnotationReversedVPN moves the vpn-server to the seed.
-	AnnotationReversedVPN = "alpha.featuregates.shoot.gardener.cloud/reversed-vpn"
 	// AnnotationNodeLocalDNS enables a per node dns cache on the shoot cluster.
 	AnnotationNodeLocalDNS = "alpha.featuregates.shoot.gardener.cloud/node-local-dns"
 	// AnnotationNodeLocalDNSForceTcpToClusterDns enforces upgrade to tcp connections for communication between node local and cluster dns.

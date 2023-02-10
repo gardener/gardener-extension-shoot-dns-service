@@ -18,14 +18,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/common"
-	apisservice "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/validation"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 	extensionswebhook "github.com/gardener/gardener/extensions/pkg/webhook"
 	"github.com/gardener/gardener/pkg/apis/core"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/common"
+	apisservice "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/validation"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 )
 
 // NewShootValidator returns a new instance of a shoot validator.

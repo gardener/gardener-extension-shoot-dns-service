@@ -17,9 +17,10 @@ package imagevector
 import (
 	"strings"
 
-	"github.com/gardener/gardener-extension-shoot-dns-service/charts"
 	"github.com/gardener/gardener/pkg/utils/imagevector"
 	"k8s.io/apimachinery/pkg/util/runtime"
+
+	"github.com/gardener/gardener-extension-shoot-dns-service/charts"
 )
 
 var imageVector imagevector.ImageVector

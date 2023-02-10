@@ -22,14 +22,12 @@ import (
 	"fmt"
 	"reflect"
 
+	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	"github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
-	"k8s.io/apimachinery/pkg/runtime"
-
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/helper"
