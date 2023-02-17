@@ -20,8 +20,8 @@ import (
 	"time"
 
 	dnsv1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
+	"github.com/gardener/gardener/extensions/pkg/util"
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
-	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	"github.com/gardener/gardener/pkg/controllerutils"
 	"github.com/gardener/gardener/pkg/extensions"
 	"github.com/gardener/gardener/pkg/operation/botanist/component"
@@ -30,6 +30,8 @@ import (
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/helper"
 )
 
 // TimeNow returns the current time. Exposed for testing.
@@ -132,7 +134,7 @@ func CheckDNSProvider(obj client.Object) error {
 			// faster, without retrying until the entire timeout is elapsed.
 			// This is the same behavior as in other extension components which leverage health.CheckExtensionObject, where
 			// ErrorWithCodes is returned if status.lastError is set (no matter if status.lastError.codes contains error codes).
-			err = retry.RetriableError(gardencorev1beta1helper.DeprecatedDetermineError(err))
+			err = retry.RetriableError(util.DetermineError(err, helper.KnownCodes))
 		}
 		return &errorWithDNSState{underlying: err, state: state}
 	}
