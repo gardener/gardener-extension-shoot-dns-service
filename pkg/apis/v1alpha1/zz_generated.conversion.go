@@ -25,10 +25,9 @@ import (
 	unsafe "unsafe"
 
 	dnsv1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
+	apis "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-
-	apis "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis"
 )
 
 func init() {
