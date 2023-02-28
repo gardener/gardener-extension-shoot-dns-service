@@ -53,11 +53,6 @@ func RegisterHealthChecks(mgr manager.Manager) error {
 				HealthCheck:   general.CheckManagedResource(lifecycle.SeedResourcesName),
 				PreCheckFunc:  preCheckFunc,
 			},
-			{
-				ConditionType: string(gardencorev1beta1.ShootSystemComponentsHealthy),
-				HealthCheck:   general.CheckManagedResource(lifecycle.ShootResourcesName),
-				PreCheckFunc:  preCheckFunc,
-			},
 		},
 	)
 }

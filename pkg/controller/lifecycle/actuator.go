@@ -214,7 +214,7 @@ func (a *actuator) ResurrectFrom(ctx context.Context, ex *extensionsv1alpha1.Ext
 	if err != nil {
 		return true, err
 	}
-	names := sets.String{}
+	names := sets.Set[string]{}
 	for _, item := range found {
 		names.Insert(item.Name)
 	}

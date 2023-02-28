@@ -121,7 +121,7 @@ func (s *StateHandler) Refresh() (bool, error) {
 
 func (s *StateHandler) EnsureEntries(entries []dnsapi.DNSEntry) bool {
 	mod := false
-	names := sets.String{}
+	names := sets.Set[string]{}
 	for _, entry := range entries {
 		mod = s.EnsureEntryFor(&entry) || mod
 		names.Insert(entry.Name)
