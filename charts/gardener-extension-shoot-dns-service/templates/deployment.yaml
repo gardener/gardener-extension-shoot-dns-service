@@ -14,10 +14,16 @@ spec:
 {{ include "labels" . | indent 6 }}
   template:
     metadata:
-      {{- if .Values.imageVectorOverwrite }}
       annotations:
+        {{- if .Values.imageVectorOverwrite }}
         checksum/configmap-extension-imagevector-overwrite: {{ include (print $.Template.BasePath "/configmap-imagevector-overwrite.yaml") . | sha256sum }}
-      {{- end }}
+        {{- end }}
+        {{- if and .Values.metrics.enableScraping }}
+        prometheus.io/name: {{ .Release.Name }}
+        prometheus.io/scrape: "true"
+        # default metrics endpoint in controller-runtime
+        prometheus.io/port: {{ .Values.metrics.port }}
+        {{- end }}      
       labels:
 {{ include "labels" . | indent 8 }}
     spec:
