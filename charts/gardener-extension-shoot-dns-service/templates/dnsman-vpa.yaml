@@ -12,7 +12,6 @@ spec:
       - containerName: '*'
         controlledValues: {{ .Values.dnsControllerManager.vpa.controlledValues }}
         minAllowed:
-          cpu: {{ .Values.dnsControllerManager.vpa.minAllowed.cpu }}
           memory: {{ .Values.dnsControllerManager.vpa.minAllowed.memory }}
   targetRef:
     apiVersion: apps/v1

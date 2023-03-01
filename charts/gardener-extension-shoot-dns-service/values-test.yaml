@@ -28,7 +28,6 @@ vpa:
   enabled: true
   resourcePolicy:
     minAllowed:
-      cpu: 25m
       memory: 50Mi
   updatePolicy:
     updateMode: "Auto"
@@ -137,7 +136,6 @@ dnsControllerManager:
     enabled: true
     controlledValues: RequestsOnly
     minAllowed:
-      cpu: 50m
       memory: 50Mi
     updatePolicy:
       updateMode: "Auto"
