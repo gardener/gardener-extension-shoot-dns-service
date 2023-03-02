@@ -10,7 +10,6 @@ spec:
       - containerName: '*'
         controlledValues: RequestsOnly
         minAllowed:
-          cpu: {{ .Values.vpa.minAllowed.cpu }}
           memory: {{ .Values.vpa.minAllowed.memory }}
   targetRef:
     apiVersion: apps/v1
