@@ -25,6 +25,7 @@ spec:
         checksum/psp: {{ include (print $.Template.BasePath "/dnsman-psp.yaml") . | sha256sum }}
         {{- end }}
 {{- if .Values.dnsControllerManager.configuration.serverPortHttp }}
+        prometheus.io/name: "{{ .Release.Name }}"
         prometheus.io/scrape: "true"
         prometheus.io/port: "{{- .Values.dnsControllerManager.configuration.serverPortHttp }}"
         prometheus.io/scheme: http
