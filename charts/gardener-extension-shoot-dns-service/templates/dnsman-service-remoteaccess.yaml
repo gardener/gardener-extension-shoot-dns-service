@@ -2,8 +2,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  {{- if .Values.dnsControllerManager.remoteaccess.service.annotations }}
   annotations:
+    networking.resources.gardener.cloud/from-world-to-ports: '[{"protocol":"TCP","port":{{ .Values.dnsControllerManager.remoteaccess.port }}}]'
+  {{- if .Values.dnsControllerManager.remoteaccess.service.annotations }}
     {{- toYaml .Values.dnsControllerManager.remoteaccess.service.annotations | nindent 4 }}
   {{- end }}
   name: dns-controller-manager-remoteaccess
