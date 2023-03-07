@@ -24,6 +24,8 @@ spec:
         prometheus.io/port: "{{ .Values.metrics.port }}"
         {{- end }}      
       labels:
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.gardener.cloud/to-dns: allowed
 {{ include "labels" . | indent 8 }}
     spec:
       priorityClassName: gardener-system-900
