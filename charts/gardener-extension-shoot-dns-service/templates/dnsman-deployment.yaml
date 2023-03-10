@@ -31,6 +31,10 @@ spec:
         prometheus.io/scheme: http
 {{- end }}
       labels:
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-private-networks: allowed
 {{ include "dnsmanLabels" . | indent 8 }}
     spec:
       hostIPC: false

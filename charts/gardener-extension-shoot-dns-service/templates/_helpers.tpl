@@ -27,3 +27,11 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/name: gardener-extension-{{ .Values.serviceName }}
 app.kubernetes.io/instance: dns-controller-manager
 {{- end -}}
+
+{{- define "dnsmanRemoteAccessLoadBalancerType" -}}
+{{- if not .Values.dnsControllerManager.remoteaccess.service -}}
+ClusterIP
+{{- else -}}
+{{ .Values.dnsControllerManager.remoteaccess.service.type | default "ClusterIP" }}
+{{- end }}
+{{- end -}}
