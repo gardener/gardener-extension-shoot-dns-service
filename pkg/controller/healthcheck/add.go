@@ -55,6 +55,7 @@ func RegisterHealthChecks(mgr manager.Manager) error {
 				PreCheckFunc:  preCheckFunc,
 			},
 		},
+		// TODO(shafeeqes): Remove this condition in a future release.
 		sets.New[gardencorev1beta1.ConditionType](gardencorev1beta1.ShootSystemComponentsHealthy),
 	)
 }
