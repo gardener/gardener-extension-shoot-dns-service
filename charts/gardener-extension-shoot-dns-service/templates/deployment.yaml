@@ -44,7 +44,7 @@ spec:
         - --leader-election-resource-lock={{ .Values.leaderElection.resourceLock }}
         - --heartbeat-namespace={{ .Release.Namespace }} 
         - --heartbeat-renew-interval-seconds={{ .Values.controllers.heartbeat.renewIntervalSeconds }} 
-        - --seed-id={{ .Values.gardener.seed.identity }}
+        - --seed-id={{ .Values.gardener.seed.name }}
         - --dns-class={{ .Values.dnsClass }}
         {{- if .Values.dnsProviderManagement.enabled }}
         - --manage-dns-providers

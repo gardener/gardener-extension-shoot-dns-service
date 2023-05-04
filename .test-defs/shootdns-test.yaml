@@ -17,4 +17,4 @@ spec:
       -shoot-kubecfg=$TM_KUBECONFIG_PATH/shoot.config
       -shoot-name=$SHOOT_NAME
       -project-namespace=$PROJECT_NAMESPACE
-  image: golang:1.20.3
+  image: golang:1.20.4
