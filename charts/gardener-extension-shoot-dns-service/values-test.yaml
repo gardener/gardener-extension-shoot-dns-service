@@ -17,7 +17,7 @@ gardener:
   garden:
     clusterIdentity: garden
   seed:
-    identity: "test-id"
+    name: "test-id"
 
 leaderElection:
   resourceLock: leases

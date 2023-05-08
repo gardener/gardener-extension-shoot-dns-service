@@ -58,8 +58,8 @@ spec:
           readOnlyRootFilesystem: true
         args:
         - --name=dns-controller-manager
-        - --identifier=seed.gardener.cloud/{{ .Values.gardener.garden.clusterIdentity }}/{{ required "A value is required for gardener.seed.identity" .Values.gardener.seed.identity }}
-        - --remote-access-client-id={{ .Values.gardener.seed.identity }}
+        - --identifier=seed.gardener.cloud/{{ .Values.gardener.garden.clusterIdentity }}/{{ required "A value is required for gardener.seed.name" .Values.gardener.seed.name }}
+        - --remote-access-client-id={{ .Values.gardener.seed.name }}
         {{- if .Values.dnsControllerManager.remoteaccess.enabled }}
         - --remote-access-port={{ .Values.dnsControllerManager.remoteaccess.port }}
         - --remote-access-cacert=/certs/ca/ca.crt
@@ -918,7 +918,7 @@ spec:
         {{- end }}
       {{- end }}
       serviceAccountName: dns-controller-manager
-      {{- if .Values.gardener.seed.identity }}
+      {{- if .Values.gardener.seed.name }}
       priorityClassName: gardener-system-900
       {{- end }}
       {{- with .Values.dnsControllerManager.nodeSelector }}
