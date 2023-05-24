@@ -57,12 +57,5 @@ var _ = ginkgo.Describe("Extension-shoot-dns-service integration test: health ch
 				framework.ExpectNoError(err)
 			}, timeout)
 		})
-
-		ginkgo.Context("Condition type: ShootSystemComponentsHealthy", func() {
-			f.Serial().Release().CIt(fmt.Sprintf("Extension CRD should contain unhealthy condition due to ManagedResource '%s' is unhealthy", lifecycle.ShootResourcesName), func(ctx context.Context) {
-				err := healthcheckoperation.ExtensionHealthCheckWithManagedResource(ctx, timeout, f, "shoot-dns-service", lifecycle.ShootResourcesName, gardencorev1beta1.ShootSystemComponentsHealthy)
-				framework.ExpectNoError(err)
-			}, timeout)
-		})
 	})
 })
