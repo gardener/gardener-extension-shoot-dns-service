@@ -569,6 +569,7 @@ func (a *actuator) prepareDefaultExternalDNSProvider(ctx context.Context, _ *api
 		return &apisservice.DNSProvider{
 			Domains: &apisservice.DNSIncludeExclude{
 				Include: []string{*cluster.Shoot.Spec.DNS.Domain},
+				Exclude: []string{"api." + *cluster.Shoot.Spec.DNS.Domain}, // exclude external kube-apiserver domain
 			},
 			SecretName: &secretName,
 			Type:       &remoteType,
@@ -582,6 +583,7 @@ func (a *actuator) prepareDefaultExternalDNSProvider(ctx context.Context, _ *api
 	provider := &apisservice.DNSProvider{
 		Domains: &apisservice.DNSIncludeExclude{
 			Include: []string{*cluster.Shoot.Spec.DNS.Domain},
+			Exclude: []string{"api." + *cluster.Shoot.Spec.DNS.Domain}, // exclude external kube-apiserver domain
 		},
 		SecretName: &secretRef.Name,
 		Type:       &providerType,
