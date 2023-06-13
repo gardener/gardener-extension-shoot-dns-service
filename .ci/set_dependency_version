@@ -12,7 +12,7 @@ curl -sSfL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
 export PATH=/tmp:$PATH
 
 # install gnutar
-apk add tar
+apk add tar yq
 
 # generate example/controller-registration.yaml
 cd "$(dirname $0)"/../charts/gardener-extension-shoot-dns-service
