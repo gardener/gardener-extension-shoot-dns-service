@@ -70,7 +70,7 @@ dnsControllerManager:
   deploy: true
   image:
     repository: eu.gcr.io/gardener-project/dns-controller-manager
-    tag: "v0.15.4" # marker-for-image-tag-dns-controller-manager (please keep this comment for automated update by set_dependency_version_dnsman)
+    tag: "v0.15.5" # marker-for-image-tag-dns-controller-manager (please keep this comment for automated update by set_dependency_version_dnsman)
     pullPolicy: IfNotPresent
 
   replicaCount: 1
