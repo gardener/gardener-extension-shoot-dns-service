@@ -45,16 +45,13 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/hashicorp/go-multierror"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
-	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/pointer"
@@ -839,40 +836,6 @@ func (a *actuator) createOrUpdateManagedResource(ctx context.Context, namespace,
 
 func (a *actuator) OwnerName(namespace string) string {
 	return fmt.Sprintf("%s-%s", OwnerName, namespace)
-}
-
-func (a *actuator) convertToV1beta1(objs []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
-	scheme := runtime.NewScheme()
-	_ = apiextensionsv1.AddToScheme(scheme)
-	_ = apiextensionsv1beta1.AddToScheme(scheme)
-
-	var converted []*unstructured.Unstructured
-
-	for _, obj := range objs {
-		crd := &apiextensions.CustomResourceDefinition{}
-		err := scheme.Convert(obj, crd, nil)
-		if err != nil {
-			return nil, fmt.Errorf("cannot convert CRD %s from v1: %w", obj.GetName(), err)
-		}
-		crdv1beta1 := &apiextensionsv1beta1.CustomResourceDefinition{}
-		err = scheme.Convert(crd, crdv1beta1, nil)
-		if err != nil {
-			return nil, fmt.Errorf("cannot convert CRD %s to v1beta1: %w", obj.GetName(), err)
-		}
-		crdv1beta1.SetGroupVersionKind(apiextensionsv1beta1.SchemeGroupVersion.WithKind("CustomResourceDefinition"))
-		bytes, err := json.Marshal(crdv1beta1)
-		if err != nil {
-			return nil, fmt.Errorf("cannot marshal CRD v1beta1 %s: %w", obj.GetName(), err)
-		}
-		obj2 := &unstructured.Unstructured{}
-		err = json.Unmarshal(bytes, obj2)
-		if err != nil {
-			return nil, fmt.Errorf("cannot unmarshal CRD v1beta %s: %w", obj.GetName(), err)
-		}
-		delete(obj2.Object, "status")
-		converted = append(converted, obj2)
-	}
-	return converted, nil
 }
 
 func cleanCRD(crd *unstructured.Unstructured) {
