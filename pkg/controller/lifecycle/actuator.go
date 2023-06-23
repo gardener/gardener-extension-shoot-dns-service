@@ -757,7 +757,6 @@ func (a *actuator) cleanupShootDNSEntries(helper *common.ShootDNSEntriesHelper) 
 
 func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *apisservice.DNSConfig, cluster *controller.Cluster, namespace string) error {
 	crd := &unstructured.Unstructured{}
-	// assuming k8s version of seed is always >= 1.20
 	crd.SetAPIVersion(apiextensionsv1.SchemeGroupVersion.String())
 	crd.SetKind("CustomResourceDefinition")
 	if err := a.Client().Get(ctx, client.ObjectKey{Name: "dnsentries.dns.gardener.cloud"}, crd); err != nil {
