@@ -21,3 +21,4 @@ spec:
   resources:
   - kind: Extension
     type: shoot-dns-service
+    workerlessSupported: true 
