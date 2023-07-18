@@ -12,21 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package extension
+//go:generate mockgen -destination=mocks.go -package=manager sigs.k8s.io/controller-runtime/pkg/manager Manager
 
-import (
-	"context"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
-	"github.com/gardener/gardener/pkg/controllerutils/mapper"
-)
-
-// ClusterToExtensionMapper returns a mapper that returns requests for Extensions whose
-// referenced clusters have been modified.
-func ClusterToExtensionMapper(ctx context.Context, mgr manager.Manager, predicates ...predicate.Predicate) mapper.Mapper {
-	return mapper.ClusterToObjectMapper(ctx, mgr, func() client.ObjectList { return &extensionsv1alpha1.ExtensionList{} }, predicates)
-}
+package manager

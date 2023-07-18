@@ -20,23 +20,27 @@ import (
 
 	extensionswebhook "github.com/gardener/gardener/extensions/pkg/webhook"
 	"github.com/gardener/gardener/pkg/apis/core"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/common"
 	apisservice "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/validation"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 )
 
 // NewShootValidator returns a new instance of a shoot validator.
-func NewShootValidator() extensionswebhook.Validator {
-	return &shoot{}
+func NewShootValidator(mgr manager.Manager) extensionswebhook.Validator {
+	return &shoot{
+		decoder: serializer.NewCodecFactory(mgr.GetScheme()).UniversalDecoder(),
+	}
 }
 
 // shoot validates shoots
 type shoot struct {
-	common.ShootAdmissionHandler
+	decoder runtime.Decoder
 }
 
 // Validate implements extensionswebhook.Validator.Validate
@@ -95,7 +99,7 @@ func (s *shoot) extractDNSConfig(shoot *core.Shoot) (*apisservice.DNSConfig, err
 	ext := s.findExtension(shoot)
 	if ext != nil && ext.ProviderConfig != nil {
 		dnsConfig := &apisservice.DNSConfig{}
-		if _, _, err := s.GetDecoder().Decode(ext.ProviderConfig.Raw, nil, dnsConfig); err != nil {
+		if _, _, err := s.decoder.Decode(ext.ProviderConfig.Raw, nil, dnsConfig); err != nil {
 			return nil, fmt.Errorf("failed to decode %s provider config: %w", ext.Type, err)
 		}
 		return dnsConfig, nil

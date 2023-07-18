@@ -53,9 +53,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/rest"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/charts"
 	apisservice "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service"
@@ -95,9 +95,12 @@ const (
 var dnsAnnotationCRD string
 
 // NewActuator returns an actuator responsible for Extension resources.
-func NewActuator(config config.DNSServiceConfig) extension.Actuator {
+func NewActuator(mgr manager.Manager, chartApplier kubernetes.ChartApplier, chartRenderer chartrenderer.Interface, config config.DNSServiceConfig) extension.Actuator {
 	return &actuator{
-		Env: common.NewEnv(ActuatorName, config),
+		Env:      common.NewEnv(ActuatorName, mgr, config),
+		applier:  chartApplier,
+		renderer: chartRenderer,
+		decoder:  serializer.NewCodecFactory(mgr.GetScheme(), serializer.EnableStrict).UniversalDecoder(),
 	}
 }
 
@@ -106,34 +109,6 @@ type actuator struct {
 	applier  kubernetes.ChartApplier
 	renderer chartrenderer.Interface
 	decoder  runtime.Decoder
-}
-
-// InjectConfig injects the rest config to this actuator.
-func (a *actuator) InjectConfig(config *rest.Config) error {
-	err := a.Env.InjectConfig(config)
-	if err != nil {
-		return err
-	}
-
-	applier, err := kubernetes.NewChartApplierForConfig(config)
-	if err != nil {
-		return fmt.Errorf("failed to create chart applier: %v", err)
-	}
-	a.applier = applier
-
-	renderer, err := chartrenderer.NewForConfig(config)
-	if err != nil {
-		return fmt.Errorf("failed to create chart renderer: %v", err)
-	}
-	a.renderer = renderer
-
-	return nil
-}
-
-// InjectScheme injects the given scheme into the reconciler.
-func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
-	a.decoder = serializer.NewCodecFactory(scheme, serializer.EnableStrict).UniversalDecoder()
-	return nil
 }
 
 // Reconcile the Extension resource.

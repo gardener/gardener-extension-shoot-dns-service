@@ -37,7 +37,7 @@ func New(mgr manager.Manager) (*extensionswebhook.Webhook, error) {
 		Name:     MutatorName,
 		Path:     MutatorPath,
 		Mutators: map[extensionswebhook.Mutator][]extensionswebhook.Type{
-			NewShootMutator(): {{Obj: &gardencorev1beta1.Shoot{}}},
+			NewShootMutator(mgr): {{Obj: &gardencorev1beta1.Shoot{}}},
 		},
 	})
 }

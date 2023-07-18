@@ -35,12 +35,13 @@ var DefaultAddOptions = healthcheck.DefaultAddArgs{}
 
 // RegisterHealthChecks registers health checks for each extension resource
 // HealthChecks are grouped by extension (e.g worker), extension.type (e.g aws) and  Health Check Type (e.g SystemComponentsHealthy)
-func RegisterHealthChecks(mgr manager.Manager) error {
+func RegisterHealthChecks(ctx context.Context, mgr manager.Manager) error {
 	preCheckFunc := func(_ context.Context, _ client.Client, _ client.Object, cluster *extensionscontroller.Cluster) bool {
 		return cluster.Shoot.Spec.DNS != nil && cluster.Shoot.Spec.DNS.Domain != nil
 	}
 
 	return healthcheck.DefaultRegistration(
+		ctx,
 		service.ExtensionType,
 		extensionsv1alpha1.SchemeGroupVersion.WithKind(extensionsv1alpha1.ExtensionResource),
 		func() client.ObjectList { return &extensionsv1alpha1.ExtensionList{} },
