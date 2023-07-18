@@ -17,6 +17,8 @@
 package replication
 
 import (
+	"context"
+
 	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -63,8 +65,8 @@ func ForService(labelKey string) predicate.Predicate {
 }
 
 // AddToManager adds a DNS Service replication controller to the given Controller Manager.
-func AddToManager(mgr manager.Manager) error {
-	reconciler := newReconciler(Name, config.DNSService)
+func AddToManager(ctx context.Context, mgr manager.Manager) error {
+	reconciler := newReconciler(Name, mgr, config.DNSService)
 	DefaultAddOptions.Controller.Reconciler = reconciler
 
 	ctrl, err := controller.New(Name, mgr, DefaultAddOptions.Controller)

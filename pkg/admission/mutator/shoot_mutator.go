@@ -25,21 +25,26 @@ import (
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/common"
 	servicev1alpha1 "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/v1alpha1"
 	pkgservice "github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 )
 
 // NewShootMutator returns a new instance of a shoot mutator.
-func NewShootMutator() extensionswebhook.Mutator {
-	return &shoot{}
+func NewShootMutator(mgr manager.Manager) extensionswebhook.Mutator {
+	return &shoot{
+		decoder: serializer.NewCodecFactory(mgr.GetScheme()).UniversalDecoder(),
+		scheme:  mgr.GetScheme(),
+	}
 }
 
 // shoot mutates shoots
 type shoot struct {
-	common.ShootAdmissionHandler
+	decoder runtime.Decoder
+	scheme  *runtime.Scheme
 	lock    sync.Mutex
 	encoder runtime.Encoder
 }
@@ -185,7 +190,7 @@ func (s *shoot) extractDNSConfig(shoot *gardencorev1beta1.Shoot) (*servicev1alph
 	ext := s.findExtension(shoot)
 	if ext != nil && ext.ProviderConfig != nil && ext.ProviderConfig.Raw != nil {
 		dnsConfig := &servicev1alpha1.DNSConfig{}
-		if _, _, err := s.GetDecoder().Decode(ext.ProviderConfig.Raw, nil, dnsConfig); err != nil {
+		if _, _, err := s.decoder.Decode(ext.ProviderConfig.Raw, nil, dnsConfig); err != nil {
 			return nil, fmt.Errorf("failed to decode %s provider config: %w", ext.Type, err)
 		}
 		return dnsConfig, nil
@@ -251,7 +256,7 @@ func (s *shoot) getEncoder() (runtime.Encoder, error) {
 		return s.encoder, nil
 	}
 
-	codec := s.NewCodecFactory()
+	codec := serializer.NewCodecFactory(s.scheme)
 	si, ok := runtime.SerializerInfoForMediaType(codec.SupportedMediaTypes(), runtime.ContentTypeJSON)
 	if !ok {
 		return nil, fmt.Errorf("could not find encoder for media type %q", runtime.ContentTypeJSON)

@@ -25,6 +25,7 @@ import (
 	extapi "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/common"
@@ -38,9 +39,9 @@ type reconciler struct {
 
 // newReconciler creates a new reconcile.Reconciler that reconciles
 // Extension resources of Gardener's `extensions.gardener.cloud` API group.
-func newReconciler(name string, controllerConfig config.DNSServiceConfig) *reconciler {
+func newReconciler(name string, mgr manager.Manager, controllerConfig config.DNSServiceConfig) *reconciler {
 	return &reconciler{
-		Env:  common.NewEnv(name, controllerConfig),
+		Env:  common.NewEnv(name, mgr, controllerConfig),
 		lock: NewStringsLock(),
 	}
 }

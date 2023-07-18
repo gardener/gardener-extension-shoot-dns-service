@@ -15,9 +15,13 @@
 package lifecycle
 
 import (
+	"context"
+	"fmt"
 	"time"
 
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
+	"github.com/gardener/gardener/pkg/chartrenderer"
+	"github.com/gardener/gardener/pkg/client/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -44,19 +48,29 @@ type AddOptions struct {
 }
 
 // AddToManager adds a controller with the default Options to the given Controller Manager.
-func AddToManager(mgr manager.Manager) error {
-	return AddToManagerWithOptions(mgr, DefaultAddOptions)
+func AddToManager(ctx context.Context, mgr manager.Manager) error {
+	return AddToManagerWithOptions(ctx, mgr, DefaultAddOptions)
 }
 
 // AddToManagerWithOptions adds a DNS Service Lifecycle controller to the given Controller Manager.
-func AddToManagerWithOptions(mgr manager.Manager, opts AddOptions) error {
-	return extension.Add(mgr, extension.AddArgs{
-		Actuator:          NewActuator(config.DNSService),
+func AddToManagerWithOptions(ctx context.Context, mgr manager.Manager, opts AddOptions) error {
+	chartApplier, err := kubernetes.NewChartApplierForConfig(mgr.GetConfig())
+	if err != nil {
+		return fmt.Errorf("failed to create chart applier: %v", err)
+	}
+
+	chartRenderer, err := chartrenderer.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		return fmt.Errorf("failed to create chart renderer: %v", err)
+	}
+
+	return extension.Add(ctx, mgr, extension.AddArgs{
+		Actuator:          NewActuator(mgr, chartApplier, chartRenderer, config.DNSService),
 		ControllerOptions: opts.Controller,
 		Name:              Name,
 		FinalizerSuffix:   FinalizerSuffix,
 		Resync:            60 * time.Minute,
-		Predicates:        extension.DefaultPredicates(opts.IgnoreOperationAnnotation),
+		Predicates:        extension.DefaultPredicates(ctx, mgr, opts.IgnoreOperationAnnotation),
 		Type:              service.ExtensionType,
 	})
 }

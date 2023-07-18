@@ -21,23 +21,21 @@ import (
 	extensionswebhook "github.com/gardener/gardener/extensions/pkg/webhook"
 	"github.com/gardener/gardener/pkg/apis/core/install"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	mockmanager "github.com/gardener/gardener/pkg/mock/controller-runtime/manager"
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	v1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	admissionmutator "github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/mutator"
 	serviceinstall "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/install"
 	servicev1alpha1 "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/v1alpha1"
 	service2 "github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 )
-
-type getDecoder interface {
-	GetDecoder() runtime.Decoder
-}
 
 type dnsStyle int
 
@@ -49,7 +47,10 @@ const (
 
 var _ = Describe("Shoot Mutator", func() {
 	var (
-		scheme  *runtime.Scheme
+		scheme *runtime.Scheme
+		ctrl   *gomock.Controller
+		mgr    *mockmanager.MockManager
+
 		mutator extensionswebhook.Mutator
 		domain  = "foo.domain.com"
 		shoot   = &gardencorev1beta1.Shoot{
@@ -197,9 +198,12 @@ var _ = Describe("Shoot Mutator", func() {
 		scheme = runtime.NewScheme()
 		install.Install(scheme)
 		serviceinstall.Install(scheme)
-		mutator = admissionmutator.NewShootMutator()
-		err := mutator.(inject.Scheme).InjectScheme(scheme)
-		Expect(err).To(BeNil())
+
+		ctrl = gomock.NewController(GinkgoT())
+		mgr = mockmanager.NewMockManager(ctrl)
+		mgr.EXPECT().GetScheme().Return(scheme).Times(3)
+
+		mutator = admissionmutator.NewShootMutator(mgr)
 	})
 
 	DescribeTable("#Mutate",
@@ -221,7 +225,7 @@ var _ = Describe("Shoot Mutator", func() {
 			}
 			err := mutator.Mutate(ctx, newShoot, oldShoot)
 			Expect(err).To(match)
-			actual := findExtensionProviderConfig(mutator.(getDecoder).GetDecoder(), newShoot)
+			actual := findExtensionProviderConfig(serializer.NewCodecFactory(mgr.GetScheme()).UniversalDecoder(), newShoot)
 			if expected == nil {
 				Expect(actual).To(BeNil())
 			} else {

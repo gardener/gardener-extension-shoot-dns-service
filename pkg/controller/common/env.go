@@ -23,7 +23,7 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 )
@@ -37,11 +37,14 @@ type Env struct {
 	logr.Logger
 }
 
-func NewEnv(name string, config config.DNSServiceConfig) *Env {
+func NewEnv(name string, mgr manager.Manager, config config.DNSServiceConfig) *Env {
 	return &Env{
-		name:   name,
-		config: config,
-		Logger: log.Log.WithName(name),
+		name:       name,
+		restConfig: mgr.GetConfig(),
+		client:     mgr.GetClient(),
+		apiReader:  mgr.GetAPIReader(),
+		config:     config,
+		Logger:     log.Log.WithName(name),
 	}
 }
 
@@ -71,33 +74,4 @@ func (e *Env) GetObject(ctx context.Context, key client.ObjectKey, obj client.Ob
 
 func (e *Env) UpdateObject(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
 	return e.client.Update(ctx, obj, opts...)
-}
-
-// InjectFunc enables dependency injection into the actuator.
-func (e *Env) InjectFunc(f inject.Func) error {
-	return nil
-}
-
-// InjectLogger injects the controller runtime client into the reconciler.
-func (e *Env) InjectLogger(l logr.Logger) error {
-	e.Logger = l.WithName(e.name)
-	return nil
-}
-
-// InjectConfig injects the rest configuration into the reconciler.
-func (e *Env) InjectConfig(config *rest.Config) error {
-	e.restConfig = config
-	return nil
-}
-
-// InjectAPIReader injects the APIReader into the reconciler.
-func (e *Env) InjectAPIReader(reader client.Reader) error {
-	e.apiReader = reader
-	return nil
-}
-
-// InjectConfig injects the caching client into the reconciler.
-func (e *Env) InjectClient(client client.Client) error {
-	e.client = client
-	return nil
 }
