@@ -17,3 +17,4 @@ apk add tar yq
 # generate example/controller-registration.yaml
 cd "$(dirname $0)"/../charts/gardener-extension-shoot-dns-service
 ../../vendor/github.com/gardener/gardener/hack/generate-controller-registration.sh extension-shoot-dns-service . $(cat ../../VERSION) ../../example/controller-registration.yaml Extension:shoot-dns-service
+sed -i 's/ type: shoot-dns-service/ type: shoot-dns-service\n    workerlessSupported: true/' ../../example/controller-registration.yaml
