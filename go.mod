@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/gardener/external-dns-management v0.14.2
-	github.com/gardener/gardener v1.76.2
+	github.com/gardener/gardener v1.77.0
 	github.com/go-logr/logr v1.2.4
 	github.com/golang/mock v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
@@ -13,11 +13,12 @@ require (
 	github.com/onsi/gomega v1.27.6
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
+	go.uber.org/mock v0.2.0
 	golang.org/x/tools v0.7.0
 	k8s.io/api v0.26.3
 	k8s.io/apiextensions-apiserver v0.26.3
 	k8s.io/apimachinery v0.26.3
-	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
+	k8s.io/client-go v0.26.3
 	k8s.io/code-generator v0.26.3
 	k8s.io/component-base v0.26.3
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
@@ -43,7 +44,7 @@ require (
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fluent/fluent-operator/v2 v2.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/gardener/etcd-druid v0.18.4 // indirect
+	github.com/gardener/etcd-druid v0.19.1 // indirect
 	github.com/gardener/hvpa-controller/api v0.5.0 // indirect
 	github.com/gardener/machine-controller-manager v0.48.1 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
@@ -140,5 +141,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-replace k8s.io/client-go => k8s.io/client-go v0.26.3
