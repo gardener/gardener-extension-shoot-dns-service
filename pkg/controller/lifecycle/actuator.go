@@ -332,7 +332,7 @@ func (a *actuator) createOrUpdateDNSProviders(ctx context.Context, log logr.Logg
 	if !a.isHibernated(cluster) {
 		external, err := a.prepareDefaultExternalDNSProvider(ctx, dnsconfig, namespace, cluster)
 		if err != nil {
-			result = multierror.Append(result, err)
+			return err
 		}
 
 		resources := cluster.Shoot.Spec.Resources
