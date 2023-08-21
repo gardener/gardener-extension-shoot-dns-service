@@ -58,11 +58,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/charts"
+	"github.com/gardener/gardener-extension-shoot-dns-service/imagevector"
 	apisservice "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/validation"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/common"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/imagevector"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 )
 
