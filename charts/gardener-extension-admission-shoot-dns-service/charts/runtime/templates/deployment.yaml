@@ -88,6 +88,7 @@ spec:
           mountPath: /var/run/secrets/projected/serviceaccount
           readOnly: true
         {{- end }}
+        {{- if .Values.global.projectedKubeconfig }}
         - name: kubeconfig
           mountPath: {{ required ".Values.global.projectedKubeconfig.baseMountPath is required" .Values.global.projectedKubeconfig.baseMountPath }}
           readOnly: true
@@ -114,6 +115,7 @@ spec:
               audience: {{ .Values.global.serviceAccountTokenVolumeProjection.audience }}
               {{- end }}
       {{- end }}
+      {{- if .Values.global.projectedKubeconfig }}
       - name: kubeconfig
         projected:
           defaultMode: 420
