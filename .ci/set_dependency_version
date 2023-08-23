@@ -3,6 +3,8 @@
 set -e
 
 "$(dirname $0)"/../vendor/github.com/gardener/gardener/hack/.ci/set_dependency_version
+# update copy in charts directory needed for installation after RBSC sync
+cp "$(dirname $0)"/../imagevector/images.yaml "$(dirname $0)"/../charts/images.yaml
 
 "$(dirname $0)"/../hack/.ci/set_dependency_version_dnsman
 
