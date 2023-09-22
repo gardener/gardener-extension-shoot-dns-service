@@ -736,6 +736,10 @@ func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *
 	}
 	cleanCRD(crd)
 
+	annotations := crd.GetAnnotations()
+	annotations[resourcesv1alpha1.SkipHealthCheck] = "true"
+	crd.SetAnnotations(annotations)
+
 	crd2 := &unstructured.Unstructured{}
 	dec := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 	_, _, err := dec.Decode([]byte(dnsAnnotationCRD), nil, crd2)
