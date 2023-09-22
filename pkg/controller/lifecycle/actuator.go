@@ -736,6 +736,10 @@ func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *
 	}
 	cleanCRD(crd)
 
+	labels := crd.GetLabels()
+	labels[v1beta1constants.ShootNoCleanup] = "true"
+	crd.SetLabels(labels)
+
 	crd2 := &unstructured.Unstructured{}
 	dec := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 	_, _, err := dec.Decode([]byte(dnsAnnotationCRD), nil, crd2)
