@@ -68,16 +68,6 @@ rules:
   - list
   - update
   - create
-{{- if semverCompare "<1.24-0" .Capabilities.KubeVersion.GitVersion }}
-- apiGroups:
-  - policy
-  resources:
-  - podsecuritypolicies
-  resourceNames:
-  - extensions.gardener.cloud.{{ .Values.serviceName }}.dns-controller-manager
-  verbs:
-  - use
-{{- end }}
 - apiGroups:
   - ""
   resources:
