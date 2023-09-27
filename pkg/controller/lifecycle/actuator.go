@@ -736,10 +736,6 @@ func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *
 	}
 	cleanCRD(crd)
 
-	annotations := crd.GetAnnotations()
-	annotations[resourcesv1alpha1.SkipHealthCheck] = "true"
-	crd.SetAnnotations(annotations)
-
 	crd2 := &unstructured.Unstructured{}
 	dec := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 	_, _, err := dec.Decode([]byte(dnsAnnotationCRD), nil, crd2)
@@ -748,7 +744,7 @@ func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *
 	}
 
 	replicateDNSProviders := a.replicateDNSProviders(dnsconfig)
-	objs := []*unstructured.Unstructured{crd, crd2}
+	crds := []*unstructured.Unstructured{crd, crd2}
 	if replicateDNSProviders {
 		crd3 := &unstructured.Unstructured{}
 		crd3.SetAPIVersion(crd.GetAPIVersion())
@@ -757,10 +753,19 @@ func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *
 			return fmt.Errorf("could not get crd dnsproviders.dns.gardener.cloud: %w", err)
 		}
 		cleanCRD(crd3)
-		objs = append(objs, crd3)
+		crds = append(crds, crd3)
 	}
 
-	if err = managedresources.CreateFromUnstructured(ctx, a.Client(), namespace, KeptShootResourcesName, false, "", objs, true, nil); err != nil {
+	for _, c := range crds {
+		labels := c.GetLabels()
+		if labels == nil {
+			labels = map[string]string{}
+		}
+		labels[v1beta1constants.ShootNoCleanup] = "true"
+		c.SetLabels(labels)
+	}
+
+	if err = managedresources.CreateFromUnstructured(ctx, a.Client(), namespace, KeptShootResourcesName, false, "", crds, true, nil); err != nil {
 		return fmt.Errorf("could not create managed resource %s: %w", KeptShootResourcesName, err)
 	}
 
