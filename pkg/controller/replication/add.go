@@ -75,5 +75,5 @@ func AddToManager(ctx context.Context, mgr manager.Manager) error {
 		return err
 	}
 	predicate := ForService(common.ShootDNSEntryLabelKey)
-	return ctrl.Watch(&source.Kind{Type: &dnsapi.DNSEntry{}}, &handler.EnqueueRequestForObject{}, predicate)
+	return ctrl.Watch(source.Kind(mgr.GetCache(), &dnsapi.DNSEntry{}), &handler.EnqueueRequestForObject{}, predicate)
 }

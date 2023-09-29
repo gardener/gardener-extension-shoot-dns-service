@@ -88,10 +88,14 @@ func (o *Options) run(ctx context.Context) error {
 
 	mgrOpts := o.managerOptions.Completed().Options()
 	mgrOpts.Scheme = mgrScheme
-	mgrOpts.ClientDisableCacheFor = []client.Object{
-		&corev1.Secret{},    // applied for ManagedResources
-		&corev1.ConfigMap{}, // applied for monitoring config
-		&dnsapi.DNSOwner{},  // avoid watching DNSOwner
+	mgrOpts.Client = client.Options{
+		Cache: &client.CacheOptions{
+			DisableFor: []client.Object{
+				&corev1.Secret{},    // applied for ManagedResources
+				&corev1.ConfigMap{}, // applied for monitoring config
+				&dnsapi.DNSOwner{},  // avoid watching DNSOwner
+			},
+		},
 	}
 	mgr, err := manager.New(o.restOptions.Completed().Config, mgrOpts)
 	if err != nil {
