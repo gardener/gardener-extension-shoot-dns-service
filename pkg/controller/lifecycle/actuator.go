@@ -220,13 +220,64 @@ func (a *actuator) Delete(ctx context.Context, log logr.Logger, ex *extensionsv1
 	return a.delete(ctx, log, ex, false)
 }
 
+// Delete the Extension resource.
+func (a *actuator) ForceDelete(ctx context.Context, log logr.Logger, ex *extensionsv1alpha1.Extension) error {
+	// try to delete managed DNS entries normally first
+	if err := a.deleteManagedDNSEntries(ctx, ex); err != nil {
+		// ignore failed deletion of DNSEntries
+		if _, ok := err.(*reconcilerutils.RequeueAfterError); !ok {
+			return err
+		}
+	}
+
+	cluster, err := controller.GetCluster(ctx, a.Client(), ex.Namespace)
+	if err != nil {
+		return err
+	}
+
+	if err := a.deleteSeedResources(ctx, log, cluster, ex, false, true); err != nil {
+		return err
+	}
+
+	entriesHelper := common.NewShootDNSEntriesHelper(ctx, a.Client(), ex)
+	if err := entriesHelper.ForceDeleteAll(); err != nil {
+		return fmt.Errorf("force deletion of DNSEntries failed: %w", err)
+	}
+
+	// If DNSProviders are still existing, forceful delete them by removing the finalizers
+	if err := a.removeFinalizersAndDeleteRemainingDNSProviders(ctx, log, ex); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a *actuator) removeFinalizersAndDeleteRemainingDNSProviders(ctx context.Context, log logr.Logger, ex *extensionsv1alpha1.Extension) error {
+	list := &dnsv1alpha1.DNSProviderList{}
+	if err := a.Client().List(ctx, list, client.InNamespace(ex.Namespace)); err != nil {
+		return fmt.Errorf("listing DNSProviders failed: %w", err)
+	}
+	for _, item := range list.Items {
+		patch := client.MergeFrom(item.DeepCopy())
+		item.SetFinalizers(nil)
+		if err := client.IgnoreNotFound(a.Client().Patch(ctx, &item, patch)); err != nil {
+			return fmt.Errorf("removing finalizers for DNSProvider %s failed: %w", item.Name, err)
+		}
+		if err := client.IgnoreNotFound(a.Client().Delete(ctx, &item)); err != nil {
+			log.Info("deleting DNSProvider failed with %s", err)
+		}
+	}
+
+	return nil
+}
+
 func (a *actuator) delete(ctx context.Context, log logr.Logger, ex *extensionsv1alpha1.Extension, migrate bool) error {
 	cluster, err := controller.GetCluster(ctx, a.Client(), ex.Namespace)
 	if err != nil {
 		return err
 	}
 
-	if err := a.deleteSeedResources(ctx, log, cluster, ex, migrate); err != nil {
+	if err := a.deleteSeedResources(ctx, log, cluster, ex, migrate, false); err != nil {
 		return err
 	}
 	return a.deleteShootResources(ctx, ex.Namespace)
@@ -603,20 +654,22 @@ func (a *actuator) replicateDNSProviders(dnsconfig *apisservice.DNSConfig) bool 
 	return a.Config().ReplicateDNSProviders
 }
 
-func (a *actuator) deleteSeedResources(ctx context.Context, log logr.Logger, cluster *controller.Cluster, ex *extensionsv1alpha1.Extension, migrate bool) error {
+func (a *actuator) deleteSeedResources(ctx context.Context, log logr.Logger, cluster *controller.Cluster, ex *extensionsv1alpha1.Extension, migrate, force bool) error {
 	namespace := ex.Namespace
 	a.Info("Component is being deleted", "component", service.ExtensionServiceName, "namespace", namespace)
 
-	if !migrate {
-		err := a.deleteManagedDNSEntries(ctx, ex)
-		if err != nil {
-			return err
+	if !force {
+		if !migrate {
+			err := a.deleteManagedDNSEntries(ctx, ex)
+			if err != nil {
+				return err
+			}
 		}
-	}
 
-	if a.isManagingDNSProviders(cluster.Shoot.Spec.DNS) {
-		if err := a.deleteDNSProviders(ctx, log, namespace); err != nil {
-			return err
+		if a.isManagingDNSProviders(cluster.Shoot.Spec.DNS) {
+			if err := a.deleteDNSProviders(ctx, log, namespace); err != nil {
+				return err
+			}
 		}
 	}
 
