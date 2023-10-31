@@ -111,6 +111,11 @@ func (h *ShootDNSEntriesHelper) DeleteAll() error {
 // ForceDeleteAll forces deletion of DNSEntries by removing the finalizers first.
 // Warning: calling this method can result in leaked DNS record sets in the infrastructure and should only be used as last resort.
 func (h *ShootDNSEntriesHelper) ForceDeleteAll() error {
+	err := h.DeleteAll()
+	if err != nil {
+		return err
+	}
+
 	entries, err := h.List()
 	if err != nil {
 		return err
@@ -124,5 +129,5 @@ func (h *ShootDNSEntriesHelper) ForceDeleteAll() error {
 		}
 	}
 
-	return h.DeleteAll()
+	return nil
 }

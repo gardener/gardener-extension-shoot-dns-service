@@ -244,27 +244,10 @@ func (a *actuator) ForceDelete(ctx context.Context, log logr.Logger, ex *extensi
 		return fmt.Errorf("force deletion of DNSEntries failed: %w", err)
 	}
 
-	// If DNSProviders are still existing, forceful delete them by removing the finalizers
-	if err := a.removeFinalizersAndDeleteRemainingDNSProviders(ctx, log, ex); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (a *actuator) removeFinalizersAndDeleteRemainingDNSProviders(ctx context.Context, log logr.Logger, ex *extensionsv1alpha1.Extension) error {
-	list := &dnsv1alpha1.DNSProviderList{}
-	if err := a.Client().List(ctx, list, client.InNamespace(ex.Namespace)); err != nil {
-		return fmt.Errorf("listing DNSProviders failed: %w", err)
-	}
-	for _, item := range list.Items {
-		patch := client.MergeFrom(item.DeepCopy())
-		item.SetFinalizers(nil)
-		if err := client.IgnoreNotFound(a.Client().Patch(ctx, &item, patch)); err != nil {
-			return fmt.Errorf("removing finalizers for DNSProvider %s failed: %w", item.Name, err)
-		}
-		if err := client.IgnoreNotFound(a.Client().Delete(ctx, &item)); err != nil {
-			log.Info("deleting DNSProvider failed with %s", err)
+	if a.isManagingDNSProviders(cluster.Shoot.Spec.DNS) {
+		// no forced deletion of providers needed, as they can be deleted normally as soon as there are no DNSEntries anymore
+		if err := a.deleteDNSProviders(ctx, log, ex.Namespace); err != nil {
+			return err
 		}
 	}
 
