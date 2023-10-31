@@ -220,7 +220,7 @@ func (a *actuator) Delete(ctx context.Context, log logr.Logger, ex *extensionsv1
 	return a.delete(ctx, log, ex, false)
 }
 
-// Delete the Extension resource.
+// ForceDelete the Extension resource.
 func (a *actuator) ForceDelete(ctx context.Context, log logr.Logger, ex *extensionsv1alpha1.Extension) error {
 	// try to delete managed DNS entries normally first
 	if err := a.deleteManagedDNSEntries(ctx, ex); err != nil {
