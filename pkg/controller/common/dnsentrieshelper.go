@@ -107,3 +107,27 @@ func (h *ShootDNSEntriesHelper) DeleteAll() error {
 	}
 	return h.client.DeleteAllOf(h.ctx, &dnsapi.DNSEntry{}, client.InNamespace(h.ext.Namespace), matchingLabel)
 }
+
+// ForceDeleteAll forces deletion of DNSEntries by removing the finalizers first.
+// Warning: calling this method can result in leaked DNS record sets in the infrastructure and should only be used as last resort.
+func (h *ShootDNSEntriesHelper) ForceDeleteAll() error {
+	err := h.DeleteAll()
+	if err != nil {
+		return err
+	}
+
+	entries, err := h.List()
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		patch := client.MergeFrom(entry.DeepCopy())
+		entry.SetFinalizers(nil)
+		if err := client.IgnoreNotFound(h.client.Patch(h.ctx, &entry, patch)); err != nil {
+			return fmt.Errorf("removing finalizers for DNSEntry %s failed: %w", entry.Name, err)
+		}
+	}
+
+	return nil
+}
