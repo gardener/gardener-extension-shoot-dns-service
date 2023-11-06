@@ -17,7 +17,9 @@
 
 package config
 
-import "k8s.io/apimachinery/pkg/types"
+import (
+	"k8s.io/apimachinery/pkg/types"
+)
 
 // DNSService contains configuration for the lifecycle controller of the dns service.
 var DNSService DNSServiceConfig
