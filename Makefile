@@ -77,6 +77,9 @@ docker-images:
 # Rules for verification, formatting, linting, testing and cleaning #
 #####################################################################
 
+.PHONY: tidy
+tidy: revendor
+
 .PHONY: revendor
 revendor:
 	@GO111MODULE=on go mod tidy
