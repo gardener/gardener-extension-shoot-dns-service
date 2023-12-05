@@ -18,23 +18,7 @@ global:
     updatePolicy:
       updateMode: "Auto"
   webhookConfig:
-    caBundle: |
-      -----BEGIN CERTIFICATE-----
-      ...
-      -----END CERTIFICATE-----
-    #objectSelector:
-    #  matchLabels:
-    #    foo: bar
     serverPort: 10250
-    tls:
-      crt: |
-        -----BEGIN CERTIFICATE-----
-        ...
-        -----END CERTIFICATE-----
-      key: |
-        -----BEGIN RSA PRIVATE KEY-----
-        ...
-        -----END RSA PRIVATE KEY-----
   # Kubeconfig to the target cluster. In-cluster configuration will be used if not specified.
   kubeconfig:
 

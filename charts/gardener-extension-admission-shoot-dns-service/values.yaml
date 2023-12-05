@@ -17,24 +17,7 @@ global:
     updatePolicy:
       updateMode: "Auto"
   webhookConfig:
-    caBundle: |
-      -----BEGIN CERTIFICATE-----
-      ...
-      -----END CERTIFICATE-----
-    # Please make sure you are running `gardener@v1.42` or later before enabling this object selector.
-    # objectSelector:
-    #   matchLabels:
-    #     extensions.extensions.gardener.cloud/shoot-dns-service: "true"
     serverPort: 10250
-    tls:
-      crt: |
-        -----BEGIN CERTIFICATE-----
-        ...
-        -----END CERTIFICATE-----
-      key: |
-        -----BEGIN RSA PRIVATE KEY-----
-        ...
-        -----END RSA PRIVATE KEY-----
   # Kubeconfig to the target cluster. In-cluster configuration will be used if not specified.
   kubeconfig:
 
