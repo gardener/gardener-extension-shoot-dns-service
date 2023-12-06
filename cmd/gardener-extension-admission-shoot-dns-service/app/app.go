@@ -26,6 +26,7 @@ import (
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
 	gardenerhealthz "github.com/gardener/gardener/pkg/healthz"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	componentbaseconfig "k8s.io/component-base/config"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -39,6 +40,9 @@ import (
 	serviceinstall "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/install"
 )
 
+// AdmissionName is the name of the admission component.
+const AdmissionName = "admission-shoot-dns-service"
+
 var log = logf.Log.WithName("gardener-extension-admission-shoot-dns-service")
 
 // NewAdmissionCommand creates a new command for running an AWS admission webhook.
@@ -46,9 +50,12 @@ func NewAdmissionCommand(ctx context.Context) *cobra.Command {
 	var (
 		restOpts = &controllercmd.RESTOptions{}
 		mgrOpts  = &controllercmd.ManagerOptions{
-			WebhookServerPort: 443,
-			HealthBindAddress: ":8081",
-			WebhookCertDir:    "/tmp/admission-shoot-dns-service-cert",
+			LeaderElection:          true,
+			LeaderElectionID:        controllercmd.LeaderElectionNameID(AdmissionName),
+			LeaderElectionNamespace: os.Getenv("LEADER_ELECTION_NAMESPACE"),
+			WebhookServerPort:       443,
+			HealthBindAddress:       ":8081",
+			WebhookCertDir:          "/tmp/admission-shoot-dns-service-cert",
 		}
 		// options for the webhook server
 		webhookServerOptions = &webhookcmd.ServerOptions{
@@ -56,7 +63,7 @@ func NewAdmissionCommand(ctx context.Context) *cobra.Command {
 		}
 		webhookSwitches = admissioncmd.GardenWebhookSwitchOptions()
 		webhookOptions  = webhookcmd.NewAddToManagerOptions(
-			"admission-shoot-dns-service",
+			AdmissionName,
 			"",
 			nil,
 			webhookServerOptions,
@@ -83,7 +90,26 @@ func NewAdmissionCommand(ctx context.Context) *cobra.Command {
 				Burst: 130,
 			}, restOpts.Completed().Config)
 
-			mgr, err := manager.New(restOpts.Completed().Config, mgrOpts.Completed().Options())
+			managerOptions := mgrOpts.Completed().Options()
+
+			// Operators can enable the source cluster option via SOURCE_CLUSTER environment variable.
+			// In-cluster config will be used if no SOURCE_KUBECONFIG is specified.
+			//
+			// The source cluster is for instance used by Gardener's certificate controller, to maintain certificate
+			// secrets in a different cluster ('runtime-garden') than the cluster where the webhook configurations
+			// are maintained ('virtual-garden').
+			var sourceClusterConfig *rest.Config
+			if sourceClusterEnabled := os.Getenv("SOURCE_CLUSTER"); sourceClusterEnabled != "" {
+				log.Info("Configuring source cluster option")
+				var err error
+				sourceClusterConfig, err = clientcmd.BuildConfigFromFlags("", os.Getenv("SOURCE_KUBECONFIG"))
+				if err != nil {
+					return err
+				}
+				managerOptions.LeaderElectionConfig = sourceClusterConfig
+			}
+
+			mgr, err := manager.New(restOpts.Completed().Config, managerOptions)
 			if err != nil {
 				runtimelog.Log.Error(err, "Could not instantiate manager")
 				os.Exit(1)
@@ -96,21 +122,9 @@ func NewAdmissionCommand(ctx context.Context) *cobra.Command {
 				os.Exit(1)
 			}
 
-			// Operators can enable the source cluster option via SOURCE_CLUSTER environment variable.
-			// In-cluster config will be used if no SOURCE_KUBECONFIG is specified.
-			//
-			// The source cluster is for instance used by Gardener's certificate controller, to maintain certificate
-			// secrets in a different cluster ('runtime-garden') than the cluster where the webhook configurations
-			// are maintained ('virtual-garden').
 			var sourceCluster cluster.Cluster
-			if sourceClusterEnabled := os.Getenv("SOURCE_CLUSTER"); sourceClusterEnabled != "" {
-				log.Info("Configuring source cluster option")
-				config, err := clientcmd.BuildConfigFromFlags("", os.Getenv("SOURCE_KUBECONFIG"))
-				if err != nil {
-					return err
-				}
-
-				sourceCluster, err = cluster.New(config, func(opts *cluster.Options) {
+			if sourceClusterConfig != nil {
+				sourceCluster, err = cluster.New(sourceClusterConfig, func(opts *cluster.Options) {
 					opts.Logger = log
 					opts.Cache.DefaultNamespaces = map[string]cache.Config{v1beta1constants.GardenNamespace: {}}
 				})
