@@ -44,25 +44,16 @@ type shoot struct {
 }
 
 // Validate implements extensionswebhook.Validator.Validate
-func (s *shoot) Validate(ctx context.Context, new, old client.Object) error {
+func (s *shoot) Validate(ctx context.Context, new, _ client.Object) error {
 	shoot, ok := new.(*core.Shoot)
 	if !ok {
 		return fmt.Errorf("wrong object type %T", new)
 	}
 
-	var oldShoot *core.Shoot
-	if old != nil {
-		var ok bool
-		oldShoot, ok = old.(*core.Shoot)
-		if !ok {
-			return fmt.Errorf("wrong object type %T for old object", old)
-		}
-	}
-
-	return s.validateShoot(ctx, oldShoot, shoot)
+	return s.validateShoot(ctx, shoot)
 }
 
-func (s *shoot) validateShoot(_ context.Context, _, shoot *core.Shoot) error {
+func (s *shoot) validateShoot(_ context.Context, shoot *core.Shoot) error {
 	if s.isDisabled(shoot) {
 		return nil
 	}
@@ -81,9 +72,6 @@ func (s *shoot) validateShoot(_ context.Context, _, shoot *core.Shoot) error {
 
 // isDisabled returns true if extension is explicitly disabled.
 func (s *shoot) isDisabled(shoot *core.Shoot) bool {
-	if shoot.Spec.DNS == nil {
-		return true
-	}
 	ext := s.findExtension(shoot)
 	if ext == nil {
 		return false
@@ -110,9 +98,6 @@ func (s *shoot) extractDNSConfig(shoot *core.Shoot) (*apisservice.DNSConfig, err
 
 // findExtension returns shoot-dns-service extension.
 func (s *shoot) findExtension(shoot *core.Shoot) *core.Extension {
-	if shoot.Spec.DNS == nil {
-		return nil
-	}
 	for i, ext := range shoot.Spec.Extensions {
 		if ext.Type == service.ExtensionType {
 			return &shoot.Spec.Extensions[i]
