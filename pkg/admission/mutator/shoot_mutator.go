@@ -50,25 +50,16 @@ type shoot struct {
 }
 
 // Mutate implements extensionswebhook.Mutator.Mutate
-func (s *shoot) Mutate(ctx context.Context, new, old client.Object) error {
+func (s *shoot) Mutate(ctx context.Context, new, _ client.Object) error {
 	shoot, ok := new.(*gardencorev1beta1.Shoot)
 	if !ok {
 		return fmt.Errorf("wrong object type %T", new)
 	}
 
-	var oldShoot *gardencorev1beta1.Shoot
-	if old != nil {
-		var ok bool
-		oldShoot, ok = old.(*gardencorev1beta1.Shoot)
-		if !ok {
-			return fmt.Errorf("wrong object type %T for old object", old)
-		}
-	}
-
-	return s.mutateShoot(ctx, oldShoot, shoot)
+	return s.mutateShoot(ctx, shoot)
 }
 
-func (s *shoot) mutateShoot(_ context.Context, _, new *gardencorev1beta1.Shoot) error {
+func (s *shoot) mutateShoot(_ context.Context, new *gardencorev1beta1.Shoot) error {
 	if s.isDisabled(new) {
 		return nil
 	}
