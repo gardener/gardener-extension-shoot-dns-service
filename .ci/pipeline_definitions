@@ -3,33 +3,41 @@ gardener-extension-shoot-dns-service:
     traits:
       version:
         preprocess: 'inject-commit-hash'
+      component_descriptor:
+        ocm_repository: europe-docker.pkg.dev/gardener-project/snapshots
       publish:
         dockerimages:
           gardener-extension-shoot-dns-service:
-            image: 'eu.gcr.io/gardener-project/gardener/extensions/shoot-dns-service'
+            image: europe-docker.pkg.dev/gardener-project/snapshots/gardener/extensions/shoot-dns-service
             dockerfile: 'Dockerfile'
             target: gardener-extension-shoot-dns-service
           gardener-extension-admission-shoot-dns-service:
-            image: 'eu.gcr.io/gardener-project/gardener/extensions/admission-shoot-dns-service'
+            image: europe-docker.pkg.dev/gardener-project/snapshots/gardener/extensions/admission-shoot-dns-service
             dockerfile: 'Dockerfile'
             target: gardener-extension-admission-shoot-dns-service
   jobs:
     head-update:
       traits:
-        component_descriptor: ~
+        component_descriptor:
+          ocm_repository_mappings:
+             - repository: europe-docker.pkg.dev/gardener-project/releases
         draft_release: ~
         options:
           public_build_logs: true
     pull-request:
       traits:
         pull-request: ~
-        component_descriptor: ~
+        component_descriptor:
+          ocm_repository_mappings:
+             - repository: europe-docker.pkg.dev/gardener-project/releases
         options:
           public_build_logs: true
     release:
       traits:
         version:
           preprocess: 'finalize'
+        component_descriptor:
+          ocm_repository: europe-docker.pkg.dev/gardener-project/releases
         release:
           nextversion: 'bump_minor'
           next_version_callback: '.ci/prepare_release'
@@ -44,6 +52,8 @@ gardener-extension-shoot-dns-service:
         publish:
           dockerimages:
             gardener-extension-shoot-dns-service:
+              image: europe-docker.pkg.dev/gardener-project/releases/gardener/extensions/shoot-dns-service
               tag_as_latest: true
             gardener-extension-admission-shoot-dns-service:
+              image: europe-docker.pkg.dev/gardener-project/releases/gardener/extensions/admission-shoot-dns-service
               tag_as_latest: true

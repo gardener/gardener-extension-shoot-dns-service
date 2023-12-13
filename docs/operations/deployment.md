@@ -48,8 +48,8 @@ providerConfig:
       ...
     dnsControllerManager:
       image:
-        repository: eu.gcr.io/gardener-project/dns-controller-manager
-        tag: v0.13.3
+        repository: europe-docker.pkg.dev/gardener-project/releases/dns-controller-manager
+        tag: v0.16.0
       configuration:
         cacheTtl: 300
         controllers: dnscontrollers,dnssources

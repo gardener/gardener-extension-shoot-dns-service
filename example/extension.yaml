@@ -125,7 +125,7 @@ spec:
       serviceAccountName: extension-shoot-dns-service
       containers:
       - name: gardener-extension-shoot-dns-service
-        image: eu.gcr.io/gardener-project/gardener/gardener-extension-hyper:latest
+        image: europe-docker.pkg.dev/gardener-project/releases/gardener/gardener-extension-hyper:latest
         imagePullPolicy: Always
         command:
         - /gardener-extension-hyper
