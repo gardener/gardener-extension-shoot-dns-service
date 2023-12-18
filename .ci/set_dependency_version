@@ -2,7 +2,7 @@
 
 set -e
 
-"$(dirname $0)"/../vendor/github.com/gardener/gardener/hack/.ci/set_dependency_version
+"$(dirname $0)"/hack/set_dependency_version
 # update copy in charts directory needed for installation after RBSC sync
 cp "$(dirname $0)"/../imagevector/images.yaml "$(dirname $0)"/../charts/images.yaml
 
@@ -20,5 +20,5 @@ apk add tar yq
 
 # generate example/controller-registration.yaml
 cd "$(dirname $0)"/../charts/gardener-extension-shoot-dns-service
-../../vendor/github.com/gardener/gardener/hack/generate-controller-registration.sh extension-shoot-dns-service . $(cat ../../VERSION) ../../example/controller-registration.yaml Extension:shoot-dns-service
+"$(dirname $0)"/hack/generate-controller-registration.sh extension-shoot-dns-service . $(cat ../../VERSION) ../../example/controller-registration.yaml Extension:shoot-dns-service
 sed -i 's/ type: shoot-dns-service/ type: shoot-dns-service\n    workerlessSupported: true/' ../../example/controller-registration.yaml
