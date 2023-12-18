@@ -29,6 +29,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	componentbaseconfig "k8s.io/component-base/config"
+	"k8s.io/component-base/version/verflag"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -80,6 +81,8 @@ func NewAdmissionCommand(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "admission webhooks of shoot-dns-service",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			verflag.PrintAndExitIfRequested()
+
 			if err := aggOption.Complete(); err != nil {
 				runtimelog.Log.Error(err, "Error completing options")
 				os.Exit(1)
