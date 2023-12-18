@@ -71,7 +71,7 @@ spec:
       serviceAccountName: gardener-resource-manager
       containers:
       - name: gardener-resource-manager
-        image: eu.gcr.io/gardener-project/gardener/gardener-resource-manager:v0.17.0
+        image: europe-docker.pkg.dev/gardener-project/releases/gardener/gardener-resource-manager:v0.17.0
         imagePullPolicy: IfNotPresent
         command:
         - /gardener-resource-manager

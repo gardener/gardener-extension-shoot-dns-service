@@ -1,5 +1,5 @@
 image:
-  repository: eu.gcr.io/gardener-project/gardener/extensions/shoot-dns-service
+  repository: europe-docker.pkg.dev/gardener-project/public/gardener/extensions/shoot-dns-service
   tag: latest
   pullPolicy: IfNotPresent
 
@@ -47,7 +47,7 @@ controllers:
 #   images:
 #   - name: dns-controller-manager
 #     sourceRepository: github.com/gardener/external-dns-management
-#     repository: eu.gcr.io/gardener-project/dns-controller-manager
+#     repository: europe-docker.pkg.dev/gardener-project/public/dns-controller-manager
 #     tag: "0.7.1"
 
 remoteDefaultDomainSecret:
@@ -63,7 +63,7 @@ remoteDefaultDomainSecret:
 dnsControllerManager:
   deploy: true
   image:
-    repository: eu.gcr.io/gardener-project/dns-controller-manager
+    repository: europe-docker.pkg.dev/gardener-project/public/dns-controller-manager
     tag: latest
     pullPolicy: IfNotPresent
 
