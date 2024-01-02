@@ -65,7 +65,3 @@ admissionregistration.k8s.io/v1alpha1
 {{- define "poddisruptionbudgetversion" -}}
 policy/v1
 {{- end -}}
-
-{{- define "podsecuritypolicyversion" -}}
-policy/v1beta1
-{{- end -}}
