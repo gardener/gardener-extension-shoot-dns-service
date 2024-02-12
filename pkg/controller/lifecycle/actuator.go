@@ -53,7 +53,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -730,7 +730,7 @@ func (a *actuator) collectProviderDetailsOnDeletingDNSEntries(ctx context.Contex
 			status = append(status, fmt.Sprintf("error on retrieving status of provider %s: %s", k, err))
 			continue
 		}
-		status = append(status, fmt.Sprintf("provider %s has status: %s", name, pointer.StringDeref(provider.Status.Message, "unknwon")))
+		status = append(status, fmt.Sprintf("provider %s has status: %s", name, ptr.Deref(provider.Status.Message, "unknwon")))
 	}
 	return strings.Join(status, ", ")
 }

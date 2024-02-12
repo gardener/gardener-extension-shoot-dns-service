@@ -36,7 +36,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -227,7 +227,7 @@ var _ = Describe("#DNSProvider", func() {
 
 		It("should return error when it's not ready", func() {
 			expected.Status.State = "dummy-not-ready"
-			expected.Status.Message = pointer.String("some-error-message")
+			expected.Status.Message = ptr.To("some-error-message")
 
 			Expect(c.Create(ctx, expected)).ToNot(HaveOccurred(), "adding pre-existing emptyProvider succeeds")
 
