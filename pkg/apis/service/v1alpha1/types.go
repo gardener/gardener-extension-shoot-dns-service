@@ -37,6 +37,7 @@ type DNSConfig struct {
 	// SyncProvidersFromShootSpecDNS is an optional flag for migrating and synchronising the providers given in the
 	// shoot manifest at section `spec.dns.providers`. If true, any direct changes on the `providers` section
 	// are overwritten with the content of section `spec.dns.providers`.
+	// This flag is ignored for Gardener >= v1.89.0, as no additional providers can be specified in section `spec.dns.providers` anymore.
 	// +optional
 	SyncProvidersFromShootSpecDNS *bool `json:"syncProvidersFromShootSpecDNS,omitempty"`
 }

@@ -21,11 +21,13 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/Masterminds/semver/v3"
 	extensionswebhook "github.com/gardener/gardener/extensions/pkg/webhook"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -66,6 +68,20 @@ func (s *shoot) mutateShoot(_ context.Context, new *gardencorev1beta1.Shoot) err
 	dnsConfig, err := s.extractDNSConfig(new)
 	if err != nil {
 		return err
+	}
+
+	gardenerVersion, err := semver.NewVersion(new.Status.Gardener.Version)
+	if err != nil {
+		return err
+	}
+	if !gardenerVersion.LessThan(semver.MustParse("v1.89.0")) {
+		// no sync if Gardener Version is >= v1.89.0 as .spec.dns.providers[].{domains,zones} fields
+		// will be removed with https://github.com/gardener/gardener/pull/9145 (planed for Gardener v1.89.0)
+		if dnsConfig != nil && dnsConfig.SyncProvidersFromShootSpecDNS != nil && *dnsConfig.SyncProvidersFromShootSpecDNS {
+			dnsConfig.SyncProvidersFromShootSpecDNS = ptr.To(false)
+			return s.updateDNSConfig(new, dnsConfig)
+		}
+		return nil
 	}
 
 	syncProviders := dnsConfig == nil || dnsConfig.Providers == nil
