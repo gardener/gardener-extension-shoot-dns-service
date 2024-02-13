@@ -55,7 +55,7 @@ Managed external DNS records are supported with the following DNS provider types
 
 ### Request DNS records for Ingress resources
 
-To request a DNS name for an Ingress or Service object in the shoot cluster it must be annotated with the DNS class `garden` and an annotation denoting the desired DNS names.
+To request a DNS name for `Ingress`, `Service` or `Gateway` (Istio or Gateway API) objects in the shoot cluster it must be annotated with the DNS class `garden` and an annotation denoting the desired DNS names.
 
 Example for an annotated Ingress resource:
 
@@ -117,7 +117,11 @@ spec:
   type: LoadBalancer
 ```
 
-#### Creating a DNSEntry resource explicitly
+### Request DNS records for Gateway resources
+
+Please see [Istio Gateways](tutorials/istio-gateways.md) or [Gateway API](tutorials/gateway-api-gateways.md) for details.
+
+### Creating a DNSEntry resource explicitly
 It is also possible to create a DNS entry via the Kubernetes resource called `DNSEntry`:
 ```yaml
 apiVersion: dns.gardener.cloud/v1alpha1
