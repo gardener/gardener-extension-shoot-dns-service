@@ -78,8 +78,6 @@ github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6r
 github.com/blang/semver v3.5.0+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=
 github.com/blang/semver/v4 v4.0.0 h1:1PFHFE6yCCTv8C1TeyNNarDzntLi7wMI5i/pzqYIsAM=
 github.com/blang/semver/v4 v4.0.0/go.mod h1:IbckMUScFkM3pff0VJDNKRiT6TG/YpiHIM2yvyW5YoQ=
-github.com/bronze1man/yaml2json v0.0.0-20211227013850-8972abeaea25 h1:GMDsCxuwEJ1tYY5anXDexdmQ1BDVzyU5BDU7N3PQWl4=
-github.com/bronze1man/yaml2json v0.0.0-20211227013850-8972abeaea25/go.mod h1:mVTg4vqWRIHEJK5QnZhSXBUP8GmI7ArXGq182zSJbxM=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/cespare/xxhash/v2 v2.2.0 h1:DC2CZ1Ep5Y4k3ZQ899DldepgrayRUGE6BBZ/cd9Cj44=
 github.com/cespare/xxhash/v2 v2.2.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
@@ -135,8 +133,8 @@ github.com/gardener/etcd-druid v0.22.0 h1:DVe+Zjrb93r9vI1uUiCTMHBffIUoMAKhNzFZNC
 github.com/gardener/etcd-druid v0.22.0/go.mod h1:FROhfVKyWBo4krlPe3R6FIhJRmOmijEWBdEeUP0CJjE=
 github.com/gardener/external-dns-management v0.14.2 h1:l7ohlZTOplyK+1AuzO9a1J4/ChyGIuKtLFoyrU+T2uI=
 github.com/gardener/external-dns-management v0.14.2/go.mod h1:dwWtamT74fAhrw2v8N/72XEtc9TvG4R6Gwd0FXKF9Do=
-github.com/gardener/gardener v1.88.0 h1:rswlezvHGqAcReLZRovPJdSEPWEOc67lHMWQqZQGICc=
-github.com/gardener/gardener v1.88.0/go.mod h1:HaefCVQWgYinwiZi4z8vEGu534/ql+bW9EEKy1bEsHY=
+github.com/gardener/gardener v1.89.0 h1:iqXptBVU0BeW0qhnvEywZtZdhD2yR3PcUlFsgdZH/1c=
+github.com/gardener/gardener v1.89.0/go.mod h1:9XpmG8MvZ2p36J7200qaGcqaFQ9vaP2ogZVkU6VgNGI=
 github.com/gardener/hvpa-controller/api v0.5.0 h1:f4F3O7YUrenwh4S3TgPREPiB287JjjUiUL18OqPLyAA=
 github.com/gardener/hvpa-controller/api v0.5.0/go.mod h1:QQl3ELkCaki+8RhXl0FZMfvnm0WCGwGJlGmrxJj6lvM=
 github.com/gardener/machine-controller-manager v0.50.0 h1:3dcQjzueFU1TGgprV00adjb3OCR99myTBx8DQGxywks=
