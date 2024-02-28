@@ -12,3 +12,6 @@ spec:
     matchLabels:
       app: {{ template "service.name" . }}
       release: {{ .Release.Name }}
+{{- if semverCompare ">= 1.26-0" .Capabilities.KubeVersion.GitVersion }}
+  unhealthyPodEvictionPolicy: AlwaysAllow
+{{- end }}
