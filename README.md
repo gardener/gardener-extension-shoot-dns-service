@@ -1,5 +1,5 @@
 # [Gardener Extension for DNS services](https://gardener.cloud)
-
+[![REUSE status](https://api.reuse.software/badge/github.com/gardener/gardener-extension-shoot-dns-service)](https://api.reuse.software/info/github.com/gardener/gardener-extension-shoot-dns-service)
 [![CI Build status](https://concourse.ci.gardener.cloud/api/v1/teams/gardener-tests/pipelines/gardener-extension-shoot-dns-service-master/jobs/master-head-update-job/badge)](https://concourse.ci.gardener.cloud/teams/gardener-tests/pipelines/gardener-extension-shoot-dns-service-master/jobs/master-head-update-job)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gardener/gardener-extension-shoot-dns-service)](https://goreportcard.com/report/github.com/gardener/gardener-extension-shoot-dns-service)
 
