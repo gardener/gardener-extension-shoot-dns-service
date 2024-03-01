@@ -13,6 +13,7 @@ import (
 	"time"
 
 	dnsv1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/helper"
 	"github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
 	"github.com/gardener/gardener/extensions/pkg/util"
@@ -32,6 +33,7 @@ import (
 	gutil "github.com/gardener/gardener/pkg/utils/gardener"
 	kutil "github.com/gardener/gardener/pkg/utils/kubernetes"
 	"github.com/gardener/gardener/pkg/utils/managedresources"
+	"github.com/gardener/gardener/pkg/utils/retry"
 	"github.com/go-logr/logr"
 	"github.com/hashicorp/go-multierror"
 	corev1 "k8s.io/api/core/v1"
@@ -685,8 +687,9 @@ func (a *actuator) deleteManagedDNSEntries(ctx context.Context, ex *extensionsv1
 			}
 		}
 		details := a.collectProviderDetailsOnDeletingDNSEntries(ctx, list)
+		err = fmt.Errorf("waiting until shoot DNS entries have been deleted: %s", details)
 		return &reconcilerutils.RequeueAfterError{
-			Cause:        fmt.Errorf("waiting until shoot DNS entries have been deleted: %s", details),
+			Cause:        retry.RetriableError(util.DetermineError(err, helper.KnownCodes)),
 			RequeueAfter: 15 * time.Second,
 		}
 	}
