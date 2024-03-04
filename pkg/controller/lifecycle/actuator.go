@@ -13,7 +13,6 @@ import (
 	"time"
 
 	dnsv1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/helper"
 	"github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
 	"github.com/gardener/gardener/extensions/pkg/util"
@@ -51,6 +50,7 @@ import (
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/charts"
 	"github.com/gardener/gardener-extension-shoot-dns-service/imagevector"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/helper"
 	apisservice "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/validation"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/common"
