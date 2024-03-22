@@ -1,6 +1,7 @@
 module github.com/gardener/gardener-extension-shoot-dns-service
 
-go 1.22.0
+go 1.22.1
+
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/gardener/external-dns-management v0.15.3
