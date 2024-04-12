@@ -5,7 +5,7 @@ go 1.22.2
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/gardener/external-dns-management v0.15.3
-	github.com/gardener/gardener v1.92.0
+	github.com/gardener/gardener v1.92.1
 	github.com/go-logr/logr v1.4.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/onsi/ginkgo/v2 v2.17.1
