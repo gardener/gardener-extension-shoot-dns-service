@@ -92,6 +92,20 @@ var _ = Describe("Validation", func() {
 			"BadValue": Equal("my-secret1"),
 			"Detail":   Equal("secret name is not defined as named resource references at 'spec.resources'"),
 		})),
+		Entry("missing resources", service.DNSConfig{
+			Providers: valid,
+		}, nil, matchers.ConsistOfFields(Fields{
+			"Type":     Equal(field.ErrorTypeInvalid),
+			"Field":    Equal("spec.extensions.[@.type='shoot-dns-service'].providerConfig[0].secretName"),
+			"BadValue": Equal("my-secret1"),
+			"Detail":   Equal("secret name is not defined as named resource references at 'spec.resources'"),
+		},
+			Fields{
+				"Type":     Equal(field.ErrorTypeInvalid),
+				"Field":    Equal("spec.extensions.[@.type='shoot-dns-service'].providerConfig[1].secretName"),
+				"BadValue": Equal("my-secret2"),
+				"Detail":   Equal("secret name is not defined as named resource references at 'spec.resources'"),
+			})),
 	)
 })
 
