@@ -48,7 +48,7 @@ var _ = Describe("Validation", func() {
 
 	DescribeTable("#ValidateDNSConfig",
 		func(config service.DNSConfig, resources []core.NamedResourceReference, match gomegatypes.GomegaMatcher) {
-			err := validation.ValidateDNSConfig(&config, resources)
+			err := validation.ValidateDNSConfig(&config, &resources)
 			Expect(err).To(match)
 		},
 		Entry("empty", service.DNSConfig{}, nil, BeEmpty()),
