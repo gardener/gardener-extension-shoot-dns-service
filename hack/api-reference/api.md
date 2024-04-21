@@ -48,8 +48,8 @@ string
 <td>
 <code>entries</code></br>
 <em>
-<a href="#dns.extensions.gardener.cloud/v1alpha1.*..DNSEntry">
-[]*..DNSEntry
+<a href="#dns.extensions.gardener.cloud/v1alpha1.*github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/v1alpha1.DNSEntry">
+[]*github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/v1alpha1.DNSEntry
 </a>
 </em>
 </td>
