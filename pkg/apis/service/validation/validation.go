@@ -51,7 +51,7 @@ func validateProviders(providers []service.DNSProvider, resources []core.NamedRe
 		}
 		if p.SecretName == nil || *p.SecretName == "" {
 			allErrs = append(allErrs, field.Required(path.Index(i).Child("secretName"), "secret name is required"))
-		} else {
+		} else if resources != nil {
 			found := false
 			for _, ref := range resources {
 				if ref.Name == *p.SecretName {
