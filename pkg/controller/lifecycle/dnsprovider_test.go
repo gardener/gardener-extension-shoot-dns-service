@@ -224,6 +224,16 @@ var _ = Describe("#DNSProvider", func() {
 			Expect(defaultDepWaiter.Wait(ctx)).To(HaveOccurred())
 		})
 
+		It("should return Coder when error contains error code", func() {
+			expected.Status.State = "Error"
+			expected.Status.Message = ptr.To("duplicate zones X and Y")
+
+			Expect(c.Create(ctx, expected)).ToNot(HaveOccurred(), "adding pre-existing emptyProvider succeeds")
+
+			err := defaultDepWaiter.Wait(ctx)
+			Expect(err.Error()).To(Equal("Error while waiting for DNSProvider test-chart-namespace/test-deploy to become ready: state Error: duplicate zones X and Y"))
+		})
+
 		It("should return error if we haven't observed the latest timestamp annotation", func() {
 			By("deploy")
 			// Deploy should fill internal state with the added timestamp annotation
