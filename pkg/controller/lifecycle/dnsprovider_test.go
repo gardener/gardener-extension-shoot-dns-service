@@ -6,11 +6,14 @@ package lifecycle
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	dnsv1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
+	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
+	"github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"github.com/gardener/gardener/pkg/component"
 	"github.com/gardener/gardener/pkg/utils/retry"
@@ -232,6 +235,11 @@ var _ = Describe("#DNSProvider", func() {
 
 			err := defaultDepWaiter.Wait(ctx)
 			Expect(err.Error()).To(Equal("Error while waiting for DNSProvider test-chart-namespace/test-deploy to become ready: state Error: duplicate zones X and Y"))
+			var coder helper.Coder
+			Expect(errors.As(err, &coder)).To(BeTrue())
+			Expect(coder.Codes()).To(Equal([]gardencorev1beta1.ErrorCode{
+				"ERR_CONFIGURATION_PROBLEM",
+			}))
 		})
 
 		It("should return error if we haven't observed the latest timestamp annotation", func() {
