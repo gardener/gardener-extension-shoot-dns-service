@@ -15,7 +15,7 @@ var (
 	unauthorizedRegexp       = regexp.MustCompile(`(?i)(Unauthorized|InvalidClientTokenId|SignatureDoesNotMatch|AuthorizationFailed|invalid_grant|Authorization Profile was not found|no active subscriptions|UnauthorizedOperation|not authorized|AccessDenied|OperationNotAllowed|Error 403|SERVICE_ACCOUNT_ACCESS_DENIED)`)
 	quotaExceededRegexp      = regexp.MustCompile(`(?i)((?:^|[^t]|(?:[^s]|^)t|(?:[^e]|^)st|(?:[^u]|^)est|(?:[^q]|^)uest|(?:[^e]|^)quest|(?:[^r]|^)equest)LimitExceeded|Quotas|Quota.*exceeded|exceeded quota|Quota has been met|QUOTA_EXCEEDED|Maximum number of ports exceeded|ZONE_RESOURCE_POOL_EXHAUSTED_WITH_DETAILS)`)
 	rateLimitsExceededRegexp = regexp.MustCompile(`(?i)(RequestLimitExceeded|Throttling|Too many requests)`)
-	configurationRegexp      = regexp.MustCompile("(?i)(no domain matching hosting zones)")
+	configurationRegexp      = regexp.MustCompile("(?i)(no domain matching hosting zones|duplicate zones)")
 
 	// KnownCodes maps Gardener error codes to respective regex.
 	KnownCodes = map[gardencorev1beta1.ErrorCode]func(string) bool{
