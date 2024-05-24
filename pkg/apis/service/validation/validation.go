@@ -29,8 +29,8 @@ var supportedProviderTypes = []string{
 }
 
 // ValidateDNSConfig validates the passed DNSConfig.
-// if resources != nil, it also validates if the referenced secrets are defined.
-func ValidateDNSConfig(config *service.DNSConfig, resources []core.NamedResourceReference) field.ErrorList {
+// If resources != nil, it also validates if the referenced secrets are defined.
+func ValidateDNSConfig(config *service.DNSConfig, resources *[]core.NamedResourceReference) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	if len(config.Providers) > 0 {
@@ -39,7 +39,7 @@ func ValidateDNSConfig(config *service.DNSConfig, resources []core.NamedResource
 	return allErrs
 }
 
-func validateProviders(providers []service.DNSProvider, resources []core.NamedResourceReference) field.ErrorList {
+func validateProviders(providers []service.DNSProvider, presources *[]core.NamedResourceReference) field.ErrorList {
 	allErrs := field.ErrorList{}
 	path := field.NewPath("spec", "extensions", "[@.type='"+service2.ExtensionType+"']", "providerConfig")
 	for i, p := range providers {
@@ -51,9 +51,9 @@ func validateProviders(providers []service.DNSProvider, resources []core.NamedRe
 		}
 		if p.SecretName == nil || *p.SecretName == "" {
 			allErrs = append(allErrs, field.Required(path.Index(i).Child("secretName"), "secret name is required"))
-		} else {
+		} else if presources != nil {
 			found := false
-			for _, ref := range resources {
+			for _, ref := range *presources {
 				if ref.Name == *p.SecretName {
 					found = true
 					break

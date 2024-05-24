@@ -54,7 +54,7 @@ func (s *shoot) validateShoot(_ context.Context, shoot *core.Shoot) error {
 
 	allErrs := field.ErrorList{}
 	if dnsConfig != nil {
-		allErrs = append(allErrs, validation.ValidateDNSConfig(dnsConfig, shoot.Spec.Resources)...)
+		allErrs = append(allErrs, validation.ValidateDNSConfig(dnsConfig, &shoot.Spec.Resources)...)
 	}
 
 	return allErrs.ToAggregate()

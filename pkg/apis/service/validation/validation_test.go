@@ -44,22 +44,29 @@ var _ = Describe("Validation", func() {
 				ResourceRef: v1.CrossVersionObjectReference{},
 			},
 		}
+		resources2 = []core.NamedResourceReference{
+			{
+				Name:        secretName2,
+				ResourceRef: v1.CrossVersionObjectReference{},
+			},
+		}
+		unsetResources []core.NamedResourceReference = nil
 	)
 
 	DescribeTable("#ValidateDNSConfig",
-		func(config service.DNSConfig, resources []core.NamedResourceReference, match gomegatypes.GomegaMatcher) {
-			err := validation.ValidateDNSConfig(&config, resources)
+		func(config service.DNSConfig, presources *[]core.NamedResourceReference, match gomegatypes.GomegaMatcher) {
+			err := validation.ValidateDNSConfig(&config, presources)
 			Expect(err).To(match)
 		},
 		Entry("empty", service.DNSConfig{}, nil, BeEmpty()),
 		Entry("valid", service.DNSConfig{
 			Providers: valid,
-		}, resources, BeEmpty()),
+		}, &resources, BeEmpty()),
 		Entry("missing provider type", service.DNSConfig{
 			Providers: modifyCopy(valid[1:], func(items []service.DNSProvider) {
 				items[0].Type = nil
 			}),
-		}, resources, matchers.ConsistOfFields(Fields{
+		}, &resources, matchers.ConsistOfFields(Fields{
 			"Type":   Equal(field.ErrorTypeRequired),
 			"Field":  Equal("spec.extensions.[@.type='shoot-dns-service'].providerConfig[0].type"),
 			"Detail": Equal("provider type is required"),
@@ -69,7 +76,7 @@ var _ = Describe("Validation", func() {
 				t := "dummy"
 				items[0].Type = &t
 			}),
-		}, resources, matchers.ConsistOfFields(Fields{
+		}, &resources, matchers.ConsistOfFields(Fields{
 			"Type":     Equal(field.ErrorTypeInvalid),
 			"Field":    Equal("spec.extensions.[@.type='shoot-dns-service'].providerConfig[0].type"),
 			"BadValue": Equal("dummy"),
@@ -79,14 +86,14 @@ var _ = Describe("Validation", func() {
 			Providers: modifyCopy(valid[1:], func(items []service.DNSProvider) {
 				items[0].SecretName = nil
 			}),
-		}, resources, matchers.ConsistOfFields(Fields{
+		}, &resources, matchers.ConsistOfFields(Fields{
 			"Type":   Equal(field.ErrorTypeRequired),
 			"Field":  Equal("spec.extensions.[@.type='shoot-dns-service'].providerConfig[0].secretName"),
 			"Detail": Equal("secret name is required"),
 		})),
 		Entry("missing named resource", service.DNSConfig{
 			Providers: valid,
-		}, resources[1:], matchers.ConsistOfFields(Fields{
+		}, &resources2, matchers.ConsistOfFields(Fields{
 			"Type":     Equal(field.ErrorTypeInvalid),
 			"Field":    Equal("spec.extensions.[@.type='shoot-dns-service'].providerConfig[0].secretName"),
 			"BadValue": Equal("my-secret1"),
@@ -94,19 +101,22 @@ var _ = Describe("Validation", func() {
 		})),
 		Entry("missing resources", service.DNSConfig{
 			Providers: valid,
-		}, nil, matchers.ConsistOfFields(Fields{
-			"Type":     Equal(field.ErrorTypeInvalid),
-			"Field":    Equal("spec.extensions.[@.type='shoot-dns-service'].providerConfig[0].secretName"),
-			"BadValue": Equal("my-secret1"),
-			"Detail":   Equal("secret name is not defined as named resource references at 'spec.resources'"),
-		},
+		}, &unsetResources, matchers.ConsistOfFields(
+			Fields{
+				"Type":     Equal(field.ErrorTypeInvalid),
+				"Field":    Equal("spec.extensions.[@.type='shoot-dns-service'].providerConfig[0].secretName"),
+				"BadValue": Equal("my-secret1"),
+				"Detail":   Equal("secret name is not defined as named resource references at 'spec.resources'"),
+			},
 			Fields{
 				"Type":     Equal(field.ErrorTypeInvalid),
 				"Field":    Equal("spec.extensions.[@.type='shoot-dns-service'].providerConfig[1].secretName"),
 				"BadValue": Equal("my-secret2"),
 				"Detail":   Equal("secret name is not defined as named resource references at 'spec.resources'"),
 			})),
-	)
+		Entry("validation without considering resources", service.DNSConfig{
+			Providers: valid,
+		}, nil, BeEmpty()))
 })
 
 func modifyCopy(orginal []service.DNSProvider, modifier func([]service.DNSProvider)) []service.DNSProvider {
