@@ -424,7 +424,7 @@ func (a *actuator) addCleanupOfOldAdditionalProviders(dnsProviders map[string]co
 		provider := &dnsv1alpha1.DNSProvider{}
 		if err := a.Client().Get(
 			ctx,
-			kutil.Key(namespace, ExternalDNSProviderName),
+			client.ObjectKey{Namespace: namespace, Name: ExternalDNSProviderName},
 			provider,
 		); err == nil {
 			dnsProviders[provider.Name] = component.OpDestroyAndWait(NewProviderDeployWaiter(
@@ -485,7 +485,7 @@ func (a *actuator) addAdditionalDNSProviders(providers map[string]*dnsv1alpha1.D
 		secret := &corev1.Secret{}
 		if err := a.Client().Get(
 			ctx,
-			kutil.Key(namespace, mappedSecretName),
+			client.ObjectKey{Namespace: namespace, Name: mappedSecretName},
 			secret,
 		); err != nil {
 			result = multierror.Append(result, fmt.Errorf("could not get dns provider[%d] secret %q -> %q: %w", i, *p.SecretName, mappedSecretName, err))
