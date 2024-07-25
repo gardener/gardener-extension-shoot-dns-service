@@ -1,4 +1,25 @@
 gardener-extension-shoot-dns-service:
+  templates:
+    helmcharts:
+    - &shoot-dns-service
+      name: shoot-dns-service
+      dir: charts/gardener-extension-shoot-dns-service
+      registry: europe-docker.pkg.dev/gardener-project/snapshots/charts/gardener/extensions
+      mappings:
+      - ref: ocm-resource:gardener-extension-shoot-dns-service.repository
+        attribute: image.repository
+      - ref: ocm-resource:gardener-extension-shoot-dns-service.tag
+        attribute: image.tag
+    - &shoot-dns-service-admission
+      name: admission-shoot-dns-service
+      dir: charts/gardener-extension-admission-shoot-dns-service
+      registry: europe-docker.pkg.dev/gardener-project/snapshots/charts/gardener/extensions
+      mappings:
+      - ref: ocm-resource:gardener-extension-admission-shoot-dns-service.repository
+        attribute: global.image.repository
+      - ref: ocm-resource:gardener-extension-admission-shoot-dns-service.tag
+        attribute: global.image.tag
+
   base_definition:
     traits:
       version:
@@ -24,6 +45,10 @@ gardener-extension-shoot-dns-service:
         draft_release: ~
         options:
           public_build_logs: true
+        publish:
+          helmcharts:
+          - *shoot-dns-service
+          - *shoot-dns-service-admission
     pull-request:
       traits:
         pull-request: ~
@@ -32,6 +57,10 @@ gardener-extension-shoot-dns-service:
              - repository: europe-docker.pkg.dev/gardener-project/releases
         options:
           public_build_logs: true
+        publish:
+          helmcharts:
+          - *shoot-dns-service
+          - *shoot-dns-service-admission
     release:
       traits:
         version:
@@ -56,3 +85,8 @@ gardener-extension-shoot-dns-service:
             gardener-extension-admission-shoot-dns-service:
               image: europe-docker.pkg.dev/gardener-project/releases/gardener/extensions/admission-shoot-dns-service
               tag_as_latest: true
+          helmcharts:
+          - <<: *shoot-dns-service
+            registry: europe-docker.pkg.dev/gardener-project/releases/charts/gardener/extensions
+          - <<: *shoot-dns-service-admission
+            registry: europe-docker.pkg.dev/gardener-project/releases/charts/gardener/extensions
