@@ -713,17 +713,18 @@ func (a *actuator) collectProviderDetailsOnDeletingDNSEntries(ctx context.Contex
 			status = append(status, "no suitable provider")
 			continue
 		}
-		namespace, name := kutil.ParseObjectName(k)
-		if namespace == "" {
+		parts := strings.Split(k, "/")
+		if len(parts) != 2 {
 			status = append(status, fmt.Sprintf("unknown provider name: %s", k))
 			continue
 		}
+		objectKey := client.ObjectKey{Namespace: parts[0], Name: parts[1]}
 		provider := &dnsv1alpha1.DNSProvider{}
-		if err := a.Client().Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, provider); err != nil {
+		if err := a.Client().Get(ctx, objectKey, provider); err != nil {
 			status = append(status, fmt.Sprintf("error on retrieving status of provider %s: %s", k, err))
 			continue
 		}
-		status = append(status, fmt.Sprintf("provider %s has status: %s", name, ptr.Deref(provider.Status.Message, "unknwon")))
+		status = append(status, fmt.Sprintf("provider %s has status: %s", objectKey, ptr.Deref(provider.Status.Message, "unknwon")))
 	}
 	return strings.Join(status, ", ")
 }
