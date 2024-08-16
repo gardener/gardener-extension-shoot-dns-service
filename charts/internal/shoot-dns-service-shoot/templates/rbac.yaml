@@ -77,6 +77,18 @@ rules:
   - update
   - create
   - watch
+- apiGroups:
+    - resources.gardener.cloud
+  resources:
+    - managedresources
+  verbs:
+    - get
+- apiGroups:
+    - ""
+  resources:
+    - namespaces
+  verbs:
+    - get
 {{- if .Values.dnsProviderReplication.enabled }}
 - apiGroups:
   - ""
