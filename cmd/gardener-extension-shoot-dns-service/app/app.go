@@ -12,8 +12,12 @@ import (
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/extensions/pkg/controller/heartbeat"
 	"github.com/gardener/gardener/extensions/pkg/util"
+	resourcesv1alpha1 "github.com/gardener/gardener/pkg/apis/resources/v1alpha1"
+	"github.com/gardener/gardener/pkg/controllerutils"
+	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	componentbaseconfig "k8s.io/component-base/config"
@@ -106,9 +110,64 @@ func (o *Options) run(ctx context.Context) error {
 		return fmt.Errorf("could not add controllers to manager: %s", err)
 	}
 
+	if err := (&migrations{}).AddToManager(ctx, mgr); err != nil {
+		return fmt.Errorf("could not add migrations to manager: %s", err)
+	}
+
 	if err := mgr.Start(ctx); err != nil {
 		return fmt.Errorf("error running manager: %s", err)
 	}
 
+	return nil
+}
+
+type migrations struct {
+	client client.Client
+	log    logr.Logger
+}
+
+var _ manager.Runnable = &migrations{}
+var _ manager.LeaderElectionRunnable = &migrations{}
+
+func (m *migrations) NeedLeaderElection() bool {
+	return true
+}
+
+func (m *migrations) Start(ctx context.Context) error {
+	// TODO (Martin Weindel) can be deleted after release 0.55.0
+	return m.deleteObsoleteManagedResources(ctx)
+}
+
+func (m *migrations) AddToManager(_ context.Context, mgr manager.Manager) error {
+	m.client = mgr.GetClient()
+	m.log = mgr.GetLogger().WithName("migrations")
+	return mgr.Add(m)
+}
+
+func (m *migrations) deleteObsoleteManagedResources(ctx context.Context) error {
+	log := m.log.WithName("deleteObsoleteManagedResources")
+
+	list := &metav1.PartialObjectMetadataList{}
+	list.SetGroupVersionKind(resourcesv1alpha1.SchemeGroupVersion.WithKind("ManagedResourceList"))
+	if err := m.client.List(ctx, list); err != nil {
+		return fmt.Errorf("could not list ManagedResources: %s", err)
+	}
+	deletionCount := 0
+	for _, managedResource := range list.Items {
+		if managedResource.Name != "extension-shoot-dns-service-shoot-keep" {
+			continue
+		}
+		if err := controllerutils.RemoveAllFinalizers(ctx, m.client, &managedResource); err != nil {
+			return fmt.Errorf("could not remove finalizer from ManagedResource %s: %s", client.ObjectKeyFromObject(&managedResource), err)
+		}
+		if err := m.client.Delete(ctx, &managedResource); client.IgnoreNotFound(err) != nil {
+			return fmt.Errorf("could not delete ManagedResource %s: %s", client.ObjectKeyFromObject(&managedResource), err)
+		}
+		log.Info("Deleted obsolete ManagedResource", "key", client.ObjectKeyFromObject(&managedResource))
+		deletionCount++
+	}
+	if deletionCount == 0 {
+		log.Info("No obsolete ManagedResources found")
+	}
 	return nil
 }

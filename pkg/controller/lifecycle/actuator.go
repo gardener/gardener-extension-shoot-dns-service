@@ -756,11 +756,6 @@ func (a *actuator) cleanupShootDNSEntries(helper *common.ShootDNSEntriesHelper) 
 }
 
 func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *apisservice.DNSConfig, cluster *controller.Cluster, namespace string) error {
-	// TODO (Martin Weindel) delete obsolete managed resource, the following 3 lines can be deleted after release 0.55.0
-	if err := managedresources.Delete(ctx, a.Client(), namespace, KeptShootResourcesName, false); err != nil {
-		return fmt.Errorf("could not create managed resource %s: %w", KeptShootResourcesName, err)
-	}
-
 	renderer, err := util.NewChartRendererForShoot(cluster.Shoot.Spec.Kubernetes.Version)
 	if err != nil {
 		return fmt.Errorf("could not create chart renderer: %w", err)
