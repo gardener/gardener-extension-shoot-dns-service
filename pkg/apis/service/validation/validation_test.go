@@ -80,7 +80,7 @@ var _ = Describe("Validation", func() {
 			"Type":     Equal(field.ErrorTypeInvalid),
 			"Field":    Equal("spec.extensions.[@.type='shoot-dns-service'].providerConfig[0].type"),
 			"BadValue": Equal("dummy"),
-			"Detail":   Equal("unsupported provider type. Valid types are: alicloud-dns, aws-route53, azure-dns, azure-private-dns, cloudflare-dns, google-clouddns, infoblox-dns, netlify-dns, openstack-designate, remote, rfc2136"),
+			"Detail":   Equal("unsupported provider type. Valid types are: alicloud-dns, aws-route53, azure-dns, azure-private-dns, cloudflare-dns, google-clouddns, infoblox-dns, netlify-dns, openstack-designate, remote, rfc2136, powerdns"),
 		})),
 		Entry("missing secret name", service.DNSConfig{
 			Providers: modifyCopy(valid[1:], func(items []service.DNSProvider) {

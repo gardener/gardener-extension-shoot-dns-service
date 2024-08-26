@@ -26,6 +26,7 @@ var supportedProviderTypes = []string{
 	"openstack-designate",
 	"remote",
 	"rfc2136",
+	"powerdns",
 }
 
 // ValidateDNSConfig validates the passed DNSConfig.
