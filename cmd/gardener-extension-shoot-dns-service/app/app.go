@@ -17,7 +17,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	componentbaseconfig "k8s.io/component-base/config"
@@ -147,8 +146,7 @@ func (m *migrations) AddToManager(_ context.Context, mgr manager.Manager) error 
 func (m *migrations) deleteObsoleteManagedResources(ctx context.Context) error {
 	log := m.log.WithName("deleteObsoleteManagedResources")
 
-	list := &metav1.PartialObjectMetadataList{}
-	list.SetGroupVersionKind(resourcesv1alpha1.SchemeGroupVersion.WithKind("ManagedResourceList"))
+	list := &resourcesv1alpha1.ManagedResourceList{}
 	if err := m.client.List(ctx, list); err != nil {
 		return fmt.Errorf("could not list ManagedResources: %s", err)
 	}
