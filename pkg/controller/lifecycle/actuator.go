@@ -36,13 +36,11 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/hashicorp/go-multierror"
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -758,47 +756,6 @@ func (a *actuator) cleanupShootDNSEntries(helper *common.ShootDNSEntriesHelper) 
 }
 
 func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *apisservice.DNSConfig, cluster *controller.Cluster, namespace string) error {
-	crd := &unstructured.Unstructured{}
-	crd.SetAPIVersion(apiextensionsv1.SchemeGroupVersion.String())
-	crd.SetKind("CustomResourceDefinition")
-	if err := a.Client().Get(ctx, client.ObjectKey{Name: "dnsentries.dns.gardener.cloud"}, crd); err != nil {
-		return fmt.Errorf("could not get crd dnsentries.dns.gardener.cloud: %w", err)
-	}
-	cleanCRD(crd)
-
-	crd2 := &unstructured.Unstructured{}
-	dec := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
-	_, _, err := dec.Decode([]byte(dnsAnnotationCRD), nil, crd2)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal dnsannotation.dns.gardener.cloud crd: %w", err)
-	}
-
-	replicateDNSProviders := a.replicateDNSProviders(dnsconfig)
-	crds := []*unstructured.Unstructured{crd, crd2}
-	if replicateDNSProviders {
-		crd3 := &unstructured.Unstructured{}
-		crd3.SetAPIVersion(crd.GetAPIVersion())
-		crd3.SetKind(crd.GetKind())
-		if err := a.Client().Get(ctx, client.ObjectKey{Name: "dnsproviders.dns.gardener.cloud"}, crd3); err != nil {
-			return fmt.Errorf("could not get crd dnsproviders.dns.gardener.cloud: %w", err)
-		}
-		cleanCRD(crd3)
-		crds = append(crds, crd3)
-	}
-
-	for _, c := range crds {
-		labels := c.GetLabels()
-		if labels == nil {
-			labels = map[string]string{}
-		}
-		labels[v1beta1constants.ShootNoCleanup] = "true"
-		c.SetLabels(labels)
-	}
-
-	if err = managedresources.CreateFromUnstructured(ctx, a.Client(), namespace, KeptShootResourcesName, false, "", crds, true, nil); err != nil {
-		return fmt.Errorf("could not create managed resource %s: %w", KeptShootResourcesName, err)
-	}
-
 	renderer, err := util.NewChartRendererForShoot(cluster.Shoot.Spec.Kubernetes.Version)
 	if err != nil {
 		return fmt.Errorf("could not create chart renderer: %w", err)
@@ -807,7 +764,7 @@ func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *
 	chartValues := map[string]interface{}{
 		"serviceName": service.ServiceName,
 		"dnsProviderReplication": map[string]interface{}{
-			"enabled": replicateDNSProviders,
+			"enabled": a.replicateDNSProviders(dnsconfig),
 		},
 		"shootAccessServiceAccountName": service.ShootAccessServiceAccountName,
 	}
