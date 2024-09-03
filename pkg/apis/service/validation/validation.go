@@ -24,9 +24,9 @@ var supportedProviderTypes = []string{
 	"infoblox-dns",
 	"netlify-dns",
 	"openstack-designate",
+	"powerdns",
 	"remote",
 	"rfc2136",
-	"powerdns",
 }
 
 // ValidateDNSConfig validates the passed DNSConfig.
