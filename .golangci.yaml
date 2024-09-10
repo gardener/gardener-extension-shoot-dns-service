@@ -8,3 +8,14 @@ run:
 linters:
   disable:
   - unused
+
+issues:
+  exclude-rules:
+    - linters:
+        - staticcheck
+      text: "SA1019:" # Excludes messages where deprecated variables are used (deprecated shoot.spec.dns.providers)
+      path: pkg/admission/mutator
+    - linters:
+        - staticcheck
+      text: "SA1019:" # Excludes messages where deprecated variables are used (deprecated shoot.spec.dns.providers)
+      path: pkg/controller/lifecycle
