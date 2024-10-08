@@ -24,6 +24,7 @@ var supportedProviderTypes = []string{
 	"infoblox-dns",
 	"netlify-dns",
 	"openstack-designate",
+	"powerdns",
 	"remote",
 	"rfc2136",
 }
