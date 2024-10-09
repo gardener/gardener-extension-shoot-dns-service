@@ -6,89 +6,52 @@ package system_test
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/gardener/gardener-extension-shoot-dns-service/test/resources/templates"
 	"github.com/gardener/gardener/extensions/pkg/controller"
-	"github.com/gardener/gardener/pkg/client/kubernetes"
 	"github.com/gardener/gardener/pkg/extensions"
 	"github.com/gardener/gardener/test/framework"
 	. "github.com/onsi/ginkgo/v2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/gardener/gardener-extension-shoot-dns-service/test/resources/templates"
 )
 
-var testCfg *ShootCPTestConfig
-
-// ShootCPTestConfig holds configuration for shoot tests using the control plane
-type ShootCPTestConfig struct {
-	ShootKubeconfig  string
-	SeedKubeconfig   string
-	ShootName        string
-	ProjectNamespace string
-}
-
 func init() {
-	testCfg = RegisterShootCPTestFlags()
-}
-
-// RegisterShootCPTestFlags registers flags for ShootCPTestConfig
-func RegisterShootCPTestFlags() *ShootCPTestConfig {
-	newCfg := &ShootCPTestConfig{}
-
-	flag.StringVar(&newCfg.ShootKubeconfig, "shoot-kubecfg", "", "the path with the shoot kubeconfig.")
-	flag.StringVar(&newCfg.SeedKubeconfig, "seed-kubecfg", "", "the path with the seed kubeconfig.")
-	flag.StringVar(&newCfg.ShootName, "shoot-name", "", "the shoot name")
-	flag.StringVar(&newCfg.ProjectNamespace, "project-namespace", "", "the project namespace of the shoot")
-
-	return newCfg
+	_ = framework.RegisterShootFrameworkFlags()
 }
 
 type shootDNSFramework struct {
-	*framework.CommonFramework
-	config ShootCPTestConfig
-
-	seedClient  kubernetes.Interface
-	shootClient kubernetes.Interface
-	cluster     *extensions.Cluster
+	*framework.ShootFramework
+	cluster *extensions.Cluster
 }
 
-func newShootDNSFramework(_ *framework.CommonConfig) *shootDNSFramework {
+func newShootDNSFramework(cfg *framework.ShootConfig) *shootDNSFramework {
 	return &shootDNSFramework{
-		CommonFramework: framework.NewCommonFramework(&framework.CommonConfig{
-			ResourceDir: "../resources",
-		}),
-		config: *testCfg,
+		ShootFramework: framework.NewShootFramework(cfg),
 	}
 }
 
 func (f *shootDNSFramework) technicalShootId() string {
-	middle := strings.TrimPrefix(f.config.ProjectNamespace, "garden-")
-	return fmt.Sprintf("shoot--%s--%s", middle, f.config.ShootName)
+	middle := strings.TrimPrefix(f.ProjectNamespace, "garden-")
+	return fmt.Sprintf("shoot--%s--%s", middle, f.Config.ShootName)
 }
 
-func (f *shootDNSFramework) prepareClientsAndCluster() {
-	var err error
-	f.seedClient, err = kubernetes.NewClientFromFile("", f.config.SeedKubeconfig,
-		kubernetes.WithClientOptions(client.Options{Scheme: kubernetes.SeedScheme}),
-		kubernetes.WithDisabledCachedClient(),
-	)
-	framework.ExpectNoError(err)
-	f.shootClient, err = kubernetes.NewClientFromFile("", f.config.ShootKubeconfig,
-		kubernetes.WithClientOptions(client.Options{Scheme: kubernetes.ShootScheme}),
-		kubernetes.WithDisabledCachedClient(),
-	)
-	framework.ExpectNoError(err)
+func (f *shootDNSFramework) prepareClientsAndCluster(ctx context.Context) {
+	if err := f.AddShoot(ctx, f.Config.ShootName, f.ProjectNamespace); err != nil {
+		Fail(fmt.Sprintf("addShoot failed: %s", err))
+	}
 
-	f.cluster, err = controller.GetCluster(context.TODO(), f.seedClient.Client(), f.technicalShootId())
-	framework.ExpectNoError(err)
+	var err error
+	f.cluster, err = controller.GetCluster(context.TODO(), f.SeedClient.Client(), f.technicalShootId())
+	if err != nil {
+		Fail(fmt.Sprintf("get cluster failed: %s", err))
+	}
 	if !f.cluster.Shoot.Spec.Addons.NginxIngress.Enabled {
 		Fail("The test requires .spec.addons.nginxIngress.enabled to be true")
 	}
@@ -105,7 +68,7 @@ func (f *shootDNSFramework) createNamespace(ctx context.Context, namespace strin
 		},
 	}
 
-	err := f.shootClient.Client().Create(ctx, ns)
+	err := f.ShootClient.Client().Create(ctx, ns)
 	framework.ExpectNoError(err)
 
 	return ns
@@ -113,9 +76,9 @@ func (f *shootDNSFramework) createNamespace(ctx context.Context, namespace strin
 
 func (f *shootDNSFramework) deleteNamespaceAndWait(ctx context.Context, ns *v1.Namespace) {
 	f.Logger.Info("Deleting namespace", "namespaceName", ns.Name)
-	err := f.shootClient.Client().Delete(ctx, ns)
+	err := f.ShootClient.Client().Delete(ctx, ns)
 	framework.ExpectNoError(err)
-	err = f.WaitUntilNamespaceIsDeleted(ctx, f.shootClient, ns.Name)
+	err = f.WaitUntilNamespaceIsDeleted(ctx, f.ShootClient, ns.Name)
 	framework.ExpectNoError(err)
 	f.Logger.Info("Deleted namespace", "namespaceName", ns.Name)
 }
@@ -135,7 +98,7 @@ func (f *shootDNSFramework) createEchoheaders(ctx context.Context, svcLB, delete
 		"ShootDnsName":            *f.cluster.Shoot.Spec.DNS.Domain,
 		"ServiceTypeLoadBalancer": svcLB,
 	}
-	err := f.RenderAndDeployTemplate(ctx, f.shootClient, templates.EchoserverApp, values)
+	err := f.RenderAndDeployTemplate(ctx, f.ShootClient, templates.EchoserverApp, values)
 	framework.ExpectNoError(err)
 
 	domainName := fmt.Sprintf("%s.%s", values["EchoName"], values["ShootDnsName"])
@@ -152,10 +115,10 @@ func (f *shootDNSFramework) createEchoheaders(ctx context.Context, svcLB, delete
 }
 
 var _ = Describe("ShootDNS test", func() {
+	dir, _ := os.Getwd()
 
-	f := newShootDNSFramework(&framework.CommonConfig{
-		ResourceDir: "../resources",
-	})
+	f := newShootDNSFramework(nil)
+	f.ResourcesDir = dir + "/../resources"
 
 	BeforeEach(f.prepareClientsAndCluster)
 
@@ -177,7 +140,7 @@ var _ = Describe("ShootDNS test", func() {
 			"Namespace": namespace,
 			"DNSName":   domainName,
 		}
-		err := f.RenderAndDeployTemplate(ctx, f.shootClient, templates.CustomDNSEntry, values)
+		err := f.RenderAndDeployTemplate(ctx, f.ShootClient, templates.CustomDNSEntry, values)
 		framework.ExpectNoError(err)
 
 		err = awaitDNSRecord(domainName, 120*time.Second)
