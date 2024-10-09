@@ -14,8 +14,8 @@ spec:
     - >-
       go test -timeout=0 ./test/system
       --v -ginkgo.v -ginkgo.progress -ginkgo.no-color
-      -seed-kubecfg=$TM_KUBECONFIG_PATH/seed.config
-      -shoot-kubecfg=$TM_KUBECONFIG_PATH/shoot.config
-      -shoot-name=$SHOOT_NAME
-      -project-namespace=$PROJECT_NAMESPACE
+      --kubecfg="$TM_KUBECONFIG_PATH/gardener.config"
+      --shoot-name=$SHOOT_NAME
+      --existing-shoot-name=$SHOOT_NAME
+      --project-namespace=$PROJECT_NAMESPACE
   image: golang:1.23.2
