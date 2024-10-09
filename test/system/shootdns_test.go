@@ -13,13 +13,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gardener/gardener-extension-shoot-dns-service/test/resources/templates"
 	"github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/pkg/extensions"
 	"github.com/gardener/gardener/test/framework"
 	. "github.com/onsi/ginkgo/v2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/gardener/gardener-extension-shoot-dns-service/test/resources/templates"
 )
 
 func init() {
