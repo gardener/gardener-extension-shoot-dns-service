@@ -20,3 +20,6 @@ TODO
 # Virtual go & fuse
 .virtualgo
 .fuse_hidden*
+
+# gosec
+gosec-report.sarif
