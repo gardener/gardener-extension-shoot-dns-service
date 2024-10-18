@@ -48,8 +48,8 @@ string
 <td>
 <code>entries</code></br>
 <em>
-<a href="#dns.extensions.gardener.cloud/v1alpha1.*..DNSEntry">
-[]*..DNSEntry
+<a href="#dns.extensions.gardener.cloud/v1alpha1.DNSEntry">
+[]DNSEntry
 </a>
 </em>
 </td>
@@ -60,6 +60,10 @@ string
 </table>
 <h3 id="dns.extensions.gardener.cloud/v1alpha1.DNSEntry">DNSEntry
 </h3>
+<p>
+(<em>Appears on:</em>
+<a href="#dns.extensions.gardener.cloud/v1alpha1.DNSState">DNSState</a>)
+</p>
 <p>
 </p>
 <table>
