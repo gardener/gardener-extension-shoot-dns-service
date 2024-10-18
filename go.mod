@@ -3,7 +3,7 @@ module github.com/gardener/gardener-extension-shoot-dns-service
 go 1.23.0
 
 require (
-	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
+	github.com/ahmetb/gen-crd-api-reference-docs v0.3.1-0.20241014194617-ffc4efda75d4
 	github.com/gardener/external-dns-management v0.18.6
 	github.com/gardener/gardener v1.105.0
 	github.com/go-logr/logr v1.4.2
@@ -133,8 +133,8 @@ require (
 	k8s.io/cluster-bootstrap v0.29.9 // indirect
 	k8s.io/component-helpers v0.29.9 // indirect
 	k8s.io/gengo v0.0.0-20230829151522-9cce18d56c01 // indirect
-	k8s.io/klog v1.0.0 // indirect
-	k8s.io/klog/v2 v2.120.1 // indirect
+	k8s.io/gengo/v2 v2.0.0-20240404160639-a0386bf69313 // indirect
+	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-aggregator v0.29.9 // indirect
 	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
 	k8s.io/kubelet v0.29.9 // indirect
