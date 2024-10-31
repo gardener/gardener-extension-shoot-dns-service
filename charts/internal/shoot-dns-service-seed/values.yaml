@@ -23,14 +23,12 @@ dnsProviderReplication:
 
 resources:
   requests:
-    memory: "64Mi"
-    cpu: "20m"
-  limits:
-    memory: "700Mi"
+    memory: "30Mi"
+    cpu: "5m"
 
 vpa:
   enabled: true
   minAllowed:
-    memory: 50Mi
+    memory: 25Mi
   updatePolicy:
     updateMode: "Auto"
