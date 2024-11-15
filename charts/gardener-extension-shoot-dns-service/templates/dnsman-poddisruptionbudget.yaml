@@ -13,6 +13,4 @@ spec:
     matchLabels:
 {{ include "dnsmanLabels" . | indent 6 }}
 {{- end }}
-{{- if semverCompare ">= 1.26-0" .Capabilities.KubeVersion.GitVersion }}
   unhealthyPodEvictionPolicy: AlwaysAllow
-{{- end }}
