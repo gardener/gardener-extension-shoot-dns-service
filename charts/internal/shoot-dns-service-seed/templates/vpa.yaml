@@ -9,6 +9,7 @@ spec:
     containerPolicies:
       - containerName: '*'
         controlledValues: RequestsOnly
+        controlledResources: [memory]
         minAllowed:
           memory: {{ .Values.vpa.minAllowed.memory }}
   targetRef:
