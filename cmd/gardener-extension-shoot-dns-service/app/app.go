@@ -133,7 +133,7 @@ func (m *migrations) NeedLeaderElection() bool {
 }
 
 func (m *migrations) Start(ctx context.Context) error {
-	// TODO (Martin Weindel) can be deleted after release 0.55.0
+	// TODO (Martin Weindel) can be deleted after release v1.55.0
 	return m.deleteObsoleteManagedResources(ctx)
 }
 
