@@ -20,9 +20,10 @@ import (
 )
 
 const (
-	ANNOTATION_OPERATION         = constants.GardenerOperation
-	ANNOTATION_OPERATION_MIGRATE = constants.GardenerOperationMigrate
-	ANNOTATION_OPERATION_RESTORE = constants.GardenerOperationRestore
+	ANNOTATION_OPERATION               = constants.GardenerOperation
+	ANNOTATION_OPERATION_MIGRATE       = constants.GardenerOperationMigrate
+	ANNOTATION_OPERATION_RESTORE       = constants.GardenerOperationRestore
+	ANNOTATION_OPERATION_RESTORE_STEP1 = "restore/step1"
 )
 
 func CopyMap(m map[string]string) map[string]string {
@@ -65,6 +66,13 @@ func IsRestoring(ex *extensionsv1alpha1.Extension) bool {
 		return false
 	}
 	return ex.Annotations[ANNOTATION_OPERATION] == ANNOTATION_OPERATION_RESTORE
+}
+
+func IsRestoringStep1(ex *extensionsv1alpha1.Extension) bool {
+	if ex.Annotations == nil {
+		return false
+	}
+	return ex.Annotations[ANNOTATION_OPERATION] == ANNOTATION_OPERATION_RESTORE_STEP1
 }
 
 // ShortenID shortens an identifier longer than maxlen characters by cutting the string

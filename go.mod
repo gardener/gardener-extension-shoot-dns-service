@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.1-0.20241014194617-ffc4efda75d4
-	github.com/gardener/external-dns-management v0.22.1
+	github.com/gardener/external-dns-management v0.22.2
 	github.com/gardener/gardener v1.110.0
 	github.com/go-logr/logr v1.4.2
 	github.com/hashicorp/go-multierror v1.1.1
@@ -43,6 +43,7 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/gardener/cert-management v0.17.1 // indirect
+	github.com/gardener/controller-manager-library v0.2.1-0.20241206090116-9fadce45689c // indirect
 	github.com/gardener/etcd-druid v0.25.0 // indirect
 	github.com/gardener/machine-controller-manager v0.55.1 // indirect
 	github.com/go-logr/zapr v1.3.0 // indirect
