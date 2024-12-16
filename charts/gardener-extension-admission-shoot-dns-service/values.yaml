@@ -15,6 +15,7 @@ global:
     resourcePolicy:
       minAllowed:
         memory: 64Mi
+      controlledValues: RequestsOnly
     updatePolicy:
       updateMode: "Auto"
   webhookConfig:
