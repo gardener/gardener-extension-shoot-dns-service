@@ -1,5 +1,5 @@
 {{- if and .Values.dnsControllerManager.deploy .Values.vpa.enabled }}
-apiVersion: "autoscaling.k8s.io/v1"
+apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
   name: dns-controller-manager-vpa
@@ -7,12 +7,20 @@ metadata:
   labels:
 {{ include "dnsmanLabels" . | indent 4 }}
 spec:
+  {{- if .Values.dnsControllerManager.vpa.resourcePolicy }}
   resourcePolicy:
     containerPolicies:
-      - containerName: '*'
-        controlledValues: {{ .Values.dnsControllerManager.vpa.controlledValues }}
-        minAllowed:
-          memory: {{ .Values.dnsControllerManager.vpa.minAllowed.memory }}
+    - containerName: dns-controller-manager
+      {{- with .Values.dnsControllerManager.vpa.resourcePolicy.minAllowed }}
+      minAllowed: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.dnsControllerManager.vpa.resourcePolicy.maxAllowed }}
+      maxAllowed: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.dnsControllerManager.vpa.resourcePolicy.controlledValues }}
+      controlledValues: {{ .Values.dnsControllerManager.vpa.resourcePolicy.controlledValues }}
+      {{- end }}
+  {{- end }}
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
