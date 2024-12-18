@@ -35,6 +35,7 @@ vpa:
   resourcePolicy:
     minAllowed:
       memory: 50Mi
+    controlledValues: RequestsOnly
   updatePolicy:
     updateMode: "Auto"
 
@@ -79,8 +80,6 @@ dnsControllerManager:
     requests:
       cpu: 100m
       memory: 64Mi
-    limits:
-      memory: 3Gi
 
   createCRDs: false
 
@@ -140,8 +139,9 @@ dnsControllerManager:
 
   vpa:
     enabled: true
-    controlledValues: RequestsOnly
-    minAllowed:
-      memory: 50Mi
+    resourcePolicy:
+      minAllowed:
+        memory: 50Mi
+      controlledValues: RequestsOnly
     updatePolicy:
       updateMode: "Auto"

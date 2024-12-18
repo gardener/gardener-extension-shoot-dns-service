@@ -61,8 +61,6 @@ providerConfig:
       deploy: true
       replicaCount: 1
       #resources:
-      #  limits:
-      #    memory: 1Gi
       #  requests:
       #    cpu: 50m
       #    memory: 500Mi
