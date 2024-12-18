@@ -19,12 +19,8 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 )
 
-const (
-	ANNOTATION_OPERATION               = constants.GardenerOperation
-	ANNOTATION_OPERATION_MIGRATE       = constants.GardenerOperationMigrate
-	ANNOTATION_OPERATION_RESTORE       = constants.GardenerOperationRestore
-	ANNOTATION_OPERATION_RESTORE_STEP1 = "restore/step1"
-)
+// gardenerOperationRestorePrepare is an internal value for the restore prepare operation
+const gardenerOperationRestorePrepare = "restore/prepare"
 
 func CopyMap(m map[string]string) map[string]string {
 	if m == nil {
@@ -58,21 +54,28 @@ func IsMigrating(ex *extensionsv1alpha1.Extension) bool {
 	if ex.Annotations == nil {
 		return false
 	}
-	return ex.Annotations[ANNOTATION_OPERATION] == ANNOTATION_OPERATION_MIGRATE
+	return ex.Annotations[constants.GardenerOperation] == constants.GardenerOperationMigrate
 }
 
 func IsRestoring(ex *extensionsv1alpha1.Extension) bool {
 	if ex.Annotations == nil {
 		return false
 	}
-	return ex.Annotations[ANNOTATION_OPERATION] == ANNOTATION_OPERATION_RESTORE
+	return ex.Annotations[constants.GardenerOperation] == constants.GardenerOperationRestore
 }
 
-func IsRestoringStep1(ex *extensionsv1alpha1.Extension) bool {
+func IsPreparingRestore(ex *extensionsv1alpha1.Extension) bool {
 	if ex.Annotations == nil {
 		return false
 	}
-	return ex.Annotations[ANNOTATION_OPERATION] == ANNOTATION_OPERATION_RESTORE_STEP1
+	return ex.Annotations[constants.GardenerOperation] == gardenerOperationRestorePrepare
+}
+
+func SetRestorePrepareAnnotation(ex *extensionsv1alpha1.Extension) {
+	if ex.Annotations == nil {
+		ex.Annotations = map[string]string{}
+	}
+	ex.Annotations[constants.GardenerOperation] = gardenerOperationRestorePrepare
 }
 
 // ShortenID shortens an identifier longer than maxlen characters by cutting the string
