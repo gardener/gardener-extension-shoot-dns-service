@@ -13,6 +13,7 @@ import (
 	"time"
 
 	dnsv1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
+	"github.com/gardener/external-dns-management/pkg/dns"
 	"github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
 	"github.com/gardener/gardener/extensions/pkg/util"
@@ -258,6 +259,19 @@ func (a *actuator) delete(ctx context.Context, log logr.Logger, ex *extensionsv1
 
 // Restore the Extension resource.
 func (a *actuator) Restore(ctx context.Context, log logr.Logger, ex *extensionsv1alpha1.Extension) error {
+	// TODO(martinweindel): Drop this section once the DNS owner has been removed for all seeds on all landscapes.
+	// First, run extension reconciliation with deactivated DNSOwner to avoid
+	// zone reconciliation before all entries are reconciled.
+	// Premature zone reconciliation can lead to DNS entries being deleted temporarily.
+	exCopy := ex.DeepCopy()
+	common.SetRestorePrepareAnnotation(exCopy)
+	if err := a.Reconcile(ctx, log, exCopy); err != nil {
+		return err
+	}
+
+	if err := a.waitForEntryReconciliation(ctx, log, ex); err != nil {
+		return err
+	}
 	return a.Reconcile(ctx, log, ex)
 }
 
@@ -268,7 +282,71 @@ func (a *actuator) Migrate(ctx context.Context, log logr.Logger, ex *extensionsv
 		return err
 	}
 
+	if err := a.ignoreDNSEntriesForMigration(ctx, ex); err != nil {
+		return err
+	}
+
 	return a.delete(ctx, log, ex, true)
+}
+
+func (a *actuator) ignoreDNSEntriesForMigration(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
+	entriesHelper := common.NewShootDNSEntriesHelper(ctx, a.Client(), ex)
+	list, err := entriesHelper.List()
+	if err != nil {
+		return err
+	}
+	for _, entry := range list {
+		patch := client.MergeFrom(entry.DeepCopy())
+		if entry.Annotations == nil {
+			entry.Annotations = map[string]string{}
+		}
+		entry.Annotations[dns.AnnotationHardIgnore] = "true"
+		if err := client.IgnoreNotFound(a.Client().Patch(ctx, &entry, patch)); err != nil {
+			return fmt.Errorf("failed to ignore DNS entry %q: %w", entry.Name, err)
+		}
+	}
+	return nil
+}
+
+func (a *actuator) waitForEntryReconciliation(ctx context.Context, log logr.Logger, ex *extensionsv1alpha1.Extension) error {
+	entriesHelper := common.NewShootDNSEntriesHelper(ctx, a.Client(), ex)
+	list, err := entriesHelper.List()
+	if err != nil {
+		return err
+	}
+
+	// annotate all entries with gardener.cloud/operation=reconcile
+	for _, entry := range list {
+		patch := client.MergeFrom(entry.DeepCopy())
+		if entry.Annotations == nil {
+			entry.Annotations = map[string]string{}
+		}
+		entry.Annotations[v1beta1constants.GardenerOperation] = v1beta1constants.GardenerOperationReconcile
+		delete(entry.Annotations, dns.AnnotationHardIgnore) // should not be needed as the DNSEntries have been recreated, but just to be sure
+		if err := client.IgnoreNotFound(a.Client().Patch(ctx, &entry, patch)); err != nil {
+			return fmt.Errorf("failed to revert ignore DNS entry %q: %w", entry.Name, err)
+		}
+	}
+
+	// wait for all entries to be reconciled, i.e. gardener.cloud/operation annotation is removed
+	start := time.Now()
+	for _, entry := range list {
+		for {
+			if err := a.Client().Get(ctx, client.ObjectKeyFromObject(&entry), &entry); err != nil {
+				return err
+			}
+			if _, ok := entry.Annotations[v1beta1constants.GardenerOperation]; !ok {
+				log.Info("DNS entry reconciled", "entry", entry.Name)
+				break
+			}
+			if time.Since(start) > 3*time.Minute {
+				return fmt.Errorf("timeout waiting for DNS entry %q to be reconciled", entry.Name)
+			}
+			time.Sleep(1 * time.Second)
+		}
+	}
+
+	return nil
 }
 
 func (a *actuator) isManagingDNSProviders(dns *gardencorev1beta1.DNS) bool {
@@ -312,7 +390,7 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 	if !deploymentEnabled || a.isHibernated(cluster) {
 		replicas = 0
 	}
-	shootActive := !common.IsMigrating(ex)
+	shootActive := !common.IsMigrating(ex) && !common.IsPreparingRestore(ex)
 
 	chartValues := map[string]interface{}{
 		"serviceName":                      service.ServiceName,
