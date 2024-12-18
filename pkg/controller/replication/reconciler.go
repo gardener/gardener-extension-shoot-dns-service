@@ -53,7 +53,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	if err != nil {
 		return result, err
 	}
-	if common.IsMigrating(ext) {
+	if ext == nil || common.IsMigrating(ext) {
 		return result, nil
 	}
 	statehandler, err := common.NewStateHandler(ctx, r.Env, ext, false)
