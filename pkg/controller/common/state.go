@@ -12,8 +12,10 @@ import (
 
 	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	"github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
+	extapi "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -22,6 +24,32 @@ import (
 	wireapi "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/v1alpha1"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 )
+
+var (
+	decoder runtime.Decoder
+)
+
+func init() {
+	decoder = serializer.NewCodecFactory(helper.Scheme).UniversalDecoder()
+}
+
+func GetExtensionState(ext *extapi.Extension) (*apis.DNSState, error) {
+	state := &apis.DNSState{}
+	if ext.Status.State != nil && ext.Status.State.Raw != nil {
+		data := ext.Status.State.Raw
+		if LooksLikeCompressedEntriesState(data) {
+			var err error
+			data, err = DecompressEntriesState(data)
+			if err != nil {
+				return state, fmt.Errorf("could not decompress extension state: %w", err)
+			}
+		}
+		if _, _, err := decoder.Decode(data, nil, state); err != nil {
+			return state, fmt.Errorf("could not decode extension state: %w", err)
+		}
+	}
+	return state, nil
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // state update handling
@@ -51,7 +79,7 @@ func NewStateHandler(ctx context.Context, env *Env, ext *v1alpha1.Extension, ref
 		elem:   elem,
 		helper: NewShootDNSEntriesHelper(ctx, env.Client(), ext),
 	}
-	handler.state, err = helper.GetExtensionState(ext)
+	handler.state, err = GetExtensionState(ext)
 	if err != nil || refresh {
 		if err != nil {
 			handler.modified = true
@@ -184,9 +212,14 @@ func (s *StateHandler) Update(reason string) error {
 		if s.ext.Status.State == nil {
 			s.ext.Status.State = &runtime.RawExtension{}
 		}
-		s.ext.Status.State.Raw, err = json.Marshal(wire)
+		data, err := json.Marshal(wire)
 		if err != nil {
 			s.Info("marshalling failed", "error", err)
+			return err
+		}
+		s.ext.Status.State.Raw, err = CompressEntriesState(data)
+		if err != nil {
+			s.Info("compressing failed", "error", err)
 			return err
 		}
 		s.ext.Status.State.Object = nil
