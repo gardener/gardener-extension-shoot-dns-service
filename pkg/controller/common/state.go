@@ -12,8 +12,10 @@ import (
 
 	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	"github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
+	extapi "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -22,6 +24,32 @@ import (
 	wireapi "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/v1alpha1"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 )
+
+var (
+	decoder runtime.Decoder
+)
+
+func init() {
+	decoder = serializer.NewCodecFactory(helper.Scheme).UniversalDecoder()
+}
+
+func GetExtensionState(ext *extapi.Extension) (*apis.DNSState, error) {
+	state := &apis.DNSState{}
+	if ext.Status.State != nil && ext.Status.State.Raw != nil {
+		data := ext.Status.State.Raw
+		if LooksLikeCompressedEntriesState(data) {
+			var err error
+			data, err = DecompressEntriesState(data)
+			if err != nil {
+				return state, fmt.Errorf("could not decompress extension state: %w", err)
+			}
+		}
+		if _, _, err := decoder.Decode(data, nil, state); err != nil {
+			return state, fmt.Errorf("could not decode extension state: %w", err)
+		}
+	}
+	return state, nil
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // state update handling
@@ -51,7 +79,7 @@ func NewStateHandler(ctx context.Context, env *Env, ext *v1alpha1.Extension, ref
 		elem:   elem,
 		helper: NewShootDNSEntriesHelper(ctx, env.Client(), ext),
 	}
-	handler.state, err = helper.GetExtensionState(ext)
+	handler.state, err = GetExtensionState(ext)
 	if err != nil || refresh {
 		if err != nil {
 			handler.modified = true
@@ -93,17 +121,6 @@ func (s *StateHandler) Refresh() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	/*
-		list = append(list, dnsapi.DNSEntry{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "DUMMY",
-			},
-			Spec: dnsapi.DNSEntrySpec{
-				DNSName: "bla.blub.de",
-				Targets: []string{"8.8.8.8"},
-			},
-		})
-	*/
 	return s.EnsureEntries(list), nil
 }
 
@@ -178,25 +195,29 @@ func (s *StateHandler) Update(reason string) error {
 		wire.Kind = wireapi.DNSStateKind
 		err := helper.Scheme.Convert(s.state, wire, nil)
 		if err != nil {
-			s.Infof("state conversion failed: %s", err)
+			s.Error(err, "state conversion failed")
 			return err
 		}
 		if s.ext.Status.State == nil {
 			s.ext.Status.State = &runtime.RawExtension{}
 		}
-		s.ext.Status.State.Raw, err = json.Marshal(wire)
+		data, err := json.Marshal(wire)
 		if err != nil {
-			s.Info("marshalling failed", "error", err)
+			s.Error(err, "marshalling failed")
+			return err
+		}
+		s.ext.Status.State.Raw, err = CompressEntriesState(data)
+		if err != nil {
+			s.Error(err, "compressing failed")
 			return err
 		}
 		s.ext.Status.State.Object = nil
 		err = s.client.Status().Update(s.ctx, s.ext)
 		if err != nil {
-			s.Info("update failed", "error", err)
-		} else {
-			s.modified = false
+			s.Error(err, "update failed")
+			return err
 		}
-		return err
+		s.modified = false
 	}
 	return nil
 }

@@ -124,7 +124,7 @@ sast-report: $(GOSEC)
 	@./hack/sast.sh --gosec-report true
 
 .PHONY: test
-test:
+test: $(GINKGO)
 	@bash $(GARDENER_HACK_DIR)/test.sh ./cmd/... ./pkg/...
 
 .PHONY: test-cov
@@ -135,8 +135,12 @@ test-cov:
 test-clean:
 	@bash $(GARDENER_HACK_DIR)/test-cover-clean.sh
 
+.PHONY: test-integration-lifecycle
+test-integration-lifecycle: $(REPORT_COLLECTOR) $(SETUP_ENVTEST)
+	@bash $(GARDENER_HACK_DIR)/test-integration.sh ./test/integration/lifecycle/...
+
 .PHONY: verify
-verify: check format test sast
+verify: check format test test-integration-lifecycle sast
 
 .PHONY: verify-extended
-verify-extended: check-generate check format test-cov test-clean sast-report
+verify-extended: check-generate check format test-cov test-clean test-integration-lifecycle sast-report

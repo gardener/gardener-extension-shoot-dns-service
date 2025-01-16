@@ -4,6 +4,7 @@ go 1.23.0
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.1-0.20241014194617-ffc4efda75d4
+	github.com/andybalholm/brotli v1.1.1
 	github.com/gardener/external-dns-management v0.22.2
 	github.com/gardener/gardener v1.110.0
 	github.com/go-logr/logr v1.4.2
@@ -29,7 +30,6 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.3.1 // indirect
 	github.com/Masterminds/sprig/v3 v3.3.0 // indirect
-	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
