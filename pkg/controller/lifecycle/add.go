@@ -54,7 +54,7 @@ func AddToManagerWithOptions(ctx context.Context, mgr manager.Manager, opts AddO
 		return fmt.Errorf("failed to create chart renderer: %v", err)
 	}
 
-	return extension.Add(ctx, mgr, extension.AddArgs{
+	return extension.Add(mgr, extension.AddArgs{
 		Actuator:          NewActuator(mgr, chartApplier, chartRenderer, config.DNSService),
 		ControllerOptions: opts.Controller,
 		Name:              Name,
