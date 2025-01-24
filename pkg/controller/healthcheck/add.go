@@ -31,7 +31,6 @@ func RegisterHealthChecks(ctx context.Context, mgr manager.Manager) error {
 	}
 
 	return healthcheck.DefaultRegistration(
-		ctx,
 		service.ExtensionType,
 		extensionsv1alpha1.SchemeGroupVersion.WithKind(extensionsv1alpha1.ExtensionResource),
 		func() client.ObjectList { return &extensionsv1alpha1.ExtensionList{} },
