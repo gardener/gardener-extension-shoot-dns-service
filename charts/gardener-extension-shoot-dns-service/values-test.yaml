@@ -67,6 +67,8 @@ dnsControllerManager:
     repository: europe-docker.pkg.dev/gardener-project/public/dns-controller-manager
     tag: latest
     pullPolicy: IfNotPresent
+  imageOld: # TODO(MartinWeindel): Remove once metadata records have been cleaned up.
+    tag: "v0.22.2"
 
   replicaCount: 1
 
