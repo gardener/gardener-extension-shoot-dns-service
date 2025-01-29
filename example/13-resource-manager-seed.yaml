@@ -73,6 +73,8 @@ spec:
       - name: gardener-resource-manager
         image: europe-docker.pkg.dev/gardener-project/releases/gardener/gardener-resource-manager:v0.17.0
         imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
         command:
         - /gardener-resource-manager
         - --leader-election=true
