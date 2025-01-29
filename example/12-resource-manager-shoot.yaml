@@ -235,6 +235,8 @@ spec:
         - --namespace=shoot--foo--bar
         - --sync-period=1m
         - --target-kubeconfig=/etc/gardener-resource-manager/kubeconfig
+        securityContext:
+          allowPrivilegeEscalation: false
         resources:
           limits:
             cpu: 400m

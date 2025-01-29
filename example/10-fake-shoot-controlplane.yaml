@@ -32,6 +32,8 @@ spec:
         - -advertise-client-urls=http://0.0.0.0:2379
         - -listen-client-urls=http://0.0.0.0:2379
         - -data-dir=/etcd-data
+        securityContext:
+          allowPrivilegeEscalation: false
         volumeMounts:
         - mountPath: /etcd-data
           name: data
@@ -171,6 +173,8 @@ spec:
         - --v=2
         image: registry.k8s.io/kube-apiserver:v1.28.2
         imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
         name: kube-apiserver
         ports:
         - containerPort: 443

@@ -34,6 +34,8 @@ spec:
       containers:
         - name: {{ template "service.name" . }}
           image: {{ index .Values.images "dns-controller-manager" }}
+          securityContext:
+            allowPrivilegeEscalation: false
           volumeMounts:
           - mountPath: /var/run/secrets/gardener.cloud/shoot/generic-kubeconfig
             name: kubeconfig

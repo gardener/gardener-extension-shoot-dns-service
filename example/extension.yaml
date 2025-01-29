@@ -127,6 +127,8 @@ spec:
       - name: gardener-extension-shoot-dns-service
         image: europe-docker.pkg.dev/gardener-project/releases/gardener/gardener-extension-hyper:latest
         imagePullPolicy: Always
+        securityContext:
+          allowPrivilegeEscalation: false
         command:
         - /gardener-extension-hyper
         - shoot-dns-service-extension-controller-manager

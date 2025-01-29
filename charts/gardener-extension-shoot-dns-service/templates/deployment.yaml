@@ -55,6 +55,8 @@ spec:
         {{- if .Values.remoteDefaultDomainSecret.enabled }}
         - --remote-default-domain-secret={{ .Release.Namespace }}/remote-default-domain
         {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
         env:
         - name: LEADER_ELECTION_NAMESPACE
           valueFrom:

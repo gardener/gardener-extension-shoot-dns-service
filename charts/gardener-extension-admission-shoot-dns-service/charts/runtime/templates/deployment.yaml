@@ -58,6 +58,8 @@ spec:
         - name: SOURCE_CLUSTER
           value: enabled
         {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
         ports:
         - name: webhook-server
           containerPort: {{ .Values.global.webhookConfig.serverPort }}
