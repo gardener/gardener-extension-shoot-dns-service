@@ -1,22 +1,22 @@
-{{- if .Values.global.vpa.enabled}}
+{{- if .Values.vpa.enabled}}
 apiVersion: "autoscaling.k8s.io/v1"
 kind: VerticalPodAutoscaler
 metadata:
   name: {{ include "name" . }}-vpa
   namespace: {{ .Release.Namespace }}
 spec:
-  {{- if .Values.global.vpa.resourcePolicy }}
+  {{- if .Values.vpa.resourcePolicy }}
   resourcePolicy:
     containerPolicies:
     - containerName: {{ include "name" . }}
-      {{- with .Values.global.vpa.resourcePolicy.minAllowed }}
+      {{- with .Values.vpa.resourcePolicy.minAllowed }}
       minAllowed: {{ toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.global.vpa.resourcePolicy.maxAllowed }}
+      {{- with .Values.vpa.resourcePolicy.maxAllowed }}
       maxAllowed: {{ toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .Values.global.vpa.resourcePolicy.controlledValues }}
-      controlledValues: {{ .Values.global.vpa.resourcePolicy.controlledValues }}
+      {{- if .Values.vpa.resourcePolicy.controlledValues }}
+      controlledValues: {{ .Values.vpa.resourcePolicy.controlledValues }}
       {{- end }}
   {{- end }}
   targetRef:
@@ -24,5 +24,5 @@ spec:
     kind: Deployment
     name: {{ include "name" . }}
   updatePolicy:
-    updateMode: {{ .Values.global.vpa.updatePolicy.updateMode }}
+    updateMode: {{ .Values.vpa.updatePolicy.updateMode }}
 {{- end }}

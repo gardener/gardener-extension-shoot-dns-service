@@ -20,6 +20,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	componentbaseconfigv1alpha1 "k8s.io/component-base/config/v1alpha1"
+	"k8s.io/component-base/version"
 	"k8s.io/component-base/version/verflag"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -74,6 +75,13 @@ func NewAdmissionCommand(ctx context.Context) *cobra.Command {
 		Use: "admission webhooks of shoot-dns-service",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			verflag.PrintAndExitIfRequested()
+
+			log.Info("Starting "+AdmissionName, "version", version.Get())
+
+			if gardenKubeconfig := os.Getenv("GARDEN_KUBECONFIG"); gardenKubeconfig != "" {
+				log.Info("Getting rest config for garden from GARDEN_KUBECONFIG", "path", gardenKubeconfig)
+				restOpts.Kubeconfig = gardenKubeconfig
+			}
 
 			if err := aggOption.Complete(); err != nil {
 				runtimelog.Log.Error(err, "Error completing options")
