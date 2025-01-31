@@ -16,18 +16,18 @@ gardener-extension-shoot-dns-service:
       registry: europe-docker.pkg.dev/gardener-project/snapshots/charts/gardener/extensions
       mappings:
       - ref: ocm-resource:gardener-extension-admission-shoot-dns-service.repository
-        attribute: global.image.repository
+        attribute: image.repository
       - ref: ocm-resource:gardener-extension-admission-shoot-dns-service.tag
-        attribute: global.image.tag
+        attribute: image.tag
     - &shoot-dns-service-admission-runtime
       name: admission-shoot-dns-service-runtime
       dir: charts/gardener-extension-admission-shoot-dns-service/charts/runtime
       registry: europe-docker.pkg.dev/gardener-project/snapshots/charts/gardener/extensions
       mappings:
       - ref: ocm-resource:gardener-extension-admission-shoot-dns-service.repository
-        attribute: global.image.repository
+        attribute: image.repository
       - ref: ocm-resource:gardener-extension-admission-shoot-dns-service.tag
-        attribute: global.image.tag
+        attribute: image.tag
 
   base_definition:
     repo:
