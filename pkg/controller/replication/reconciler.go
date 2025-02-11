@@ -40,15 +40,6 @@ func newReconciler(name string, mgr manager.Manager, controllerConfig config.DNS
 func (r *reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	result := reconcile.Result{}
 
-	// ensure that only one DNSEntry is reconciled per extension (shoot) to avoid parallel conflicting updates
-	if !r.lock.TryLock(req.Namespace) {
-		r.Env.Info("delaying as namespace already locked", "namespace", req.Namespace, "entry", req.Name)
-		result.Requeue = true
-		result.RequeueAfter = wait.Jitter(1*time.Second, 0)
-		return result, nil
-	}
-	defer r.lock.Unlock(req.Namespace)
-
 	ext, err := r.findExtension(ctx, req.Namespace)
 	if err != nil {
 		return result, err
@@ -56,6 +47,19 @@ func (r *reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	if ext == nil || common.IsMigrating(ext) {
 		return result, nil
 	}
+	if common.IsPreparingRestore(ext) || common.IsRestoring(ext) {
+		return reconcile.Result{Requeue: true, RequeueAfter: 10 * time.Second}, nil
+	}
+
+	// ensure that only one DNSEntry is reconciled per extension (shoot) to avoid parallel conflicting updates
+	if !r.lock.TryLock(req.Namespace) {
+		r.Env.Info("delaying as namespace already locked", "namespace", req.Namespace, "entry", req.Name)
+		result.Requeue = true
+		result.RequeueAfter = wait.Jitter(2*time.Second, 0.1)
+		return result, nil
+	}
+	defer r.lock.Unlock(req.Namespace)
+
 	statehandler, err := common.NewStateHandler(ctx, r.Env, ext, false)
 	if err != nil {
 		return result, err
