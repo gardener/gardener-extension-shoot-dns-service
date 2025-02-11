@@ -7,5 +7,5 @@ images:
 - name: dns-controller-manager
   sourceRepository: github.com/gardener/external-dns-management
   repository: europe-docker.pkg.dev/gardener-project/releases/dns-controller-manager
-  tag: "v0.23.0"
+  tag: "v0.23.1"
   targetVersion: "1.25.x" # TODO(marc1404): Remove once metadata records have been cleaned up.
