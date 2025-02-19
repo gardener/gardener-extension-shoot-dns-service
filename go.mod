@@ -6,7 +6,7 @@ require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.1-0.20241014194617-ffc4efda75d4
 	github.com/andybalholm/brotli v1.1.1
 	github.com/gardener/external-dns-management v0.23.0
-	github.com/gardener/gardener v1.112.0
+	github.com/gardener/gardener v1.112.2
 	github.com/go-logr/logr v1.4.2
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/onsi/ginkgo/v2 v2.22.1
@@ -45,7 +45,7 @@ require (
 	github.com/gardener/cert-management v0.17.3 // indirect
 	github.com/gardener/controller-manager-library v0.2.1-0.20241212154005-7de194a006b6 // indirect
 	github.com/gardener/etcd-druid v0.26.1 // indirect
-	github.com/gardener/machine-controller-manager v0.56.0 // indirect
+	github.com/gardener/machine-controller-manager v0.56.1 // indirect
 	github.com/go-logr/zapr v1.3.0 // indirect
 	github.com/go-openapi/errors v0.22.0 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
