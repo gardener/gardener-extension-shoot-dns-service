@@ -68,7 +68,7 @@ dnsControllerManager:
     tag: latest
     pullPolicy: IfNotPresent
   imageOld: # TODO(MartinWeindel): Remove once metadata records have been cleaned up.
-    tag: "v0.22.2"
+    tag: "v0.22.3"
 
   replicaCount: 1
 
