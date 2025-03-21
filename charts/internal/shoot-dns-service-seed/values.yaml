@@ -16,7 +16,6 @@ creatorLabelValue: "4711-abc"
 shootId: "4711"
 seedId: "3141"
 dnsClass: ""
-shootActive: true
 
 dnsProviderReplication:
   enabled: false

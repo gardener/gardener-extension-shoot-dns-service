@@ -47,7 +47,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	if ext == nil || common.IsMigrating(ext) {
 		return result, nil
 	}
-	if common.IsPreparingRestore(ext) || common.IsRestoring(ext) {
+	if common.IsRestoring(ext) {
 		return reconcile.Result{Requeue: true, RequeueAfter: 10 * time.Second}, nil
 	}
 

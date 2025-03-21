@@ -259,16 +259,6 @@ func (a *actuator) delete(ctx context.Context, log logr.Logger, ex *extensionsv1
 
 // Restore the Extension resource.
 func (a *actuator) Restore(ctx context.Context, log logr.Logger, ex *extensionsv1alpha1.Extension) error {
-	// TODO(martinweindel): Drop this section once the DNS owner has been removed for all seeds on all landscapes.
-	// First, run extension reconciliation with deactivated DNSOwner to avoid
-	// zone reconciliation before all entries are reconciled.
-	// Premature zone reconciliation can lead to DNS entries being deleted temporarily.
-	exCopy := ex.DeepCopy()
-	common.SetRestorePrepareAnnotation(exCopy)
-	if err := a.Reconcile(ctx, log, exCopy); err != nil {
-		return err
-	}
-
 	if err := a.waitForEntryReconciliation(ctx, log, ex); err != nil {
 		return err
 	}
@@ -390,7 +380,6 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 	if !deploymentEnabled || a.isHibernated(cluster) {
 		replicas = 0
 	}
-	shootActive := !common.IsMigrating(ex) && !common.IsPreparingRestore(ex)
 
 	chartValues := map[string]interface{}{
 		"serviceName":                      service.ServiceName,
@@ -403,8 +392,7 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 		"dnsProviderReplication": map[string]interface{}{
 			"enabled": a.replicateDNSProviders(dnsconfig),
 		},
-		"dnsOwner":    a.OwnerName(namespace),
-		"shootActive": shootActive,
+		"dnsOwner": a.OwnerName(namespace),
 	}
 
 	if err := gutil.NewShootAccessSecret(service.ShootAccessSecretName, namespace).Reconcile(ctx, a.Client()); err != nil {
