@@ -47,11 +47,7 @@ spec:
         runAsUser: 65534
       containers:
       - name: dns-controller-manager
-        {{- if eq (index .Values.gardener.seed.labels "service.dns.extensions.gardener.cloud/drop-metadata-records") "true" }}
         image: "{{ include "dnsmanImage" . }}"
-        {{- else }}
-        image: "{{ include "dnsmanImageOld" . }}"
-        {{- end }}
         imagePullPolicy: {{ .Values.dnsControllerManager.image.pullPolicy }}
         securityContext:
           allowPrivilegeEscalation: false
