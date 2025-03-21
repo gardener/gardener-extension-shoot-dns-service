@@ -14,14 +14,6 @@
   {{- end }}
 {{- end }}
 
-{{-  define "dnsmanImageOld" -}}
-  {{- if hasPrefix "sha256:" .Values.dnsControllerManager.imageOld.tag }}
-  {{- printf "%s@%s" .Values.dnsControllerManager.image.repository .Values.dnsControllerManager.imageOld.tag }}
-  {{- else }}
-  {{- printf "%s:%s" .Values.dnsControllerManager.image.repository .Values.dnsControllerManager.imageOld.tag }}
-  {{- end }}
-{{- end }}
-
 {{- define "leaderelectionid" -}}
 extension-shoot-dns-service-leader-election
 {{- end -}}
