@@ -49,7 +49,7 @@ func (f *shootDNSFramework) prepareClientsAndCluster(ctx context.Context) {
 	}
 
 	var err error
-	f.cluster, err = controller.GetCluster(context.TODO(), f.SeedClient.Client(), f.technicalShootId())
+	f.cluster, err = controller.GetCluster(context.Background(), f.SeedClient.Client(), f.technicalShootId())
 	if err != nil {
 		Fail(fmt.Sprintf("get cluster failed: %s", err))
 	}

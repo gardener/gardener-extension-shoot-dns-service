@@ -68,7 +68,7 @@ var _ = Describe("#DNSProvider", func() {
 			&TimeNow, func() time.Time { return now },
 		)
 
-		ctx = context.TODO()
+		ctx = context.Background()
 		log = logf.Log.WithName("test")
 
 		scheme = runtime.NewScheme()
