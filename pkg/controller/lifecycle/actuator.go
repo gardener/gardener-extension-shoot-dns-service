@@ -6,7 +6,6 @@ package lifecycle
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -39,7 +38,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -79,11 +77,6 @@ const (
 	// ShootDNSServiceUseRemoteDefaultDomainLabel is the label key for marking a seed to use the remote DNS-provider for the default domain
 	ShootDNSServiceUseRemoteDefaultDomainLabel = "service.dns.extensions.gardener.cloud/use-remote-default-domain"
 )
-
-// dnsAnnotationCRD contains the contents of the dnsAnnotationCRD.yaml file.
-//
-//go:embed dnsAnnotationCRD.yaml
-var dnsAnnotationCRD string
 
 // NewActuator returns an actuator responsible for Extension resources.
 func NewActuator(mgr manager.Manager, chartApplier kubernetes.ChartApplier, chartRenderer chartrenderer.Interface, config config.DNSServiceConfig) extension.Actuator {
@@ -873,19 +866,6 @@ func (a *actuator) createOrUpdateManagedResource(ctx context.Context, namespace,
 
 func (a *actuator) OwnerName(namespace string) string {
 	return fmt.Sprintf("%s-%s", OwnerName, namespace)
-}
-
-func cleanCRD(crd *unstructured.Unstructured) {
-	crd.SetResourceVersion("")
-	crd.SetUID("")
-	crd.SetCreationTimestamp(metav1.Time{})
-	crd.SetGeneration(0)
-	crd.SetManagedFields(nil)
-	annotations := crd.GetAnnotations()
-	if annotations != nil {
-		delete(annotations, "kubectl.kubernetes.io/last-applied-configuration")
-	}
-	crd.SetAnnotations(annotations)
 }
 
 func enableDNSProviderForShootDNSEntries(seedNamespace string) map[string]string {
