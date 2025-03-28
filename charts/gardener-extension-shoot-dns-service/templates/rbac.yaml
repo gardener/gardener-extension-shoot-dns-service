@@ -44,7 +44,6 @@ rules:
   verbs:
   - create
   - delete
-  - deletecollection
   - get
   - list
   - patch
@@ -80,7 +79,6 @@ rules:
   - update
   - patch
   - delete
-  - deletecollection
 - apiGroups:
   - "dns.gardener.cloud"
   resources:
