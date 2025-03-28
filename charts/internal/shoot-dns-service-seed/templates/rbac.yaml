@@ -17,7 +17,14 @@ rules:
   - "dnsproviders"
   {{- end }}
   verbs:
-  - "*"
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - create
+  - update
+  - watch
 - apiGroups:
   - ""
   resources:
@@ -36,7 +43,11 @@ rules:
   - "secrets"
   {{- end }}
   verbs:
-  - "*"
+  - create
+  - delete
+  - get
+  - patch
+  - update
 ---
 apiVersion: {{ include "rbacversion" . }}
 kind: RoleBinding
