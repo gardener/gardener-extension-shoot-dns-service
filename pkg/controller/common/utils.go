@@ -11,7 +11,6 @@ import (
 	"strconv"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
-	extapi "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,8 +29,8 @@ func CopyMap(m map[string]string) map[string]string {
 	return r
 }
 
-func FindExtension(ctx context.Context, reader client.Reader, namespace string) (*extapi.Extension, error) {
-	list := &extapi.ExtensionList{}
+func FindExtension(ctx context.Context, reader client.Reader, namespace string) (*extensionsv1alpha1.Extension, error) {
+	list := &extensionsv1alpha1.ExtensionList{}
 	if err := reader.List(ctx, list, client.InNamespace(namespace)); err != nil {
 		if errors.IsNotFound(err) {
 			return nil, nil

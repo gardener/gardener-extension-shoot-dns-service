@@ -53,7 +53,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	// ensure that only one DNSEntry is reconciled per extension (shoot) to avoid parallel conflicting updates
 	if !r.lock.TryLock(req.Namespace) {
-		r.Env.Info("delaying as namespace already locked", "namespace", req.Namespace, "entry", req.Name)
+		r.Info("delaying as namespace already locked", "namespace", req.Namespace, "entry", req.Name)
 		result.Requeue = true
 		result.RequeueAfter = wait.Jitter(2*time.Second, 0.1)
 		return result, nil

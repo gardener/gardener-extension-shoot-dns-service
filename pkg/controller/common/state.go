@@ -11,7 +11,6 @@ import (
 	"reflect"
 
 	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
-	"github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	extapi "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -57,14 +56,14 @@ func GetExtensionState(ext *extapi.Extension) (*apis.DNSState, error) {
 type StateHandler struct {
 	*Env
 	ctx      context.Context
-	ext      *v1alpha1.Extension
+	ext      *extapi.Extension
 	state    *apis.DNSState
 	modified bool
 	elem     *unstructured.Unstructured
 	helper   *ShootDNSEntriesHelper
 }
 
-func NewStateHandler(ctx context.Context, env *Env, ext *v1alpha1.Extension, refresh bool) (*StateHandler, error) {
+func NewStateHandler(ctx context.Context, env *Env, ext *extapi.Extension, refresh bool) (*StateHandler, error) {
 	var err error
 
 	elem := &unstructured.Unstructured{}

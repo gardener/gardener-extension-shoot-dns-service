@@ -1,21 +1,33 @@
+version: "2"
 run:
   concurrency: 4
-  deadline: 10m
-  # some of the linters don't work correctly with 1.18, ref https://github.com/golangci/golangci-lint/issues/2649
-  # we are not using generics, so let's pin this to 1.17 until 1.18 is fully supported
-  #go: "1.17"
-
 linters:
   disable:
-  - unused
-
-issues:
-  exclude-rules:
-    - linters:
-        - staticcheck
-      text: "SA1019:" # Excludes messages where deprecated variables are used (deprecated shoot.spec.dns.providers)
-      path: pkg/admission/mutator
-    - linters:
-        - staticcheck
-      text: "SA1019:" # Excludes messages where deprecated variables are used (deprecated shoot.spec.dns.providers)
-      path: pkg/controller/lifecycle
+    - unused
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - staticcheck
+        path: pkg/admission/mutator
+        text: 'SA1019:'
+      - linters:
+          - staticcheck
+        path: pkg/controller/lifecycle
+        text: 'SA1019:'
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

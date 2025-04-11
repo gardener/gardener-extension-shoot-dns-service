@@ -157,11 +157,11 @@ var _ = Describe("#DNSProvider", func() {
 			}),
 			Entry("with custom labels", func() {
 				vals.Labels = map[string]string{"foo": "bar"}
-				expected.ObjectMeta.Labels = map[string]string{"foo": "bar"}
+				expected.Labels = map[string]string{"foo": "bar"}
 			}),
 			Entry("with custom annotations", func() {
 				vals.Annotations = map[string]string{"foo": "bar"}
-				expected.ObjectMeta.Annotations = map[string]string{"foo": "bar"}
+				expected.Annotations = map[string]string{"foo": "bar"}
 			}),
 			Entry("with no exclude zones", func() {
 				vals.Spec.Zones.Exclude = nil
@@ -251,7 +251,7 @@ var _ = Describe("#DNSProvider", func() {
 			patch := client.MergeFrom(expected.DeepCopy())
 			expected.Status.State = "Ready"
 			// add old timestamp annotation
-			expected.ObjectMeta.Annotations = map[string]string{
+			expected.Annotations = map[string]string{
 				v1beta1constants.GardenerTimestamp: now.Add(-time.Millisecond).UTC().String(),
 			}
 			Expect(c.Patch(ctx, expected, patch)).To(Succeed(), "patching dnsprovider succeeds")
@@ -269,7 +269,7 @@ var _ = Describe("#DNSProvider", func() {
 			patch := client.MergeFrom(expected.DeepCopy())
 			expected.Status.State = "Ready"
 			// add up-to-date timestamp annotation
-			expected.ObjectMeta.Annotations = map[string]string{
+			expected.Annotations = map[string]string{
 				v1beta1constants.GardenerTimestamp: now.UTC().String(),
 			}
 			Expect(c.Patch(ctx, expected, patch)).To(Succeed(), "patching dnsprovider succeeds")
