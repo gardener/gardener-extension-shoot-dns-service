@@ -26,7 +26,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	runtimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -37,7 +36,7 @@ import (
 // AdmissionName is the name of the admission component.
 const AdmissionName = "admission-shoot-dns-service"
 
-var log = logf.Log.WithName("gardener-extension-admission-shoot-dns-service")
+var log = runtimelog.Log.WithName("gardener-extension-admission-shoot-dns-service")
 
 // NewAdmissionCommand creates a new command for running an AWS admission webhook.
 func NewAdmissionCommand(ctx context.Context) *cobra.Command {
