@@ -21,25 +21,25 @@ func NewStringsLock() *StringsLock {
 
 // TryLock returns true if the name is successfully locked, i.e. not locked by another consumer.
 // If true is returned, it must be unlocked with `Unlock`
-func (this *StringsLock) TryLock(name string) bool {
-	this.lock.Lock()
-	defer this.lock.Unlock()
+func (l *StringsLock) TryLock(name string) bool {
+	l.lock.Lock()
+	defer l.lock.Unlock()
 
-	_, ok := this.strings[name]
+	_, ok := l.strings[name]
 	if !ok {
-		this.strings[name] = struct{}{}
+		l.strings[name] = struct{}{}
 	}
 	return !ok
 }
 
 // Unlock unlocks a name locked with `TryLock`
-func (this *StringsLock) Unlock(name string) {
-	this.lock.Lock()
-	defer this.lock.Unlock()
+func (l *StringsLock) Unlock(name string) {
+	l.lock.Lock()
+	defer l.lock.Unlock()
 
-	_, ok := this.strings[name]
+	_, ok := l.strings[name]
 	if !ok {
 		panic("missing lock")
 	}
-	delete(this.strings, name)
+	delete(l.strings, name)
 }
