@@ -107,6 +107,7 @@ rules:
   verbs:
   - update
   - get
+  - patch
 - apiGroups:
   - policy
   resources:
