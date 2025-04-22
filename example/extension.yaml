@@ -33,7 +33,13 @@ rules:
   resources:
   - managedresources
   verbs:
-  - "*"
+  - create
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - delete
 - apiGroups:
   - ""
   resources:
@@ -56,14 +62,25 @@ rules:
   resources:
   - "dnsentries"
   verbs:
-  - "*"
+  - create
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - delete
+  - deletecollection
 - apiGroups:
   - ""
   resources:
   - "configmaps"
   - "secrets"
   verbs:
-  - "*"
+  - create
+  - get
+  - update
+  - patch
+  - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
