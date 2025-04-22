@@ -90,15 +90,6 @@ rules:
   - create
   - watch
 - apiGroups:
-  - apiextensions.k8s.io
-  resources:
-  - customresourcedefinitions
-  verbs:
-  - delete
-  resourceNames:
-  - "dnslocks.dns.gardener.cloud"
-  - "remoteaccesscertificates.dns.gardener.cloud"
-- apiGroups:
   - ""
   resources:
   - configmaps
