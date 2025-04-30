@@ -173,7 +173,7 @@ func (s *StateHandler) ensureEntryFor(entry *dnsapi.DNSEntry) bool {
 
 // Update updates the state in the extension status.
 func (s *StateHandler) Update(reason string) error {
-	if s.modified {
+	if s.modified || s.ext.Status.State == nil {
 		s.Info("updating modified state", "namespace", s.ext.Namespace, "extension", s.ext.Name, "reason", reason)
 		wire := &wireapi.DNSState{}
 		wire.APIVersion = wireapi.SchemeGroupVersion.String()
