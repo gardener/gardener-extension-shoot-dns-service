@@ -254,12 +254,12 @@ func (a *actuator) Migrate(ctx context.Context, log logr.Logger, ex *extensionsv
 		return err
 	}
 
-	if ex.Annotations[DropDNSEntriesStateOnMigration] != "true" {
-		if err := a.ensureStateRefreshed(ctx, ex); err != nil {
+	if ex.Annotations[DropDNSEntriesStateOnMigration] == "true" {
+		if err := a.ensureStateDropped(ctx, ex); err != nil {
 			return err
 		}
 	} else {
-		if err := a.ensureStateDropped(ctx, ex); err != nil {
+		if err := a.ensureStateRefreshed(ctx, ex); err != nil {
 			return err
 		}
 	}
