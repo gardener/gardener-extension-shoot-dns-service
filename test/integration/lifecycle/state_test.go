@@ -235,9 +235,6 @@ var _ = Describe("Lifecycle state tests", func() {
 		Expect(c.Get(ctx, client.ObjectKeyFromObject(ext), ext)).To(Succeed())
 		Expect(ext.Status.State).NotTo(BeNil())
 		Expect(common.LooksLikeCompressedEntriesState(ext.Status.State.Raw)).Should(BeTrue())
-		compressedSize := len(ext.Status.State.Raw)
-		uncompressed, err := common.DecompressEntriesState(ext.Status.State.Raw)
-		Expect(err).NotTo(HaveOccurred())
 
 		state, err := common.GetExtensionState(ext)
 		Expect(err).NotTo(HaveOccurred())
@@ -264,8 +261,8 @@ var _ = Describe("Lifecycle state tests", func() {
 
 		By("check non-empty compressed extension state")
 		Expect(common.LooksLikeCompressedEntriesState(ext.Status.State.Raw)).Should(BeTrue())
-		compressedSize = len(ext.Status.State.Raw)
-		uncompressed, err = common.DecompressEntriesState(ext.Status.State.Raw)
+		compressedSize := len(ext.Status.State.Raw)
+		uncompressed, err := common.DecompressEntriesState(ext.Status.State.Raw)
 		Expect(err).NotTo(HaveOccurred())
 
 		state, err = common.GetExtensionState(ext)
