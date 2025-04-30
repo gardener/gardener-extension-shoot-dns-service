@@ -11,17 +11,16 @@ import (
 	"reflect"
 
 	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
+	"github.com/gardener/external-dns-management/pkg/dns"
 	extapi "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/helper"
 	wireapi "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/v1alpha1"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 )
 
 var (
@@ -53,6 +52,7 @@ func GetExtensionState(ext *extapi.Extension) (*apis.DNSState, error) {
 ////////////////////////////////////////////////////////////////////////////////
 // state update handling
 
+// StateHandler is a handler for the state of the extension.
 type StateHandler struct {
 	*Env
 	ctx      context.Context
@@ -63,7 +63,8 @@ type StateHandler struct {
 	helper   *ShootDNSEntriesHelper
 }
 
-func NewStateHandler(ctx context.Context, env *Env, ext *extapi.Extension, refresh bool) (*StateHandler, error) {
+// NewStateHandler creates a new state handler.
+func NewStateHandler(ctx context.Context, env *Env, ext *extapi.Extension) (*StateHandler, error) {
 	var err error
 
 	elem := &unstructured.Unstructured{}
@@ -79,42 +80,20 @@ func NewStateHandler(ctx context.Context, env *Env, ext *extapi.Extension, refre
 		helper: NewShootDNSEntriesHelper(ctx, env.Client(), ext),
 	}
 	handler.state, err = GetExtensionState(ext)
-	if err != nil || refresh {
-		if err != nil {
-			handler.modified = true
-			handler.Infof("cannot setup state for %s -> refreshing: %s", ext.Name, err)
-		} else {
-			handler.Infof("refreshing state for %s", ext.Name)
-		}
-		_, err = handler.Refresh()
-		if err != nil {
-			handler.Infof("cannot setup state for %s -> refreshing: %s", ext.Name, err)
-			return nil, err
-		}
-	}
-	return handler, nil
+	return handler, err
 }
 
-func (s *StateHandler) Infof(msg string, args ...interface{}) {
-	s.Info(fmt.Sprintf(msg, args...), "component", service.ServiceName, "namespace", s.ext.Namespace)
-}
-
+// ShootDNSEntriesHelper returns the helper for the shoot DNSEntries.
 func (s *StateHandler) ShootDNSEntriesHelper() *ShootDNSEntriesHelper {
 	return s.helper
 }
 
-func (s *StateHandler) Delete(name string) error {
-	s.elem.SetName(name)
-	if err := s.client.Delete(s.ctx, s.elem); client.IgnoreNotFound(err) != nil {
-		return err
-	}
-	return nil
-}
-
+// StateItems returns the list of entries in the state.
 func (s *StateHandler) StateItems() []*apis.DNSEntry {
 	return s.state.Entries
 }
 
+// Refresh reads all entries from the control plane into the state.
 func (s *StateHandler) Refresh() (bool, error) {
 	list, err := s.ShootDNSEntriesHelper().List()
 	if err != nil {
@@ -123,11 +102,21 @@ func (s *StateHandler) Refresh() (bool, error) {
 	return s.EnsureEntries(list), nil
 }
 
+// DropAllEntries removes all entries from the state.
+func (s *StateHandler) DropAllEntries() {
+	if s.state == nil || !reflect.DeepEqual(s.state, &apis.DNSState{}) {
+		s.Info("dropping all entries from state", "namespace", s.ext.Namespace)
+		s.state = &apis.DNSState{}
+		s.modified = true
+	}
+}
+
+// EnsureEntries ensures that the entries in the state are up to date.
 func (s *StateHandler) EnsureEntries(entries []dnsapi.DNSEntry) bool {
 	mod := false
 	names := sets.Set[string]{}
 	for _, entry := range entries {
-		mod = s.EnsureEntryFor(&entry) || mod
+		mod = s.ensureEntryFor(&entry) || mod
 		names.Insert(entry.Name)
 	}
 	if len(entries) != len(s.state.Entries) {
@@ -143,18 +132,13 @@ func (s *StateHandler) EnsureEntries(entries []dnsapi.DNSEntry) bool {
 	return mod
 }
 
-func (s *StateHandler) EnsureEntryDeleted(name string) bool {
-	for i, e := range s.state.Entries {
-		if e.Name == name {
-			s.state.Entries = append(s.state.Entries[:i], s.state.Entries[i+1:]...)
-			s.modified = true
-			return true
-		}
-	}
-	return false
+func (s *StateHandler) copyRelevantAnnotations(entry *dnsapi.DNSEntry) map[string]string {
+	annotations := CopyMap(entry.Annotations)
+	delete(annotations, dns.AnnotationHardIgnore)
+	return annotations
 }
 
-func (s *StateHandler) EnsureEntryFor(entry *dnsapi.DNSEntry) bool {
+func (s *StateHandler) ensureEntryFor(entry *dnsapi.DNSEntry) bool {
 	for _, e := range s.state.Entries {
 		if e.Name == entry.Name {
 			mod := false
@@ -162,11 +146,12 @@ func (s *StateHandler) EnsureEntryFor(entry *dnsapi.DNSEntry) bool {
 				mod = true
 				e.Spec = entry.Spec.DeepCopy()
 			}
-			if !reflect.DeepEqual(&e.Annotations, &entry.Annotations) {
+			annotations := s.copyRelevantAnnotations(entry)
+			if !reflect.DeepEqual(e.Annotations, annotations) {
 				mod = true
-				e.Annotations = CopyMap(entry.Annotations)
+				e.Annotations = annotations
 			}
-			if !reflect.DeepEqual(&e.Labels, &entry.Labels) {
+			if !reflect.DeepEqual(e.Labels, entry.Labels) {
 				mod = true
 				e.Labels = CopyMap(entry.Labels)
 			}
@@ -178,7 +163,7 @@ func (s *StateHandler) EnsureEntryFor(entry *dnsapi.DNSEntry) bool {
 	e := &apis.DNSEntry{
 		Name:        entry.Name,
 		Labels:      CopyMap(entry.Labels),
-		Annotations: CopyMap(entry.Annotations),
+		Annotations: s.copyRelevantAnnotations(entry),
 		Spec:        entry.Spec.DeepCopy(),
 	}
 	s.modified = true
@@ -186,6 +171,7 @@ func (s *StateHandler) EnsureEntryFor(entry *dnsapi.DNSEntry) bool {
 	return true
 }
 
+// Update updates the state in the extension status.
 func (s *StateHandler) Update(reason string) error {
 	if s.modified {
 		s.Info("updating modified state", "namespace", s.ext.Namespace, "extension", s.ext.Name, "reason", reason)

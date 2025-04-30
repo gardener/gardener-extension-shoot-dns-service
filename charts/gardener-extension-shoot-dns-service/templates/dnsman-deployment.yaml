@@ -58,8 +58,7 @@ spec:
           readOnlyRootFilesystem: true
         args:
         - --name=dns-controller-manager
-        - --identifier=seed.gardener.cloud/{{ .Values.gardener.garden.clusterIdentity }}/{{ required "A value is required for gardener.seed.name" .Values.gardener.seed.name }}
-        - --remote-access-client-id={{ .Values.gardener.seed.name }}
+        - --remote-access-client-id={{ required "A value is required for gardener.seed.name" .Values.gardener.seed.name }}
         {{- if .Values.dnsControllerManager.remoteaccess.enabled }}
         - --remote-access-port={{ .Values.dnsControllerManager.remoteaccess.port }}
         - --remote-access-cacert=/certs/ca/ca.crt
@@ -259,6 +258,9 @@ spec:
         {{- if .Values.dnsControllerManager.configuration.compoundDefaultPoolSize }}
         - --compound.default.pool.size={{ .Values.dnsControllerManager.configuration.compoundDefaultPoolSize }}
         {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.compoundDisableDnsnameValidation }}
+        - --compound.disable-dnsname-validation={{ .Values.dnsControllerManager.configuration.compoundDisableDnsnameValidation }}
+        {{- end }}
         {{- if .Values.dnsControllerManager.configuration.compoundDisableZoneStateCaching }}
         - --compound.disable-zone-state-caching={{ .Values.dnsControllerManager.configuration.compoundDisableZoneStateCaching }}
         {{- end }}
@@ -343,14 +345,26 @@ spec:
         {{- if .Values.dnsControllerManager.configuration.compoundOpenstackDesignateRatelimiterQps }}
         - --compound.openstack-designate.ratelimiter.qps={{ .Values.dnsControllerManager.configuration.compoundOpenstackDesignateRatelimiterQps }}
         {{- end }}
-        {{- if .Values.dnsControllerManager.configuration.compoundOwneridsPoolSize }}
-        - --compound.ownerids.pool.size={{ .Values.dnsControllerManager.configuration.compoundOwneridsPoolSize }}
-        {{- end }}
         {{- if .Values.dnsControllerManager.configuration.compoundPoolResyncPeriod }}
         - --compound.pool.resync-period={{ .Values.dnsControllerManager.configuration.compoundPoolResyncPeriod }}
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.compoundPoolSize }}
         - --compound.pool.size={{ .Values.dnsControllerManager.configuration.compoundPoolSize }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.compoundPowerdnsAdvancedBatchSize }}
+        - --compound.powerdns.advanced.batch-size={{ .Values.dnsControllerManager.configuration.compoundPowerdnsAdvancedBatchSize }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.compoundPowerdnsAdvancedMaxRetries }}
+        - --compound.powerdns.advanced.max-retries={{ .Values.dnsControllerManager.configuration.compoundPowerdnsAdvancedMaxRetries }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.compoundPowerdnsRatelimiterBurst }}
+        - --compound.powerdns.ratelimiter.burst={{ .Values.dnsControllerManager.configuration.compoundPowerdnsRatelimiterBurst }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.compoundPowerdnsRatelimiterEnabled }}
+        - --compound.powerdns.ratelimiter.enabled={{ .Values.dnsControllerManager.configuration.compoundPowerdnsRatelimiterEnabled }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.compoundPowerdnsRatelimiterQps }}
+        - --compound.powerdns.ratelimiter.qps={{ .Values.dnsControllerManager.configuration.compoundPowerdnsRatelimiterQps }}
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.compoundProviderTypes }}
         - --compound.provider-types={{ .Values.dnsControllerManager.configuration.compoundProviderTypes }}
@@ -388,14 +402,26 @@ spec:
         {{- if .Values.dnsControllerManager.configuration.compoundRescheduleDelay }}
         - --compound.reschedule-delay={{ .Values.dnsControllerManager.configuration.compoundRescheduleDelay }}
         {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.compoundRfc2136AdvancedBatchSize }}
+        - --compound.rfc2136.advanced.batch-size={{ .Values.dnsControllerManager.configuration.compoundRfc2136AdvancedBatchSize }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.compoundRfc2136AdvancedMaxRetries }}
+        - --compound.rfc2136.advanced.max-retries={{ .Values.dnsControllerManager.configuration.compoundRfc2136AdvancedMaxRetries }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.compoundRfc2136RatelimiterBurst }}
+        - --compound.rfc2136.ratelimiter.burst={{ .Values.dnsControllerManager.configuration.compoundRfc2136RatelimiterBurst }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.compoundRfc2136RatelimiterEnabled }}
+        - --compound.rfc2136.ratelimiter.enabled={{ .Values.dnsControllerManager.configuration.compoundRfc2136RatelimiterEnabled }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.compoundRfc2136RatelimiterQps }}
+        - --compound.rfc2136.ratelimiter.qps={{ .Values.dnsControllerManager.configuration.compoundRfc2136RatelimiterQps }}
+        {{- end }}
         {{- if .Values.dnsControllerManager.configuration.compoundSecretsPoolSize }}
         - --compound.secrets.pool.size={{ .Values.dnsControllerManager.configuration.compoundSecretsPoolSize }}
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.compoundSetup }}
         - --compound.setup={{ .Values.dnsControllerManager.configuration.compoundSetup }}
-        {{- end }}
-        {{- if .Values.dnsControllerManager.configuration.compoundStatisticPoolSize }}
-        - --compound.statistic.pool.size={{ .Values.dnsControllerManager.configuration.compoundStatisticPoolSize }}
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.compoundTtl }}
         - --compound.ttl={{ .Values.dnsControllerManager.configuration.compoundTtl }}
@@ -417,6 +443,9 @@ spec:
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.defaultPoolSize }}
         - --default.pool.size={{ .Values.dnsControllerManager.configuration.defaultPoolSize }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.disableDnsnameValidation }}
+        - --disable-dnsname-validation={{ .Values.dnsControllerManager.configuration.disableDnsnameValidation }}
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.disableNamespaceRestriction }}
         - --disable-namespace-restriction={{ .Values.dnsControllerManager.configuration.disableNamespaceRestriction }}
@@ -475,17 +504,8 @@ spec:
         {{- if .Values.dnsControllerManager.configuration.dnsentrySourceTargetNamespace }}
         - --dnsentry-source.target-namespace={{ .Values.dnsControllerManager.configuration.dnsentrySourceTargetNamespace }}
         {{- end }}
-        {{- if .Values.dnsControllerManager.configuration.dnsentrySourceTargetOwnerId }}
-        - --dnsentry-source.target-owner-id={{ .Values.dnsControllerManager.configuration.dnsentrySourceTargetOwnerId }}
-        {{- end }}
-        {{- if .Values.dnsControllerManager.configuration.dnsentrySourceTargetOwnerObject }}
-        - --dnsentry-source.target-owner-object={{ .Values.dnsControllerManager.configuration.dnsentrySourceTargetOwnerObject }}
-        {{- end }}
         {{- if .Values.dnsControllerManager.configuration.dnsentrySourceTargetRealms }}
         - --dnsentry-source.target-realms={{ .Values.dnsControllerManager.configuration.dnsentrySourceTargetRealms }}
-        {{- end }}
-        {{- if .Values.dnsControllerManager.configuration.dnsentrySourceTargetSetIgnoreOwners }}
-        - --dnsentry-source.target-set-ignore-owners={{ .Values.dnsControllerManager.configuration.dnsentrySourceTargetSetIgnoreOwners }}
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.dnsentrySourceTargetsPoolSize }}
         - --dnsentry-source.targets.pool.size={{ .Values.dnsControllerManager.configuration.dnsentrySourceTargetsPoolSize }}
@@ -553,6 +573,9 @@ spec:
         {{- if .Values.dnsControllerManager.configuration.gracePeriod }}
         - --grace-period={{ .Values.dnsControllerManager.configuration.gracePeriod }}
         {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.httproutesPoolSize }}
+        - --httproutes.pool.size={{ .Values.dnsControllerManager.configuration.httproutesPoolSize }}
+        {{- end }}
         {{- if .Values.dnsControllerManager.configuration.infobloxDNSAdvancedBatchSize }}
         - --infoblox-dns.advanced.batch-size={{ .Values.dnsControllerManager.configuration.infobloxDNSAdvancedBatchSize }}
         {{- end }}
@@ -604,26 +627,113 @@ spec:
         {{- if .Values.dnsControllerManager.configuration.ingressDNSTargetNamespace }}
         - --ingress-dns.target-namespace={{ .Values.dnsControllerManager.configuration.ingressDNSTargetNamespace }}
         {{- end }}
-        {{- if .Values.dnsControllerManager.configuration.ingressDNSTargetOwnerId }}
-        - --ingress-dns.target-owner-id={{ .Values.dnsControllerManager.configuration.ingressDNSTargetOwnerId }}
-        {{- end }}
-        {{- if .Values.dnsControllerManager.configuration.ingressDNSTargetOwnerObject }}
-        - --ingress-dns.target-owner-object={{ .Values.dnsControllerManager.configuration.ingressDNSTargetOwnerObject }}
-        {{- end }}
         {{- if .Values.dnsControllerManager.configuration.ingressDNSTargetRealms }}
         - --ingress-dns.target-realms={{ .Values.dnsControllerManager.configuration.ingressDNSTargetRealms }}
         {{- end }}
-        {{- if .Values.dnsControllerManager.configuration.ingressDNSTargetSetIgnoreOwners }}
-        - --ingress-dns.target-set-ignore-owners={{ .Values.dnsControllerManager.configuration.ingressDNSTargetSetIgnoreOwners }}
-        {{- end }}
         {{- if .Values.dnsControllerManager.configuration.ingressDNSTargetsPoolSize }}
         - --ingress-dns.targets.pool.size={{ .Values.dnsControllerManager.configuration.ingressDNSTargetsPoolSize }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.istioGatewaysDnsDefaultPoolResyncPeriod }}
+        - --istio-gateways-dns.default.pool.resync-period={{ .Values.dnsControllerManager.configuration.istioGatewaysDnsDefaultPoolResyncPeriod }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.istioGatewaysDnsDefaultPoolSize }}
+        - --istio-gateways-dns.default.pool.size={{ .Values.dnsControllerManager.configuration.istioGatewaysDnsDefaultPoolSize }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.istioGatewaysDnsDnsClass }}
+        - --istio-gateways-dns.dns-class={{ .Values.dnsControllerManager.configuration.istioGatewaysDnsDnsClass }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.istioGatewaysDnsDnsTargetClass }}
+        - --istio-gateways-dns.dns-target-class={{ .Values.dnsControllerManager.configuration.istioGatewaysDnsDnsTargetClass }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.istioGatewaysDnsExcludeDomains }}
+        - --istio-gateways-dns.exclude-domains={{ .Values.dnsControllerManager.configuration.istioGatewaysDnsExcludeDomains }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.istioGatewaysDnsKey }}
+        - --istio-gateways-dns.key={{ .Values.dnsControllerManager.configuration.istioGatewaysDnsKey }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.istioGatewaysDnsPoolResyncPeriod }}
+        - --istio-gateways-dns.pool.resync-period={{ .Values.dnsControllerManager.configuration.istioGatewaysDnsPoolResyncPeriod }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.istioGatewaysDnsPoolSize }}
+        - --istio-gateways-dns.pool.size={{ .Values.dnsControllerManager.configuration.istioGatewaysDnsPoolSize }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.istioGatewaysDnsTargetCreatorLabelName }}
+        - --istio-gateways-dns.target-creator-label-name={{ .Values.dnsControllerManager.configuration.istioGatewaysDnsTargetCreatorLabelName }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.istioGatewaysDnsTargetCreatorLabelValue }}
+        - --istio-gateways-dns.target-creator-label-value={{ .Values.dnsControllerManager.configuration.istioGatewaysDnsTargetCreatorLabelValue }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.istioGatewaysDnsTargetNamePrefix }}
+        - --istio-gateways-dns.target-name-prefix={{ .Values.dnsControllerManager.configuration.istioGatewaysDnsTargetNamePrefix }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.istioGatewaysDnsTargetNamespace }}
+        - --istio-gateways-dns.target-namespace={{ .Values.dnsControllerManager.configuration.istioGatewaysDnsTargetNamespace }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.istioGatewaysDnsTargetRealms }}
+        - --istio-gateways-dns.target-realms={{ .Values.dnsControllerManager.configuration.istioGatewaysDnsTargetRealms }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.istioGatewaysDnsTargetsPoolSize }}
+        - --istio-gateways-dns.targets.pool.size={{ .Values.dnsControllerManager.configuration.istioGatewaysDnsTargetsPoolSize }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.istioGatewaysDnsTargetsourcesPoolSize }}
+        - --istio-gateways-dns.targetsources.pool.size={{ .Values.dnsControllerManager.configuration.istioGatewaysDnsTargetsourcesPoolSize }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.istioGatewaysDnsVirtualservicesPoolSize }}
+        - --istio-gateways-dns.virtualservices.pool.size={{ .Values.dnsControllerManager.configuration.istioGatewaysDnsVirtualservicesPoolSize }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.k8sGatewaysDnsDefaultPoolResyncPeriod }}
+        - --k8s-gateways-dns.default.pool.resync-period={{ .Values.dnsControllerManager.configuration.k8sGatewaysDnsDefaultPoolResyncPeriod }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.k8sGatewaysDnsDefaultPoolSize }}
+        - --k8s-gateways-dns.default.pool.size={{ .Values.dnsControllerManager.configuration.k8sGatewaysDnsDefaultPoolSize }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.k8sGatewaysDnsDnsClass }}
+        - --k8s-gateways-dns.dns-class={{ .Values.dnsControllerManager.configuration.k8sGatewaysDnsDnsClass }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.k8sGatewaysDnsDnsTargetClass }}
+        - --k8s-gateways-dns.dns-target-class={{ .Values.dnsControllerManager.configuration.k8sGatewaysDnsDnsTargetClass }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.k8sGatewaysDnsExcludeDomains }}
+        - --k8s-gateways-dns.exclude-domains={{ .Values.dnsControllerManager.configuration.k8sGatewaysDnsExcludeDomains }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.k8sGatewaysDnsHttproutesPoolSize }}
+        - --k8s-gateways-dns.httproutes.pool.size={{ .Values.dnsControllerManager.configuration.k8sGatewaysDnsHttproutesPoolSize }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.k8sGatewaysDnsKey }}
+        - --k8s-gateways-dns.key={{ .Values.dnsControllerManager.configuration.k8sGatewaysDnsKey }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.k8sGatewaysDnsPoolResyncPeriod }}
+        - --k8s-gateways-dns.pool.resync-period={{ .Values.dnsControllerManager.configuration.k8sGatewaysDnsPoolResyncPeriod }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.k8sGatewaysDnsPoolSize }}
+        - --k8s-gateways-dns.pool.size={{ .Values.dnsControllerManager.configuration.k8sGatewaysDnsPoolSize }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.k8sGatewaysDnsTargetCreatorLabelName }}
+        - --k8s-gateways-dns.target-creator-label-name={{ .Values.dnsControllerManager.configuration.k8sGatewaysDnsTargetCreatorLabelName }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.k8sGatewaysDnsTargetCreatorLabelValue }}
+        - --k8s-gateways-dns.target-creator-label-value={{ .Values.dnsControllerManager.configuration.k8sGatewaysDnsTargetCreatorLabelValue }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.k8sGatewaysDnsTargetNamePrefix }}
+        - --k8s-gateways-dns.target-name-prefix={{ .Values.dnsControllerManager.configuration.k8sGatewaysDnsTargetNamePrefix }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.k8sGatewaysDnsTargetNamespace }}
+        - --k8s-gateways-dns.target-namespace={{ .Values.dnsControllerManager.configuration.k8sGatewaysDnsTargetNamespace }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.k8sGatewaysDnsTargetRealms }}
+        - --k8s-gateways-dns.target-realms={{ .Values.dnsControllerManager.configuration.k8sGatewaysDnsTargetRealms }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.k8sGatewaysDnsTargetsPoolSize }}
+        - --k8s-gateways-dns.targets.pool.size={{ .Values.dnsControllerManager.configuration.k8sGatewaysDnsTargetsPoolSize }}
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.key }}
         - --key={{ .Values.dnsControllerManager.configuration.key }}
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.kubeconfig }}
         - --kubeconfig={{ .Values.dnsControllerManager.configuration.kubeconfig }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.kubeconfigConditionalDeployCrds }}
+        - --kubeconfig.conditional-deploy-crds={{ .Values.dnsControllerManager.configuration.kubeconfigConditionalDeployCrds }}
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.kubeconfigDisableDeployCrds }}
         - --kubeconfig.disable-deploy-crds={{ .Values.dnsControllerManager.configuration.kubeconfigDisableDeployCrds }}
@@ -697,9 +807,6 @@ spec:
         {{- if .Values.dnsControllerManager.configuration.openstackDesignateRatelimiterQps }}
         - --openstack-designate.ratelimiter.qps={{ .Values.dnsControllerManager.configuration.openstackDesignateRatelimiterQps }}
         {{- end }}
-        {{- if .Values.dnsControllerManager.configuration.owneridsPoolSize }}
-        - --ownerids.pool.size={{ .Values.dnsControllerManager.configuration.owneridsPoolSize }}
-        {{- end }}
         {{- if .Values.dnsControllerManager.configuration.pluginFile }}
         - --plugin-file={{ .Values.dnsControllerManager.configuration.pluginFile }}
         {{- end }}
@@ -709,11 +816,29 @@ spec:
         {{- if .Values.dnsControllerManager.configuration.poolSize }}
         - --pool.size={{ .Values.dnsControllerManager.configuration.poolSize }}
         {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.powerdnsAdvancedBatchSize }}
+        - --powerdns.advanced.batch-size={{ .Values.dnsControllerManager.configuration.powerdnsAdvancedBatchSize }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.powerdnsAdvancedMaxRetries }}
+        - --powerdns.advanced.max-retries={{ .Values.dnsControllerManager.configuration.powerdnsAdvancedMaxRetries }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.powerdnsRatelimiterBurst }}
+        - --powerdns.ratelimiter.burst={{ .Values.dnsControllerManager.configuration.powerdnsRatelimiterBurst }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.powerdnsRatelimiterEnabled }}
+        - --powerdns.ratelimiter.enabled={{ .Values.dnsControllerManager.configuration.powerdnsRatelimiterEnabled }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.powerdnsRatelimiterQps }}
+        - --powerdns.ratelimiter.qps={{ .Values.dnsControllerManager.configuration.powerdnsRatelimiterQps }}
+        {{- end }}
         {{- if .Values.dnsControllerManager.configuration.providerTypes }}
         - --provider-types={{ .Values.dnsControllerManager.configuration.providerTypes }}
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.providers }}
         - --providers={{ .Values.dnsControllerManager.configuration.providers }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.providersConditionalDeployCrds }}
+        - --providers.conditional-deploy-crds={{ .Values.dnsControllerManager.configuration.providersConditionalDeployCrds }}
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.providersDisableDeployCrds }}
         - --providers.disable-deploy-crds={{ .Values.dnsControllerManager.configuration.providersDisableDeployCrds }}
@@ -754,14 +879,23 @@ spec:
         {{- if .Values.dnsControllerManager.configuration.remoteRatelimiterQps }}
         - --remote.ratelimiter.qps={{ .Values.dnsControllerManager.configuration.remoteRatelimiterQps }}
         {{- end }}
-        {{- if .Values.dnsControllerManager.configuration.remoteaccesscertificatesDefaultPoolSize }}
-        - --remoteaccesscertificates.default.pool.size={{ .Values.dnsControllerManager.configuration.remoteaccesscertificatesDefaultPoolSize }}
-        {{- end }}
-        {{- if .Values.dnsControllerManager.configuration.remoteaccesscertificatesPoolSize }}
-        - --remoteaccesscertificates.pool.size={{ .Values.dnsControllerManager.configuration.remoteaccesscertificatesPoolSize }}
-        {{- end }}
         {{- if .Values.dnsControllerManager.configuration.rescheduleDelay }}
         - --reschedule-delay={{ .Values.dnsControllerManager.configuration.rescheduleDelay }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.rfc2136AdvancedBatchSize }}
+        - --rfc2136.advanced.batch-size={{ .Values.dnsControllerManager.configuration.rfc2136AdvancedBatchSize }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.rfc2136AdvancedMaxRetries }}
+        - --rfc2136.advanced.max-retries={{ .Values.dnsControllerManager.configuration.rfc2136AdvancedMaxRetries }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.rfc2136RatelimiterBurst }}
+        - --rfc2136.ratelimiter.burst={{ .Values.dnsControllerManager.configuration.rfc2136RatelimiterBurst }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.rfc2136RatelimiterEnabled }}
+        - --rfc2136.ratelimiter.enabled={{ .Values.dnsControllerManager.configuration.rfc2136RatelimiterEnabled }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.rfc2136RatelimiterQps }}
+        - --rfc2136.ratelimiter.qps={{ .Values.dnsControllerManager.configuration.rfc2136RatelimiterQps }}
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.secretsPoolSize }}
         - --secrets.pool.size={{ .Values.dnsControllerManager.configuration.secretsPoolSize }}
@@ -805,26 +939,14 @@ spec:
         {{- if .Values.dnsControllerManager.configuration.serviceDNSTargetNamespace }}
         - --service-dns.target-namespace={{ .Values.dnsControllerManager.configuration.serviceDNSTargetNamespace }}
         {{- end }}
-        {{- if .Values.dnsControllerManager.configuration.serviceDNSTargetOwnerId }}
-        - --service-dns.target-owner-id={{ .Values.dnsControllerManager.configuration.serviceDNSTargetOwnerId }}
-        {{- end }}
-        {{- if .Values.dnsControllerManager.configuration.serviceDNSTargetOwnerObject }}
-        - --service-dns.target-owner-object={{ .Values.dnsControllerManager.configuration.serviceDNSTargetOwnerObject }}
-        {{- end }}
         {{- if .Values.dnsControllerManager.configuration.serviceDNSTargetRealms }}
         - --service-dns.target-realms={{ .Values.dnsControllerManager.configuration.serviceDNSTargetRealms }}
-        {{- end }}
-        {{- if .Values.dnsControllerManager.configuration.serviceDNSTargetSetIgnoreOwners }}
-        - --service-dns.target-set-ignore-owners={{ .Values.dnsControllerManager.configuration.serviceDNSTargetSetIgnoreOwners }}
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.serviceDNSTargetsPoolSize }}
         - --service-dns.targets.pool.size={{ .Values.dnsControllerManager.configuration.serviceDNSTargetsPoolSize }}
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.setup }}
         - --setup={{ .Values.dnsControllerManager.configuration.setup }}
-        {{- end }}
-        {{- if .Values.dnsControllerManager.configuration.statisticPoolSize }}
-        - --statistic.pool.size={{ .Values.dnsControllerManager.configuration.statisticPoolSize }}
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.target }}
         - --target={{ .Values.dnsControllerManager.configuration.target }}
@@ -841,17 +963,11 @@ spec:
         {{- if .Values.dnsControllerManager.configuration.targetNamespace }}
         - --target-namespace={{ .Values.dnsControllerManager.configuration.targetNamespace }}
         {{- end }}
-        {{- if .Values.dnsControllerManager.configuration.targetOwnerId }}
-        - --target-owner-id={{ .Values.dnsControllerManager.configuration.targetOwnerId }}
-        {{- end }}
-        {{- if .Values.dnsControllerManager.configuration.targetOwnerObject }}
-        - --target-owner-object={{ .Values.dnsControllerManager.configuration.targetOwnerObject }}
-        {{- end }}
         {{- if .Values.dnsControllerManager.configuration.targetRealms }}
         - --target-realms={{ .Values.dnsControllerManager.configuration.targetRealms }}
         {{- end }}
-        {{- if .Values.dnsControllerManager.configuration.targetSetIgnoreOwners }}
-        - --target-set-ignore-owners={{ .Values.dnsControllerManager.configuration.targetSetIgnoreOwners }}
+        {{- if .Values.dnsControllerManager.configuration.targetConditionalDeployCrds }}
+        - --target.conditional-deploy-crds={{ .Values.dnsControllerManager.configuration.targetConditionalDeployCrds }}
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.targetDisableDeployCrds }}
         - --target.disable-deploy-crds={{ .Values.dnsControllerManager.configuration.targetDisableDeployCrds }}
@@ -865,11 +981,23 @@ spec:
         {{- if .Values.dnsControllerManager.configuration.targetsPoolSize }}
         - --targets.pool.size={{ .Values.dnsControllerManager.configuration.targetsPoolSize }}
         {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.targetsourcesPoolSize }}
+        - --targetsources.pool.size={{ .Values.dnsControllerManager.configuration.targetsourcesPoolSize }}
+        {{- end }}
         {{- if .Values.dnsControllerManager.configuration.ttl }}
         - --ttl={{ .Values.dnsControllerManager.configuration.ttl }}
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.version }}
         - --version={{ .Values.dnsControllerManager.configuration.version }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.virtualservicesPoolSize }}
+        - --virtualservices.pool.size={{ .Values.dnsControllerManager.configuration.virtualservicesPoolSize }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.watchGatewaysCrdsDefaultPoolSize }}
+        - --watch-gateways-crds.default.pool.size={{ .Values.dnsControllerManager.configuration.watchGatewaysCrdsDefaultPoolSize }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.watchGatewaysCrdsPoolSize }}
+        - --watch-gateways-crds.pool.size={{ .Values.dnsControllerManager.configuration.watchGatewaysCrdsPoolSize }}
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.zonepoliciesPoolSize }}
         - --zonepolicies.pool.size={{ .Values.dnsControllerManager.configuration.zonepoliciesPoolSize }}

@@ -20,7 +20,6 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/healthcheck"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/lifecycle"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/replication"
 )
 
 // DNSServiceOptions holds options related to the dns service.
@@ -125,7 +124,6 @@ func (c *HealthConfig) ApplyHealthCheckConfig(config *healthcheckconfigv1alpha1.
 func ControllerSwitches() *cmd.SwitchOptions {
 	return cmd.NewSwitchOptions(
 		cmd.Switch(lifecycle.Name, lifecycle.AddToManager),
-		cmd.Switch(replication.Name, replication.AddToManager),
 		cmd.Switch(extensionshealthcheckcontroller.ControllerName, healthcheck.RegisterHealthChecks),
 		cmd.Switch(extensionsheartbeatcontroller.ControllerName, extensionsheartbeatcontroller.AddToManager),
 	)

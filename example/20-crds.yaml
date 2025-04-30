@@ -324,10 +324,6 @@ spec:
           jsonPath: .status.targets
           name: TARGETS
           type: string
-        - description: owner id used to tag entries in external DNS system
-          jsonPath: .spec.ownerId
-          name: OWNERID
-          type: string
         - description: time to live
           jsonPath: .status.ttl
           name: TTL
@@ -363,30 +359,36 @@ spec:
         openAPIV3Schema:
           properties:
             apiVersion:
-              description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
             spec:
               properties:
                 cnameLookupInterval:
-                  description: lookup interval for CNAMEs that must be resolved to IP
-                    addresses. Only used if `resolveTargetsToAddresses` is set to true
-                    or targets consists of multiple domain names.
+                  description: |-
+                    lookup interval for CNAMEs that must be resolved to IP addresses.
+                    Only used if `resolveTargetsToAddresses` is set to true or targets consists of multiple domain names.
                   format: int64
                   type: integer
                 dnsName:
                   description: full qualified domain name
                   type: string
                 ownerId:
-                  description: owner id used to tag entries in external DNS system
+                  description: 'Deprecated: This field is no longer used and will be
+                  removed in a future release.'
                   type: string
                 reference:
                   description: reference to base entry used to inherit attributes from
@@ -401,10 +403,10 @@ spec:
                     - name
                   type: object
                 resolveTargetsToAddresses:
-                  description: enables translation of a target domain name in the resolved
-                    IPv4 and IPv6 addresses. If enabled, `A` and/or `AAAA` records are
-                    created instead of a `CNAME` record. If the target list contains
-                    multiple targets, it is enabled implicitly.
+                  description: |-
+                    enables translation of a target domain name in the resolved IPv4 and IPv6 addresses.
+                    If enabled, `A` and/or `AAAA` records are created instead of a `CNAME` record.
+                    If the target list contains multiple targets, it is enabled implicitly.
                   type: boolean
                 routingPolicy:
                   description: optional routing policy
@@ -515,105 +517,6 @@ spec:
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: dnsowners.dns.gardener.cloud
-spec:
-  group: dns.gardener.cloud
-  names:
-    kind: DNSOwner
-    listKind: DNSOwnerList
-    plural: dnsowners
-    shortNames:
-      - dnso
-    singular: dnsowner
-  scope: Cluster
-  versions:
-    - additionalPrinterColumns:
-        - jsonPath: .spec.ownerId
-          name: OwnerId
-          type: string
-        - jsonPath: .status.active
-          name: Active
-          type: boolean
-        - jsonPath: .status.entries.amount
-          name: Usages
-          type: integer
-        - description: expiration date
-          format: date-time
-          jsonPath: .spec.validUntil
-          name: Valid
-          type: string
-        - description: creation timestamp
-          jsonPath: .metadata.creationTimestamp
-          name: AGE
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          properties:
-            apiVersion:
-              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-              type: string
-            kind:
-              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-              type: string
-            metadata:
-              type: object
-            spec:
-              properties:
-                active:
-                  description: state of the ownerid for the DNS controller observing entry using this owner id (default:true)
-                  type: boolean
-                dnsActivation:
-                  description: Optional activation info for controlling the owner activation remotely via DNS TXT record
-                  properties:
-                    dnsName:
-                      description: DNS name for controlling the owner activation remotely via DNS TXT record
-                      type: string
-                    value:
-                      description: Optional value for the DNS activation record used to activate this owner The default is the id of the cluster used to read the owner object
-                      type: string
-                  required:
-                    - dnsName
-                  type: object
-                ownerId:
-                  description: owner id used to tag entries in external DNS system
-                  type: string
-                validUntil:
-                  description: optional time this owner should be active if active flag is not false
-                  format: date-time
-                  type: string
-              required:
-                - ownerId
-              type: object
-            status:
-              properties:
-                active:
-                  description: state of the ownerid for the DNS controller observing entry using this owner id
-                  type: boolean
-                entries:
-                  description: Entry statistic for this owner id
-                  properties:
-                    amount:
-                      description: number of entries using this owner id
-                      type: integer
-                    types:
-                      additionalProperties:
-                        type: integer
-                      description: number of entries per provider type
-                      type: object
-                  type: object
-              type: object
-          required:
-            - spec
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
----
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
   name: dnsproviders.dns.gardener.cloud
 spec:
   group: dns.gardener.cloud
@@ -656,10 +559,19 @@ spec:
         openAPIV3Schema:
           properties:
             apiVersion:
-              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -670,7 +582,9 @@ spec:
                   format: int64
                   type: integer
                 domains:
-                  description: desired selection of usable domains (by default all zones and domains in those zones will be served)
+                  description: |-
+                    desired selection of usable domains
+                    (by default all zones and domains in those zones will be served)
                   properties:
                     exclude:
                       description: values that should be ignored (domains or zones)
@@ -687,21 +601,46 @@ spec:
                   description: optional additional provider specific configuration values
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
+                rateLimit:
+                  description: rate limit for create/update operations on DNSEntries
+                    assigned to this provider
+                  properties:
+                    burst:
+                      description: |-
+                        Burst allows bursts of up to 'burst' to exceed the rate defined by 'RequestsPerDay', while still maintaining a
+                        smoothed rate of 'RequestsPerDay'
+                      type: integer
+                    requestsPerDay:
+                      description: RequestsPerDay is create/update request rate per
+                        DNS entry given by requests per day
+                      type: integer
+                  required:
+                    - burst
+                    - requestsPerDay
+                  type: object
                 secretRef:
-                  description: access credential for the external DNS system of the given type
+                  description: access credential for the external DNS system of the
+                    given type
                   properties:
                     name:
-                      description: Name is unique within a namespace to reference a secret resource.
+                      description: name is unique within a namespace to reference a
+                        secret resource.
                       type: string
                     namespace:
-                      description: Namespace defines the space within which the secret name must be unique.
+                      description: namespace defines the space within which the secret
+                        name must be unique.
                       type: string
                   type: object
+                  x-kubernetes-map-type: atomic
                 type:
-                  description: type of the provider (selecting the responsible type of DNS controller)
+                  description: type of the provider (selecting the responsible type
+                    of DNS controller)
                   type: string
                 zones:
-                  description: desired selection of usable domains the domain selection is used for served zones, only (by default all zones will be served)
+                  description: |-
+                    desired selection of usable domains
+                    the domain selection is used for served zones, only
+                    (by default all zones will be served)
                   properties:
                     exclude:
                       description: values that should be ignored (domains or zones)
@@ -736,15 +675,34 @@ spec:
                       type: array
                   type: object
                 lastUpdateTime:
-                  description: lastUpdateTime contains the timestamp of the last status update
+                  description: lastUpdateTime contains the timestamp of the last status
+                    update
                   format: date-time
                   type: string
                 message:
-                  description: message describing the reason for the actual state of the provider
+                  description: message describing the reason for the actual state of
+                    the provider
                   type: string
                 observedGeneration:
                   format: int64
                   type: integer
+                rateLimit:
+                  description: actually used rate limit for create/update operations
+                    on DNSEntries assigned to this provider
+                  properties:
+                    burst:
+                      description: |-
+                        Burst allows bursts of up to 'burst' to exceed the rate defined by 'RequestsPerDay', while still maintaining a
+                        smoothed rate of 'RequestsPerDay'
+                      type: integer
+                    requestsPerDay:
+                      description: RequestsPerDay is create/update request rate per
+                        DNS entry given by requests per day
+                      type: integer
+                  required:
+                    - burst
+                    - requestsPerDay
+                  type: object
                 state:
                   description: state of the provider
                   type: string

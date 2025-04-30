@@ -25,11 +25,10 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/healthcheck"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/lifecycle"
-	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/replication"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/service"
 )
 
-// NewServiceControllerCommand creates a new command that is used to start the DNS Service controller.
+// NewServiceControllerCommand creates a new command used to start the DNS Service controller.
 func NewServiceControllerCommand() *cobra.Command {
 	options := NewOptions()
 
@@ -85,7 +84,6 @@ func (o *Options) run(ctx context.Context) error {
 			DisableFor: []client.Object{
 				&corev1.Secret{},    // applied for ManagedResources
 				&corev1.ConfigMap{}, // applied for monitoring config
-				&dnsapi.DNSOwner{},  // avoid watching DNSOwner
 			},
 		},
 	}
@@ -98,7 +96,6 @@ func (o *Options) run(ctx context.Context) error {
 	o.healthOptions.Completed().ApplyHealthCheckConfig(&healthcheck.DefaultAddOptions.HealthCheckConfig)
 	o.healthControllerOptions.Completed().Apply(&healthcheck.DefaultAddOptions.Controller)
 	o.lifecycleControllerOptions.Completed().Apply(&lifecycle.DefaultAddOptions.Controller)
-	o.replicationControllerOptions.Completed().Apply(&replication.DefaultAddOptions.Controller)
 	o.reconcileOptions.Completed().Apply(&lifecycle.DefaultAddOptions.IgnoreOperationAnnotation, nil)
 	o.heartbeatControllerOptions.Completed().Apply(&heartbeat.DefaultAddOptions)
 
