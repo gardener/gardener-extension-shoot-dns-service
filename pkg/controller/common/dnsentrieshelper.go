@@ -61,6 +61,10 @@ func (h *ShootDNSEntriesHelper) ShootID() (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
+	return ShootID(cluster)
+}
+
+func ShootID(cluster *controller.Cluster) (string, string, error) {
 	if cluster.Shoot.Status.ClusterIdentity == nil {
 		return "", "", fmt.Errorf("missing shoot cluster identity")
 	}
