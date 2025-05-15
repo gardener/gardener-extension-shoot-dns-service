@@ -57,8 +57,6 @@ rules:
   - dnsentries/status
   - dnsannotations
   - dnsannotations/status
-  - dnsowners
-  - dnsowners/status
   - dnshostedzonepolicies
   - dnshostedzonepolicies/status
   - dnslocks
