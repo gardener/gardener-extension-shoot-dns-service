@@ -37,7 +37,6 @@ rules:
   - update
   - patch
   - delete
-  - deletecollection
 - apiGroups:
   - ""
   resources:
@@ -81,13 +80,6 @@ rules:
   - patch
   - delete
   - deletecollection
-- apiGroups:
-  - "dns.gardener.cloud"
-  resources:
-  - "dnsowners"
-  verbs:
-  - get
-  - list
 - apiGroups:
     - "extensions.gardener.cloud"
   resources:

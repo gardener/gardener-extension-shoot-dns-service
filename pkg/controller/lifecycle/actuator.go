@@ -20,7 +20,6 @@ import (
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
-	resourcesv1alpha1 "github.com/gardener/gardener/pkg/apis/resources/v1alpha1"
 	"github.com/gardener/gardener/pkg/chartrenderer"
 	"github.com/gardener/gardener/pkg/client/kubernetes"
 	"github.com/gardener/gardener/pkg/component"
@@ -64,8 +63,6 @@ const (
 	ShootResourcesName = service.ExtensionServiceName + "-shoot"
 	// KeptShootResourcesName is the name for resource describing the resources applied to the shoot cluster that should not be deleted.
 	KeptShootResourcesName = service.ExtensionServiceName + "-shoot-keep"
-	// OwnerName is the name of the DNSOwner object created for the shoot dns service
-	OwnerName = service.ServiceName
 	// DNSProviderRoleAdditional is a constant for additionally managed DNS providers.
 	DNSProviderRoleAdditional = "managed-dns-provider"
 	// DNSRealmAnnotation is the annotation key for restricting provider access for shoot DNS entries
@@ -76,6 +73,13 @@ const (
 	ExternalDNSProviderName = "external"
 	// ShootDNSServiceUseRemoteDefaultDomainLabel is the label key for marking a seed to use the remote DNS-provider for the default domain
 	ShootDNSServiceUseRemoteDefaultDomainLabel = "service.dns.extensions.gardener.cloud/use-remote-default-domain"
+	// DropDNSEntriesStateOnMigration is the annotation key for dropping the state of DNSEntries during migration.
+	// Activated by setting the annotation value to "true".
+	// This may be helpful if the state is too large to be stored in the extension state.
+	// In this case, it may be a fall-back option, to set this annotation value to "true" and run the migration without
+	// DNSEntries in the extension status state. Nothing should be lost, but if source objects are deleted during the migration,
+	// the deletion of the DNS records cannot be guaranteed.
+	DropDNSEntriesStateOnMigration = "drop-dns-entries-state-on-migration"
 )
 
 // NewActuator returns an actuator responsible for Extension resources.
@@ -107,24 +111,22 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ex *extension
 		return err
 	}
 
-	resurrection := false
-	if ex.Status.State != nil && !common.IsMigrating(ex) {
-		resurrection, err = a.ResurrectFrom(ctx, ex)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Shoots that don't specify a DNS domain don't get an DNS service
+	// Shoots that don't specify a DNS domain don't get a DNS service
 	if cluster.Shoot.Spec.DNS == nil {
 		log.Info("DNS domain is not specified, therefore no shoot dns service is installed", "shoot", ex.Namespace)
 		return a.Delete(ctx, log, ex)
 	}
 
+	if ex.Status.State != nil && common.IsRestoring(ex) {
+		if err := a.ResurrectFrom(ctx, ex); err != nil {
+			return err
+		}
+	}
+
 	if err := a.createOrUpdateShootResources(ctx, dnsConfig, cluster, ex.Namespace); err != nil {
 		return err
 	}
-	if err := a.createOrUpdateSeedResources(ctx, dnsConfig, cluster, ex, !resurrection, true); err != nil {
+	if err := a.createOrUpdateSeedResources(ctx, dnsConfig, cluster, ex, true); err != nil {
 		return err
 	}
 	return a.createOrUpdateDNSProviders(ctx, log, dnsConfig, cluster, ex)
@@ -143,32 +145,17 @@ func (a *actuator) extractDNSConfig(ex *extensionsv1alpha1.Extension) (*apisserv
 	return dnsConfig, nil
 }
 
-func (a *actuator) ResurrectFrom(ctx context.Context, ex *extensionsv1alpha1.Extension) (bool, error) {
-	owner := &dnsv1alpha1.DNSOwner{}
-
-	err := a.GetObject(ctx, client.ObjectKey{Name: a.OwnerName(ex.Namespace)}, owner)
-	if err == nil || !k8serr.IsNotFound(err) {
-		return false, err
-	}
-	// Ok, Owner object lost. This might have several reasons, we have to try to
-	// exclude a human error before initiating a resurrection
-
-	handler, err := common.NewStateHandler(ctx, a.Env, ex, false)
+func (a *actuator) ResurrectFrom(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
+	handler, err := common.NewStateHandler(ctx, a.Env, ex)
 	if err != nil {
-		return false, err
-	}
-	handler.Infof("owner object not found")
-	err = a.GetObject(ctx, client.ObjectKey{Namespace: ex.Namespace, Name: SeedResourcesName}, &resourcesv1alpha1.ManagedResource{})
-	if err == nil || !k8serr.IsNotFound(err) {
-		// a potentially missing DNSOwner object will be reconciled by resource manager
-		return false, err
+		return err
 	}
 
-	handler.Infof("resources object not found, also -> trying to resurrect DNS entries before setting up new owner")
+	handler.Info("resurrect DNS entries", "namespace", ex.Namespace, "name", ex.Name)
 
 	found, err := handler.ShootDNSEntriesHelper().List()
 	if err != nil {
-		return true, err
+		return err
 	}
 	names := sets.Set[string]{}
 	for _, item := range found {
@@ -194,9 +181,7 @@ func (a *actuator) ResurrectFrom(ctx context.Context, ex *extensionsv1alpha1.Ext
 		}
 	}
 
-	// the new onwer will be reconciled by resource manger after re-/creating
-	// the seed resource object later on
-	return true, lasterr
+	return lasterr
 }
 
 // Delete the Extension resource.
@@ -269,6 +254,16 @@ func (a *actuator) Migrate(ctx context.Context, log logr.Logger, ex *extensionsv
 		return err
 	}
 
+	if ex.Annotations[DropDNSEntriesStateOnMigration] == "true" {
+		if err := a.ensureStateDropped(ctx, ex); err != nil {
+			return err
+		}
+	} else {
+		if err := a.ensureStateRefreshed(ctx, ex); err != nil {
+			return err
+		}
+	}
+
 	return a.delete(ctx, log, ex, true)
 }
 
@@ -311,7 +306,7 @@ func (a *actuator) waitForEntryReconciliation(ctx context.Context, log logr.Logg
 		}
 	}
 
-	// wait for all entries to be reconciled, i.e. gardener.cloud/operation annotation is removed
+	// wait for all entries to be reconciled i.e., gardener.cloud/operation annotation is removed
 	start := time.Now()
 	for _, entry := range list {
 		for {
@@ -342,20 +337,18 @@ func (a *actuator) isHibernated(cluster *controller.Cluster) bool {
 }
 
 func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *apisservice.DNSConfig, cluster *controller.Cluster, ex *extensionsv1alpha1.Extension,
-	refresh bool, deploymentEnabled bool) error {
+	deploymentEnabled bool) error {
 	var err error
 	namespace := ex.Namespace
 
-	handler, err := common.NewStateHandler(ctx, a.Env, ex, refresh)
-	if err != nil {
-		return err
-	}
-	err = handler.Update("refresh")
-	if err != nil {
-		return err
+	a.Info("Creating/updating seed resources", "namespace", namespace)
+	if !common.IsRestoring(ex) {
+		if err := a.ensureStateDropped(ctx, ex); err != nil {
+			return err
+		}
 	}
 
-	shootID, creatorLabelValue, err := handler.ShootDNSEntriesHelper().ShootID()
+	shootID, creatorLabelValue, err := common.ShootID(cluster)
 	if err != nil {
 		return err
 	}
@@ -385,7 +378,6 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 		"dnsProviderReplication": map[string]interface{}{
 			"enabled": a.replicateDNSProviders(dnsconfig),
 		},
-		"dnsOwner": a.OwnerName(namespace),
 	}
 
 	if err := gutil.NewShootAccessSecret(service.ShootAccessSecretName, namespace).Reconcile(ctx, a.Client()); err != nil {
@@ -400,6 +392,31 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 
 	a.Info("Component is being applied", "component", service.ExtensionServiceName, "namespace", namespace)
 	return a.createOrUpdateManagedResource(ctx, namespace, SeedResourcesName, "seed", a.renderer, service.SeedChartName, chartValues, nil)
+}
+
+func (a *actuator) ensureStateDropped(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
+	// The DNSEntries are not stored in the extension state, as they are only needed for control plane migration during the
+	// restore step.
+	handler, err := common.NewStateHandler(ctx, a.Env, ex)
+	if err != nil {
+		a.Info("ignoring state handler error", "error", err, "namespace", ex.Namespace)
+	}
+	handler.DropAllEntries()
+	return handler.Update("cleanup")
+}
+
+func (a *actuator) ensureStateRefreshed(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
+	// The DNSEntries in the control plane are listed and stored in the extension state for migration.
+	handler, err := common.NewStateHandler(ctx, a.Env, ex)
+	if err != nil {
+		a.Info("ignoring state handler error", "error", err, "namespace", ex.Namespace)
+	}
+	handler.Info("refreshing state", "err", err, "namespace", ex.Namespace, "name", ex.Name)
+	if _, err = handler.Refresh(); err != nil {
+		handler.Info("refreshing state failed", "err", err, "namespace", ex.Namespace, "name", ex.Name)
+		return err
+	}
+	return handler.Update("refresh")
 }
 
 func (a *actuator) createOrUpdateDNSProviders(ctx context.Context, log logr.Logger, dnsconfig *apisservice.DNSConfig,
@@ -781,7 +798,7 @@ func (a *actuator) collectProviderDetailsOnDeletingDNSEntries(ctx context.Contex
 			status = append(status, fmt.Sprintf("error on retrieving status of provider %s: %s", k, err))
 			continue
 		}
-		status = append(status, fmt.Sprintf("provider %s has status: %s", objectKey, ptr.Deref(provider.Status.Message, "unknwon")))
+		status = append(status, fmt.Sprintf("provider %s has status: %s", objectKey, ptr.Deref(provider.Status.Message, "unknown")))
 	}
 	return strings.Join(status, ", ")
 }
@@ -806,7 +823,7 @@ func (a *actuator) cleanupShootDNSEntries(helper *common.ShootDNSEntriesHelper) 
 	if err != nil {
 		return err
 	}
-	err = a.createOrUpdateSeedResources(helper.Context(), dnsconfig, cluster, helper.Extension(), false, false)
+	err = a.createOrUpdateSeedResources(helper.Context(), dnsconfig, cluster, helper.Extension(), false)
 	if err != nil {
 		return err
 	}
@@ -862,10 +879,6 @@ func (a *actuator) createOrUpdateManagedResource(ctx context.Context, namespace,
 	keepObjects := false
 	forceOverwriteAnnotations := false
 	return managedresources.Create(ctx, a.Client(), namespace, name, nil, false, class, data, &keepObjects, injectedLabels, &forceOverwriteAnnotations)
-}
-
-func (a *actuator) OwnerName(namespace string) string {
-	return fmt.Sprintf("%s-%s", OwnerName, namespace)
 }
 
 func enableDNSProviderForShootDNSEntries(seedNamespace string) map[string]string {

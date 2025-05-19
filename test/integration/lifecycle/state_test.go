@@ -14,6 +14,7 @@ import (
 
 	dnsv1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	resourcesv1alpha1 "github.com/gardener/gardener/pkg/apis/resources/v1alpha1"
 	"github.com/gardener/gardener/pkg/logger"
@@ -230,15 +231,41 @@ var _ = Describe("Lifecycle state tests", func() {
 		Expect(c.Get(ctx, client.ObjectKey{Namespace: testName, Name: "extension-shoot-dns-service-seed"}, mr)).To(Succeed())
 		Expect(c.Get(ctx, client.ObjectKey{Namespace: testName, Name: "extension-shoot-dns-service-shoot"}, mr)).To(Succeed())
 
-		By("check compressed extension state")
+		By("check empty compressed extension state")
 		Expect(c.Get(ctx, client.ObjectKeyFromObject(ext), ext)).To(Succeed())
 		Expect(ext.Status.State).NotTo(BeNil())
+		Expect(common.LooksLikeCompressedEntriesState(ext.Status.State.Raw)).Should(BeTrue())
+
+		state, err := common.GetExtensionState(ext)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(state).NotTo(BeNil())
+		Expect(state.Entries).To(HaveLen(0))
+
+		By("start migration")
+		CEventually(ctx, func(g Gomega) error {
+			patch := client.MergeFrom(ext.DeepCopy())
+			if ext.Annotations == nil {
+				ext.Annotations = map[string]string{}
+			}
+			ext.Annotations[v1beta1constants.GardenerOperation] = v1beta1constants.GardenerOperationMigrate
+			return c.Patch(ctx, ext, patch)
+		}).Should(Succeed())
+
+		By("waiting for extension last operation to succeed")
+		CEventually(ctx, func() bool {
+			Expect(c.Get(ctx, client.ObjectKeyFromObject(ext), ext)).To(Succeed())
+			return ext.Status.LastOperation != nil &&
+				ext.Status.LastOperation.State == gardencorev1beta1.LastOperationStateSucceeded &&
+				ext.Status.LastOperation.Type == gardencorev1beta1.LastOperationTypeMigrate
+		}).WithPolling(1 * time.Second).WithTimeout(defaultTimeout).Should(BeTrue())
+
+		By("check non-empty compressed extension state")
 		Expect(common.LooksLikeCompressedEntriesState(ext.Status.State.Raw)).Should(BeTrue())
 		compressedSize := len(ext.Status.State.Raw)
 		uncompressed, err := common.DecompressEntriesState(ext.Status.State.Raw)
 		Expect(err).NotTo(HaveOccurred())
 
-		state, err := common.GetExtensionState(ext)
+		state, err = common.GetExtensionState(ext)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(state).NotTo(BeNil())
 		Expect(state.Entries).To(HaveLen(len(entries)))
@@ -296,7 +323,6 @@ func createDNSEntries(shootID, namespace string, count int) []*dnsv1alpha1.DNSEn
 			},
 			Spec: dnsv1alpha1.DNSEntrySpec{
 				DNSName: name + "some.blabla.example.com",
-				OwnerId: ptr.To("shoot--foo--barbar-e5421aeb-a317-3f25-afbc-f0e12fce61bd-test-landscape-shootdns"),
 				TTL:     ptr.To[int64](300),
 			},
 			Status: dnsv1alpha1.DNSEntryStatus{
