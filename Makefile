@@ -95,6 +95,7 @@ tidy:
 .PHONY: clean
 clean:
 	@$(shell find ./example -type f -name "controller-registration.yaml" -exec rm '{}' \;)
+	@$(shell find ./example -type f -name "extension-shoot-dns-service.yaml" -exec rm '{}' \;)
 	@bash $(GARDENER_HACK_DIR)/clean.sh ./cmd/... ./pkg/... ./test/...
 
 .PHONY: check-generate
@@ -107,8 +108,9 @@ check: $(GOIMPORTS) $(GOLANGCI_LINT) $(HELM)
 	@bash $(GARDENER_HACK_DIR)/check-charts.sh ./charts
 
 .PHONY: generate
-generate: $(CONTROLLER_GEN) $(GEN_CRD_API_REFERENCE_DOCS) $(HELM) $(MOCKGEN) $(YQ) $(VGOPATH)
-	@VGOPATH=$(VGOPATH) REPO_ROOT=$(REPO_ROOT) GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) bash $(GARDENER_HACK_DIR)/generate-sequential.sh ./charts/... ./cmd/... ./pkg/... ./test/...
+generate: $(CONTROLLER_GEN) $(GEN_CRD_API_REFERENCE_DOCS) $(HELM) $(MOCKGEN) $(YQ) $(VGOPATH) $(EXTENSION_GEN) $(KUBECTL)
+	@VGOPATH=$(VGOPATH) REPO_ROOT=$(REPO_ROOT) GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) bash $(GARDENER_HACK_DIR)/generate-sequential.sh ./charts/... ./cmd/... ./pkg/... ./test/... ./example/...
+	@./hack/prepare-operator-extension.sh
 	$(MAKE) format
 
 .PHONY: format

@@ -1,0 +1,29 @@
+apiVersion: operator.gardener.cloud/v1alpha1
+kind: Extension
+metadata:
+  annotations:
+    security.gardener.cloud/pod-security-enforce: baseline
+  name: extension-shoot-dns-service
+spec:
+  deployment:
+    admission:
+      runtimeCluster:
+        helm:
+          ociRepository:
+            ref: europe-docker.pkg.dev/gardener-project/releases/charts/gardener/extensions/admission-shoot-dns-service-runtime:v1.65.0-dev
+      virtualCluster:
+        helm:
+          ociRepository:
+            ref: europe-docker.pkg.dev/gardener-project/releases/charts/gardener/extensions/admission-shoot-dns-service-application:v1.65.0-dev
+    extension:
+      helm:
+        ociRepository:
+          ref: europe-docker.pkg.dev/gardener-project/releases/charts/gardener/extensions/shoot-dns-service:v1.65.0-dev
+  resources:
+  - autoEnable:
+    - shoot
+    clusterCompatibility:
+    - shoot
+    kind: Extension
+    type: shoot-dns-service
+    workerlessSupported: true
