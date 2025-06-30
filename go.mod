@@ -18,6 +18,7 @@ require (
 	go.uber.org/mock v0.5.0
 	golang.org/x/tools v0.34.0
 	k8s.io/api v0.33.2
+	k8s.io/apiextensions-apiserver v0.33.2
 	k8s.io/apimachinery v0.33.2
 	k8s.io/client-go v0.33.2
 	k8s.io/code-generator v0.33.2
@@ -150,7 +151,6 @@ require (
 	helm.sh/helm/v3 v3.18.3 // indirect
 	istio.io/api v1.25.3 // indirect
 	istio.io/client-go v1.25.1 // indirect
-	k8s.io/apiextensions-apiserver v0.33.2 // indirect
 	k8s.io/apiserver v0.33.2 // indirect
 	k8s.io/autoscaler/vertical-pod-autoscaler v1.4.1 // indirect
 	k8s.io/cluster-bootstrap v0.33.2 // indirect
