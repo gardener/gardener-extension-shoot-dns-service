@@ -14,11 +14,15 @@ import (
 	"github.com/gardener/gardener/extensions/pkg/util"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	componentbaseconfigv1alpha1 "k8s.io/component-base/config/v1alpha1"
 	"k8s.io/component-base/version/verflag"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	serviceinstall "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/install"
@@ -76,6 +80,9 @@ func (o *Options) run(ctx context.Context) error {
 	if err := extensionscontroller.AddToScheme(mgrScheme); err != nil {
 		return fmt.Errorf("could not update manager scheme: %s", err)
 	}
+	if err := apiextensionsv1.AddToScheme(mgrScheme); err != nil {
+		return fmt.Errorf("could not update manager scheme: %s", err)
+	}
 
 	mgrOpts := o.managerOptions.Completed().Options()
 	mgrOpts.Scheme = mgrScheme
@@ -103,9 +110,45 @@ func (o *Options) run(ctx context.Context) error {
 		return fmt.Errorf("could not add controllers to manager: %s", err)
 	}
 
+	// TODO(MartinWeindel): delete after v1.66.0
+	if err := mgr.Add(&cleanupDNSOwnerRunnable{client: mgr.GetClient()}); err != nil {
+		return fmt.Errorf("could not add cleanupDNSOwnerRunnable: %s", err)
+	}
+
 	if err := mgr.Start(ctx); err != nil {
 		return fmt.Errorf("error running manager: %s", err)
 	}
 
 	return nil
+}
+
+type cleanupDNSOwnerRunnable struct {
+	client client.Client
+}
+
+var _ manager.Runnable = &cleanupDNSOwnerRunnable{}
+var _ manager.LeaderElectionRunnable = &cleanupDNSOwnerRunnable{}
+
+func (c *cleanupDNSOwnerRunnable) Start(ctx context.Context) error {
+	log := log.Log.WithName("cleanupDNSOwnerRunnable")
+	log.Info("Starting cleanup of old DNS owner resources...")
+	crd := &apiextensionsv1.CustomResourceDefinition{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "dnsowners.dns.gardener.cloud",
+		},
+	}
+	if err := c.client.Delete(ctx, crd); err != nil {
+		if apierrors.IsNotFound(err) {
+			log.Info("CRD 'dnsowners.dns.gardener.cloud' not found, nothing to clean up")
+			return nil
+		}
+		log.Error(err, "error deleting CRD 'dnsowners.dns.gardener.cloud'")
+		return fmt.Errorf("error deleting CRD %s: %w", crd.Name, err)
+	}
+	log.Info("deleted CRD 'dnsowners.dns.gardener.cloud' to clean up old DNS owner resources")
+	return nil
+}
+
+func (c *cleanupDNSOwnerRunnable) NeedLeaderElection() bool {
+	return true
 }
