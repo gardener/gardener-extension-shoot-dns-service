@@ -137,11 +137,24 @@ func (c *cleanupDNSOwnerRunnable) Start(ctx context.Context) error {
 			Name: "dnsowners.dns.gardener.cloud",
 		},
 	}
-	if err := c.client.Delete(ctx, crd); err != nil {
+	if err := c.client.Get(ctx, client.ObjectKeyFromObject(crd), crd); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Info("CRD 'dnsowners.dns.gardener.cloud' not found, nothing to clean up")
 			return nil
 		}
+		log.Error(err, "error getting CRD 'dnsowners.dns.gardener.cloud'")
+		return fmt.Errorf("error getting CRD %s: %w", crd.Name, err)
+	}
+	patch := client.MergeFrom(crd.DeepCopy())
+	if crd.Annotations == nil {
+		crd.Annotations = make(map[string]string)
+	}
+	crd.Annotations["confirmation.gardener.cloud/deletion"] = "true"
+	if err := c.client.Patch(ctx, crd, patch); err != nil {
+		log.Error(err, "error patching CRD 'dnsowners.dns.gardener.cloud'")
+		return fmt.Errorf("error patching CRD %s: %w", crd.Name, err)
+	}
+	if err := c.client.Delete(ctx, crd); err != nil {
 		log.Error(err, "error deleting CRD 'dnsowners.dns.gardener.cloud'")
 		return fmt.Errorf("error deleting CRD %s: %w", crd.Name, err)
 	}
