@@ -111,7 +111,9 @@ func (o *Options) run(ctx context.Context) error {
 	}
 
 	// TODO(MartinWeindel): delete after v1.66.0
-	mgr.Add(&cleanupDNSOwnerRunnable{client: mgr.GetClient()})
+	if err := mgr.Add(&cleanupDNSOwnerRunnable{client: mgr.GetClient()}); err != nil {
+		return fmt.Errorf("could not add cleanupDNSOwnerRunnable: %s", err)
+	}
 
 	if err := mgr.Start(ctx); err != nil {
 		return fmt.Errorf("error running manager: %s", err)
