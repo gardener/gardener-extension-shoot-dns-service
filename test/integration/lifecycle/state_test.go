@@ -215,7 +215,7 @@ var _ = Describe("Lifecycle state tests", func() {
 
 			patch := client.MergeFrom(provider.DeepCopy())
 			provider.Status.State = "Ready"
-			provider.Status.LastUptimeTime = &metav1.Time{Time: time.Now()}
+			provider.Status.LastUpdateTime = &metav1.Time{Time: time.Now()}
 			provider.Status.ObservedGeneration = provider.Generation
 			return c.Status().Patch(ctx, provider, patch)
 		}).Should(Succeed())
@@ -327,7 +327,7 @@ func createDNSEntries(shootID, namespace string, count int) []*dnsv1alpha1.DNSEn
 			},
 			Status: dnsv1alpha1.DNSEntryStatus{
 				Provider:       ptr.To("shoot--foo--barbar/some-test-provider"),
-				LastUptimeTime: ptr.To(metav1.Now()),
+				LastUpdateTime: ptr.To(metav1.Now()),
 				ProviderType:   ptr.To("aws-route53"),
 				State:          "Ready",
 				Targets:        []string{fmt.Sprintf("f00aa479c3011153f4bdd5f65b89e7ff-f000-%04x.elb.eu-central-1.amazonaws.com", i)},
