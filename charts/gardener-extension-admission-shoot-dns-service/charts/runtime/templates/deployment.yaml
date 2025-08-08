@@ -53,10 +53,14 @@ spec:
         {{- end }}
         - --health-bind-address=:{{ .Values.healthPort }}
         - --leader-election-id={{ include "leaderelectionid" . }}
-        {{- if .Values.gardener.virtualCluster.enabled }}
         env:
+        {{- if .Values.gardener.virtualCluster.enabled }}
         - name: SOURCE_CLUSTER
           value: enabled
+        {{- end }}
+        {{- if not .Values.validateSecrets }}
+        - name: DISABLE_SECRET_VALIDATION
+          value: "true"
         {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
