@@ -7,11 +7,14 @@ package lifecycle
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	dnsv1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	"github.com/gardener/gardener/extensions/pkg/util"
+	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
+	v1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	"github.com/gardener/gardener/pkg/component"
 	"github.com/gardener/gardener/pkg/controllerutils"
 	"github.com/gardener/gardener/pkg/extensions"
@@ -119,12 +122,25 @@ func CheckDNSProvider(obj client.Object) error {
 		// DetermineError first needs to be improved to properly wrap the given error, afterwards we can clean up this
 		// code here
 		if state == dnsv1alpha1.STATE_ERROR || state == dnsv1alpha1.STATE_INVALID {
-			// return a retriable error for an Error or Invalid state (independent of the error code detection), which makes
-			// WaitUntilObjectReadyWithHealthFunction not treat the error as severe immediately but still surface errors
-			// faster, without retrying until the entire timeout is elapsed.
-			// This is the same behavior as in other extension components which leverage health.CheckExtensionObject, where
-			// ErrorWithCodes is returned if status.lastError is set (no matter if status.lastError.codes contains error codes).
-			err = retry.RetriableError(util.DetermineError(err, helper.KnownCodes))
+			var isValidationErrorOnly bool
+			if strings.Contains(err.Error(), "validation failed for") {
+				// If the error message contains "validation failed for", we assume that this is a validation error
+				// and we add an ErrorConfigurationProblem code to the error.
+				tmpErr := util.DetermineError(err, helper.KnownCodes)
+				if len(v1beta1helper.ExtractErrorCodes(tmpErr)) == 0 {
+					err = retry.RetriableError(v1beta1helper.NewErrorWithCodes(err, gardencorev1beta1.ErrorConfigurationProblem))
+					isValidationErrorOnly = true
+				}
+			}
+
+			if !isValidationErrorOnly {
+				// return a retriable error for an Error or Invalid state (independent of the error code detection), which makes
+				// WaitUntilObjectReadyWithHealthFunction not treat the error as severe immediately but still surface errors
+				// faster, without retrying until the entire timeout is elapsed.
+				// This is the same behavior as in other extension components which leverage health.CheckExtensionObject, where
+				// ErrorWithCodes is returned if status.lastError is set (no matter if status.lastError.codes contains error codes).
+				err = retry.RetriableError(util.DetermineError(err, helper.KnownCodes))
+			}
 		}
 		return &errorWithDNSState{underlying: err, state: state}
 	}
