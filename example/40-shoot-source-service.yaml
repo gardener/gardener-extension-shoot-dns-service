@@ -4,6 +4,8 @@ metadata:
   annotations:
     dns.gardener.cloud/class: garden
     dns.gardener.cloud/dnsnames: dummy.xxx.ondemand.com
+    # If you're using a load balancer on AWS and expect the creation of both `A` and `AAAA` records, uncomment the following line
+    #dns.gardener.cloud/ip-stack: dual-stack
   name: dummy-service
   namespace: default
 spec:
