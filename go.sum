@@ -160,12 +160,12 @@ github.com/fxamacker/cbor/v2 v2.8.0 h1:fFtUGXUzXPHTIUdne5+zzMPTfffl3RD5qYnkY40vt
 github.com/fxamacker/cbor/v2 v2.8.0/go.mod h1:vM4b+DJCtHn+zz7h3FFp/hDAI9WNWCsZj23V5ytsSxQ=
 github.com/gardener/cert-management v0.17.8 h1:G2vfNtWGgyWQn0e2RWEGiKo1sAgF0t6U7LPvI+faV7Q=
 github.com/gardener/cert-management v0.17.8/go.mod h1:wl4YqTM/evCPITOj//sJsGiSebww7ofAtlsi5/RhbjQ=
-github.com/gardener/controller-manager-library v0.2.1-0.20250630105600-972716a5f721 h1:+6UNO070Mo7oJglmSjGS8ibVAFU/8mR5BCqE6R3f59w=
-github.com/gardener/controller-manager-library v0.2.1-0.20250630105600-972716a5f721/go.mod h1:KH0e0QZI8BsZoP3VmjdUMiPro6oF1frDzV0HL2eyrE4=
+github.com/gardener/controller-manager-library v0.2.1-0.20250807124838-0a9c26884c72 h1:JPv/LYxT7oj0+ITgzmkoa9cjWhGDtO1E9RAycm77g0w=
+github.com/gardener/controller-manager-library v0.2.1-0.20250807124838-0a9c26884c72/go.mod h1:KH0e0QZI8BsZoP3VmjdUMiPro6oF1frDzV0HL2eyrE4=
 github.com/gardener/etcd-druid/api v0.31.0 h1:iH800fQOTeTAwQzaUQ8jxKFlSI8shZtpNfCTpsm3EyA=
 github.com/gardener/etcd-druid/api v0.31.0/go.mod h1:usOvhSOpqlrlnr/DTugq8VDoZRCU2YmwyDfiy6hRVO8=
-github.com/gardener/external-dns-management v0.26.0 h1:Jhk8HRO5tMHx+2jfr0h8MjMHTfcKBJEZLD4dU5yTjuM=
-github.com/gardener/external-dns-management v0.26.0/go.mod h1:0sFmZu+MzUsCzu0IruV6k6uDwoTqTTqJdS31kx+xCw0=
+github.com/gardener/external-dns-management v0.26.1-0.20250808084035-b6eb5620aef5 h1:WGEW9744xS6fkhRAaPCCPaolYX+YtDAfdqKBpO5EDp0=
+github.com/gardener/external-dns-management v0.26.1-0.20250808084035-b6eb5620aef5/go.mod h1:rHqUtV3cky7tgLXgtW7zBXcqpfFQoM63w/Y4bS/+7J0=
 github.com/gardener/gardener v1.124.0 h1:0zM/Nnb164C2JnXN3FLPna+YySpLMB35T+TzMGCQmIc=
 github.com/gardener/gardener v1.124.0/go.mod h1:OxnsmvZA3qMv9G/jjH5VXldLQ9XVppSNCVCE/eeay/s=
 github.com/gardener/machine-controller-manager v0.59.2 h1:CSDKoNFzn8MdG+gJDp7ntsiuc7c57u82YYHLEbVdyOA=
@@ -596,6 +596,8 @@ go.opentelemetry.io/otel/trace v1.37.0 h1:HLdcFNbRQBE2imdSEgm/kwqmQj1Or1l/7bW6mx
 go.opentelemetry.io/otel/trace v1.37.0/go.mod h1:TlgrlQ+PtQO5XFerSPUYG0JSgGyryXewPGyayAWSBS0=
 go.opentelemetry.io/proto/otlp v1.7.0 h1:jX1VolD6nHuFzOYso2E73H85i92Mv8JQYk0K9vz09os=
 go.opentelemetry.io/proto/otlp v1.7.0/go.mod h1:fSKjH6YJ7HDlwzltzyMj036AJ3ejJLCgCSHGj4efDDo=
+go.uber.org/atomic v1.11.0 h1:ZvwS0R+56ePWxUNi+Atn9dWONBPp/AUETXlHW0DxSjE=
+go.uber.org/atomic v1.11.0/go.mod h1:LUxbIzbOniOlMKjJjyPfpl4v+PKK2cNJn91OQbhoJI0=
 go.uber.org/automaxprocs v1.6.0 h1:O3y2/QNTOdbF+e/dpXNNW7Rx2hZ4sTIPyybbxyNqTUs=
 go.uber.org/automaxprocs v1.6.0/go.mod h1:ifeIMSnPZuznNm6jmdzmU3/bfk01Fe2fotchwEFJ8r8=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
