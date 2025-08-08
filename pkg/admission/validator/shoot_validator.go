@@ -7,9 +7,11 @@ package validator
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	extensionswebhook "github.com/gardener/gardener/extensions/pkg/webhook"
 	"github.com/gardener/gardener/pkg/apis/core"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -25,25 +27,34 @@ import (
 func NewShootValidator(mgr manager.Manager) extensionswebhook.Validator {
 	return &shoot{
 		decoder: serializer.NewCodecFactory(mgr.GetScheme()).UniversalDecoder(),
+		client:  mgr.GetClient(),
 	}
 }
 
 // shoot validates shoots
 type shoot struct {
 	decoder runtime.Decoder
+	client  client.Client
 }
 
 // Validate implements extensionswebhook.Validator.Validate
-func (s *shoot) Validate(ctx context.Context, new, _ client.Object) error {
+func (s *shoot) Validate(ctx context.Context, new, old client.Object) error {
 	shoot, ok := new.(*core.Shoot)
 	if !ok {
 		return fmt.Errorf("wrong object type %T", new)
 	}
+	var oldShoot *core.Shoot
+	if old != nil {
+		oldShoot, ok = old.(*core.Shoot)
+		if !ok {
+			return fmt.Errorf("wrong object type %T (old)", old)
+		}
+	}
 
-	return s.validateShoot(ctx, shoot)
+	return s.validateShoot(ctx, shoot, oldShoot)
 }
 
-func (s *shoot) validateShoot(_ context.Context, shoot *core.Shoot) error {
+func (s *shoot) validateShoot(ctx context.Context, shoot, oldShoot *core.Shoot) error {
 	if s.isDisabled(shoot) {
 		return nil
 	}
@@ -51,10 +62,24 @@ func (s *shoot) validateShoot(_ context.Context, shoot *core.Shoot) error {
 	if err != nil {
 		return err
 	}
+	var oldDnsConfig *apisservice.DNSConfig
+	if oldShoot != nil {
+		oldDnsConfig, err = s.extractDNSConfig(oldShoot)
+		if err != nil {
+			// If we cannot extract the old DNSConfig, we handle it as if it's a create operation
+			oldDnsConfig = nil
+		}
+	}
 
 	allErrs := field.ErrorList{}
 	if dnsConfig != nil {
-		allErrs = append(allErrs, validation.ValidateDNSConfig(dnsConfig, &shoot.Spec.Resources)...)
+		var getter validation.SecretGetter
+		if hasChanged := oldDnsConfig == nil || !reflect.DeepEqual(dnsConfig, oldDnsConfig); hasChanged {
+			// If the DNSConfig has changed, we want to validate the secrets.
+			// Otherwise, we skip the secret validation to avoid shoot manifests updates to fail due to an unrelated changed secret.
+			getter = s.makeSecretGetter(ctx, shoot.Namespace)
+		}
+		allErrs = append(allErrs, validation.ValidateDNSConfig(dnsConfig, &shoot.Spec.Resources, getter)...)
 	}
 
 	return allErrs.ToAggregate()
@@ -94,4 +119,12 @@ func (s *shoot) findExtension(shoot *core.Shoot) *core.Extension {
 		}
 	}
 	return nil
+}
+
+func (s *shoot) makeSecretGetter(ctx context.Context, namespace string) validation.SecretGetter {
+	return func(name string) (*corev1.Secret, error) {
+		secret := &corev1.Secret{}
+		err := s.client.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, secret)
+		return secret, err
+	}
 }

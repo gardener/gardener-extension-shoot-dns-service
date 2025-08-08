@@ -27,6 +27,8 @@ service:
   topologyAwareRouting:
     enabled: false
 
+validateSecrets: true
+
 gardener:
   virtualCluster:
     enabled: true
