@@ -71,6 +71,8 @@ metadata:
     dns.gardener.cloud/class: garden
     # If you are delegating the certificate management to Gardener, uncomment the following line
     #cert.gardener.cloud/purpose: managed
+    # If you're using a load balancer on AWS and expect the creation of both `A` and `AAAA` records, uncomment the following line
+    #dns.gardener.cloud/ip-stack: dual-stack
 spec:
   rules:
   - host: special.example.com
@@ -107,6 +109,8 @@ metadata:
     dns.gardener.cloud/dnsnames: special.example.com
     dns.gardener.cloud/ttl: "600"
     dns.gardener.cloud/class: garden
+    # If you're using a load balancer on AWS and expect the creation of both `A` and `AAAA` records, uncomment the following line
+    #dns.gardener.cloud/ip-stack: dual-stack
 spec:
   selector:
     app: amazing-app
@@ -116,6 +120,19 @@ spec:
       targetPort: 8080
   type: LoadBalancer
 ```
+
+### Request `AAAA` DNS records for Dual-Stack load balancers on AWS
+
+For Amazon Route 53 and AWS load balancers, `A` DNS records with alias target are created instead of `CNAME` as an optimization.
+
+To support dual-stack IP addresses in this case, set one of these annotations:
+
+* `service.beta.kubernetes.io/aws-load-balancer-ip-address-type=dualstack` (`Service` only)
+* `dns.gardener.cloud/ip-stack=dual-stack` (`Ingress`, `Service`, or `DNSEntry`)
+
+In this case, both `A` and `AAAA` records with alias target records are created.
+
+With the annotation `dns.gardener.cloud/ip-stack=ipv6`, only an `AAAA` record with alias target is created.
 
 ### Request DNS records for Gateway resources
 
