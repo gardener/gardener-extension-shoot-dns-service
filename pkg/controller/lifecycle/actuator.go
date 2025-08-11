@@ -138,7 +138,7 @@ func (a *actuator) extractDNSConfig(ex *extensionsv1alpha1.Extension) (*apisserv
 		if _, _, err := a.decoder.Decode(ex.Spec.ProviderConfig.Raw, nil, dnsConfig); err != nil {
 			return nil, fmt.Errorf("failed to decode provider config: %+v", err)
 		}
-		if errs := validation.ValidateDNSConfig(dnsConfig, nil); len(errs) > 0 {
+		if errs := validation.ValidateDNSConfig(dnsConfig, nil, nil); len(errs) > 0 {
 			return nil, errs.ToAggregate()
 		}
 	}
