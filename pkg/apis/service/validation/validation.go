@@ -26,6 +26,7 @@ var supportedProviderTypes = []string{
 	"aws-route53",
 	"azure-dns", "azure-private-dns",
 	"cloudflare-dns",
+	"gdch-dns",
 	"google-clouddns",
 	"infoblox-dns",
 	"netlify-dns",
