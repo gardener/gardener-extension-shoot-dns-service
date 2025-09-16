@@ -8,5 +8,5 @@ cp "$(dirname $0)"/../imagevector/images.yaml "$(dirname $0)"/../charts/images.y
 
 "$(dirname $0)"/../hack/.ci/set_dependency_version_dnsman
 
-## need to update example/controller-registration.yaml
+## need to update generated examples
 make -C "$(dirname $0)"/.. generate
