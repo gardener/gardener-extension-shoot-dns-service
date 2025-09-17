@@ -11,8 +11,8 @@ spec:
       runtimeCluster:
         helm:
           ociRepository:
-            ref: local-skaffold/gardener-extension-shoot-dns-service/charts/admission-shoot-dns-service-runtime:v0.0.0
+            ref: local-skaffold/gardener-extension-shoot-dns-service/charts/shoot-dns-service-admission-runtime:v0.0.0
       virtualCluster:
         helm:
           ociRepository:
-            ref: local-skaffold/gardener-extension-shoot-dns-service/charts/admission-shoot-dns-service-application:v0.0.0
+            ref: local-skaffold/gardener-extension-shoot-dns-service/charts/shoot-dns-service-admission-application:v0.0.0
