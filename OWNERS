@@ -1,0 +1,6 @@
+# See the OWNERS docs at https://go.k8s.io/owners
+
+reviewers:
+- shoot-dns-service-reviewers
+approvers:
+- shoot-dns-service-approvers
