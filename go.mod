@@ -7,7 +7,7 @@ toolchain go1.24.1
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.1-0.20241014194617-ffc4efda75d4
 	github.com/andybalholm/brotli v1.2.0
-	github.com/gardener/controller-manager-library v0.2.1-0.20250807124838-0a9c26884c72
+	github.com/gardener/controller-manager-library v0.2.1-0.20250922122006-4d77c1a8caa3
 	github.com/gardener/external-dns-management v0.28.0
 	github.com/gardener/gardener v1.128.1
 	github.com/go-logr/logr v1.4.3
