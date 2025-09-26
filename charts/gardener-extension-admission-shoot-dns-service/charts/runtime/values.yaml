@@ -3,7 +3,10 @@ image:
   tag: latest
   pullPolicy: IfNotPresent
 replicaCount: 1
-resources: {}
+resources:
+  requests:
+    cpu: 30m
+    memory: 100Mi
 healthPort: 8081
 vpa:
   enabled: true
