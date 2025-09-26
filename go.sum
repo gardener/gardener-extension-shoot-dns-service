@@ -74,6 +74,7 @@ github.com/PuerkitoBio/urlesc v0.0.0-20160726150825-5bd2802263f2/go.mod h1:uGdko
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
 github.com/ahmetb/gen-crd-api-reference-docs v0.3.1-0.20241014194617-ffc4efda75d4 h1:6EoMPTkpp1N2YhyOu6eYm7a56rhDPBz6pQL/O0kzhTA=
 github.com/ahmetb/gen-crd-api-reference-docs v0.3.1-0.20241014194617-ffc4efda75d4/go.mod h1:XH7UFcXiBwpjFOhyHgTTmkTTA6rvn9oUlbnlIp9fRKI=
+github.com/ahmetb/gen-crd-api-reference-docs v0.3.1-0.20250520003539-c2e9cae110cd/go.mod h1:XH7UFcXiBwpjFOhyHgTTmkTTA6rvn9oUlbnlIp9fRKI=
 github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b h1:mimo19zliBX/vSQ6PWWSL9lK8qwHozUj03+zLoEB8O0=
 github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b/go.mod h1:fvzegU4vN3H1qMT+8wDmzjAcDONcgo2/SZ/TyfdUOFs=
 github.com/andybalholm/brotli v1.2.0 h1:ukwgCxwYrmACq68yiUqwIWnGY0cTPox/M94sVwToPjQ=
