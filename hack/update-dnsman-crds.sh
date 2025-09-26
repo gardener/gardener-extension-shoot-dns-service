@@ -38,7 +38,7 @@ echo "{{- if and .Values.dnsControllerManager.deploy .Values.dnsControllerManage
 cat "${tmp_crds}" >> "${tmp_dnsman_crds}"
 echo "{{- end }}" >> "${tmp_dnsman_crds}"
 awk '
-  found && $0 ~ /^ {4}controller-gen\.kubebuilder\.io\/version:/ {
+  found && $0 ~ /controller-gen\.kubebuilder\.io\/version:/ {
     print
     print "    resources.gardener.cloud/keep-object: \"true\""
     print "  labels:"
