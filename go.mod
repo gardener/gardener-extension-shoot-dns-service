@@ -9,7 +9,7 @@ require (
 	github.com/andybalholm/brotli v1.2.0
 	github.com/gardener/controller-manager-library v0.2.1-0.20250922122006-4d77c1a8caa3
 	github.com/gardener/external-dns-management v0.28.0
-	github.com/gardener/gardener v1.128.1
+	github.com/gardener/gardener v1.128.3
 	github.com/go-logr/logr v1.4.3
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/onsi/ginkgo/v2 v2.25.0
