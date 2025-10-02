@@ -37,7 +37,7 @@ vpa:
       memory: 50Mi
     controlledValues: RequestsOnly
   updatePolicy:
-    updateMode: "Auto"
+    updateMode: "Recreate"
 
 controllers:
   lifecycle:
@@ -144,4 +144,4 @@ dnsControllerManager:
         memory: 50Mi
       controlledValues: RequestsOnly
     updatePolicy:
-      updateMode: "Auto"
+      updateMode: "Recreate"
