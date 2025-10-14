@@ -35,8 +35,7 @@ spec:
       - name: gardener-extension-{{ .Values.serviceName }}
         image: {{ include "image" . }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command:
-        - /gardener-extension-shoot-dns-service
+        args:
         - --lifecycle-max-concurrent-reconciles={{ .Values.controllers.lifecycle.concurrentSyncs }}
         - --healthcheck-max-concurrent-reconciles={{ .Values.controllers.healthcheck.concurrentSyncs }}
         - --replication-max-concurrent-reconciles={{ .Values.controllers.replication.concurrentSyncs }}

@@ -106,6 +106,7 @@ check-generate:
 check: $(GOIMPORTS) $(GOLANGCI_LINT) $(HELM)
 	@bash $(GARDENER_HACK_DIR)/check.sh --golangci-lint-config=./.golangci.yaml ./cmd/... ./pkg/... ./test/...
 	@bash $(GARDENER_HACK_DIR)/check-charts.sh ./charts
+	@GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) $(REPO_ROOT)/hack/check-skaffold-deps.sh
 
 .PHONY: generate
 generate: $(CONTROLLER_GEN) $(GEN_CRD_API_REFERENCE_DOCS) $(HELM) $(MOCKGEN) $(YQ) $(VGOPATH) $(EXTENSION_GEN) $(KUBECTL)
@@ -143,8 +144,28 @@ test-clean:
 test-integration-lifecycle: $(REPORT_COLLECTOR) $(SETUP_ENVTEST)
 	@bash $(GARDENER_HACK_DIR)/test-integration.sh ./test/integration/lifecycle/...
 
+.PHONY: test-e2e-local
+test-e2e-local: $(KIND) $(YQ) $(GINKGO)
+	@$(REPO_ROOT)/hack/test-e2e-provider-local.sh --procs=3
+
 .PHONY: verify
 verify: check format test test-integration-lifecycle sast
 
 .PHONY: verify-extended
 verify-extended: check-generate check format test-cov test-clean test-integration-lifecycle sast-report
+
+.PHONY: extension-up
+extension-up: export EXTENSION_VERSION = $(VERSION)
+extension-up: export SKAFFOLD_DEFAULT_REPO = garden.local.gardener.cloud:5001
+extension-up: export SKAFFOLD_PUSH = true
+extension-up: export LD_FLAGS = $(shell bash $(GARDENER_HACK_DIR)/get-build-ld-flags.sh k8s.io/component-base $(REPO_ROOT)/VERSION gardener-extension-shoot-dns-service)
+extension-up: export EXTENSION_GARDENER_HACK_DIR = $(GARDENER_HACK_DIR)
+extension-up: $(SKAFFOLD) $(HELM) $(KUBECTL)
+	$(REPO_ROOT)/hack/knot-dns/knot-dns-up.sh
+	$(REPO_ROOT)/hack/prepare-dev-extension.sh
+	$(SKAFFOLD) run --cache-artifacts=true
+
+.PHONY: extension-down
+extension-down:
+	$(SKAFFOLD) delete
+	$(REPO_ROOT)/hack/knot-dns/knot-dns-down.sh
