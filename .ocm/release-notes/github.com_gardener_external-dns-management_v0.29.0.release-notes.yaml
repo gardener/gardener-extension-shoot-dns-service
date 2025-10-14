@@ -1,0 +1,89 @@
+ocm:
+  component_name: github.com/gardener/external-dns-management
+  component_version: v0.29.0
+release_notes:
+- audience: user
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: breaking
+  contents: The `infoblox-dns` provider is deprecated and will be removed end of 2025.
+  mimetype: text/markdown
+  reference: '[#645](https://github.com/gardener/external-dns-management/pull/645)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: vitanovs
+  category: other
+  contents: Migrate the workload VPA from the deprecated update mode `Auto` to its
+    only fallback strategy - update mode `Recreate`.
+  mimetype: text/markdown
+  reference: '[#671](https://github.com/gardener/external-dns-management/pull/671)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: feature
+  contents: Support command line option `--kubeconfig.crds-shoot-no-cleanup-label`
+    to allow to set the label `shoot.gardener.cloud/no-cleanup=true`  for deployed
+    CRDs.
+  mimetype: text/markdown
+  reference: '[#674](https://github.com/gardener/external-dns-management/pull/674)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: other
+  contents: Update cloudflare-dns to use the Version 6 of `github.com/cloudflare/cloudflare-go/v6`.
+  mimetype: text/markdown
+  reference: '[#640](https://github.com/gardener/external-dns-management/pull/640)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: marc1404
+  category: other
+  contents: Aligned zone metrics handling in Azure DNS and Azure Private DNS providers
+    with all other DNS providers.
+  mimetype: text/markdown
+  reference: '[#667](https://github.com/gardener/external-dns-management/pull/667)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: breaking
+  contents: The `infoblox-dns` provider is deprecated and will be removed end of 2025.
+  mimetype: text/markdown
+  reference: '[#645](https://github.com/gardener/external-dns-management/pull/645)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: '[netlify-dns] Allow underscore character on validating the API token
+    for netlify.'
+  mimetype: text/markdown
+  reference: '[#644](https://github.com/gardener/external-dns-management/pull/644)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: other
+  contents: Simplify build workflow, drop redundant `check` step.
+  mimetype: text/markdown
+  reference: '[#658](https://github.com/gardener/external-dns-management/pull/658)'
+  type: standard
