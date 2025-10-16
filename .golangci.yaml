@@ -20,14 +20,17 @@ linters:
           - staticcheck
         path: pkg/controller/lifecycle
         text: 'SA1019:'
+      - linters:
+          - staticcheck
+        text: 'ST1001:' # should not use dot imports
     paths:
-      - third_party$
-      - builtin$
-      - examples$
+      - example$
+      - gardener$
+      - local$
 formatters:
   exclusions:
     generated: lax
     paths:
-      - third_party$
-      - builtin$
-      - examples$
+      - example$
+      - gardener$
+      - local$

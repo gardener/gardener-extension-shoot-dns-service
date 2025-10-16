@@ -13,6 +13,7 @@ import (
 
 	dnsv1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	"github.com/gardener/external-dns-management/pkg/dns"
+	extensionsconfigv1alpha1 "github.com/gardener/gardener/extensions/pkg/apis/config/v1alpha1"
 	"github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
 	"github.com/gardener/gardener/extensions/pkg/util"
@@ -35,6 +36,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/hashicorp/go-multierror"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -477,12 +479,14 @@ func (a *actuator) addCleanupOfOldAdditionalProviders(dnsProviders map[string]co
 		ctx,
 		providerList,
 		client.InNamespace(namespace),
-		client.MatchingLabels{v1beta1constants.GardenRole: DNSProviderRoleAdditional},
 	); err != nil {
 		return err
 	}
 
 	for _, provider := range providerList.Items {
+		if !isAdditionalProvider(provider) && !isReplicatedProvider(provider) {
+			continue
+		}
 		if _, ok := dnsProviders[provider.Name]; !ok {
 			p := provider
 			dnsProviders[provider.Name] = component.OpDestroyAndWait(NewProviderDeployWaiter(
@@ -707,12 +711,20 @@ func (a *actuator) deleteSeedResources(ctx context.Context, log logr.Logger, clu
 	namespace := ex.Namespace
 	a.Info("Component is being deleted", "component", service.ExtensionServiceName, "namespace", namespace)
 
+	// DNSEntries and DNSProvider are deleted after the seed resources have been deleted, so that the
+	// shoot-dns-service deployment is already gone and cannot resurrect resources from the shoot cluster.
 	if !force {
 		if !migrate {
 			err := a.deleteManagedDNSEntries(ctx, ex)
 			if err != nil {
 				return err
 			}
+			// need to remove finalizers from DNSEntries and DNSProviders on shoot as
+			// shoot-dns-service is not running anymore on the seed
+			if err := a.removeShootCustomResourcesFinalizersAndDeleteCRDs(ctx, ex); err != nil {
+				return err
+			}
+			a.Info("Removed finalizers from DNSEntries and DNSProviders in shoot cluster", "namespace", namespace)
 		}
 
 		if a.isManagingDNSProviders(cluster.Shoot.Spec.DNS) {
@@ -733,6 +745,81 @@ func (a *actuator) deleteSeedResources(ctx context.Context, log logr.Logger, clu
 	}
 
 	return kutil.DeleteObject(ctx, a.Client(), &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: gutil.SecretNamePrefixShootAccess + service.ShootAccessSecretName, Namespace: namespace}})
+}
+
+func (a *actuator) removeShootCustomResourcesFinalizersAndDeleteCRDs(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
+	shootClient, err := a.getShootClient(ctx, ex.Namespace)
+	if err != nil {
+		return err
+	}
+
+	if err := removeFinalizersFor(
+		ctx,
+		a.Logger,
+		shootClient,
+		"DNSEntries", "dnsentries.dns.gardener.cloud", ex.Namespace,
+		&dnsv1alpha1.DNSEntryList{},
+		func(list client.ObjectList) []objectWithDeepCopy[*dnsv1alpha1.DNSEntry] {
+			l := list.(*dnsv1alpha1.DNSEntryList)
+			result := make([]objectWithDeepCopy[*dnsv1alpha1.DNSEntry], len(l.Items))
+			for i := range l.Items {
+				result[i] = &l.Items[i]
+			}
+			return result
+		}); err != nil {
+		return err
+	}
+
+	if err := removeFinalizersFor(
+		ctx,
+		a.Logger,
+		shootClient,
+		"DNSProviders", "dnsproviders.dns.gardener.cloud", ex.Namespace,
+		&dnsv1alpha1.DNSProviderList{},
+		func(list client.ObjectList) []objectWithDeepCopy[*dnsv1alpha1.DNSProvider] {
+			l := list.(*dnsv1alpha1.DNSProviderList)
+			result := make([]objectWithDeepCopy[*dnsv1alpha1.DNSProvider], len(l.Items))
+			for i := range l.Items {
+				result[i] = &l.Items[i]
+			}
+			return result
+		}); err != nil {
+		return err
+	}
+
+	if err := a.deleteShootCustomResourceDefinitions(ctx, shootClient); err != nil {
+		return fmt.Errorf("failed to delete DNS CRDs in shoot cluster: %w", err)
+	}
+
+	return nil
+}
+
+func (a *actuator) deleteShootCustomResourceDefinitions(ctx context.Context, shootClient client.Client) error {
+	list := &apiextensionsv1.CustomResourceDefinitionList{}
+	if err := shootClient.List(ctx, list); err != nil {
+		return err
+	}
+
+	for _, crd := range list.Items {
+		if crd.Spec.Group == dnsv1alpha1.SchemeGroupVersion.Group {
+			if err := kutil.DeleteObject(ctx, shootClient, &crd); err != nil {
+				if k8serr.IsNotFound(err) {
+					continue
+				}
+				return fmt.Errorf("failed to delete DNS CRD %q in shoot cluster: %w", crd.Name, err)
+			}
+			a.Info("Deleted DNS CRD in shoot cluster", "crd", crd.Name)
+		}
+	}
+	return nil
+}
+
+func (a *actuator) getShootClient(ctx context.Context, namespace string) (client.Client, error) {
+	_, shootClient, err := util.NewClientForShoot(ctx, a.Client(), namespace, client.Options{Scheme: a.Client().Scheme()}, extensionsconfigv1alpha1.RESTOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed creating client for shoot cluster: %w", err)
+	}
+	return shootClient, nil
 }
 
 func (a *actuator) deleteManagedDNSEntries(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
@@ -883,4 +970,56 @@ func (a *actuator) createOrUpdateManagedResource(ctx context.Context, namespace,
 
 func enableDNSProviderForShootDNSEntries(seedNamespace string) map[string]string {
 	return map[string]string{DNSRealmAnnotation: fmt.Sprintf("%s,", seedNamespace)}
+}
+
+type objectWithDeepCopy[T client.Object] interface {
+	client.Object
+	DeepCopy() T
+}
+
+func removeFinalizersFor[T client.Object](
+	ctx context.Context,
+	log logr.Logger,
+	shootClient client.Client,
+	shortName, crdName, namespace string,
+	list client.ObjectList,
+	toObjectSlice func(list client.ObjectList) []objectWithDeepCopy[T]) error {
+	if err := shootClient.Get(ctx, client.ObjectKey{Name: crdName}, &apiextensionsv1.CustomResourceDefinition{}); err != nil {
+		if k8serr.IsNotFound(err) {
+			log.Info("Skipping removal of finalizers from "+shortName+" in shoot cluster as CRD is not present", "namespace", namespace)
+			return nil
+		}
+		return err
+	}
+
+	patchCount := 0
+	// Remove finalizers from objects if managed by shoot-dns-service
+	if err := shootClient.List(ctx, list); err != nil {
+		return fmt.Errorf("failed to list %s in shoot cluster: %w", shortName, err)
+	}
+	for _, obj := range toObjectSlice(list) {
+		if obj.GetAnnotations()[dns.CLASS_ANNOTATION] == "garden" {
+			patch := client.MergeFrom(obj.DeepCopy())
+			obj.SetFinalizers(nil)
+			if err := client.IgnoreNotFound(shootClient.Patch(ctx, obj, patch)); err != nil {
+				return fmt.Errorf("failed to remove finalizer from %s %q in shoot cluster: %w", shortName, client.ObjectKeyFromObject(obj), err)
+			}
+			log.Info("Removed finalizer from "+shortName+" in shoot cluster", "entry", client.ObjectKeyFromObject(obj), "namespace", namespace)
+			patchCount++
+		}
+	}
+
+	if patchCount == 0 {
+		log.Info("No "+shortName+" found to patch in shoot cluster", "namespace", namespace)
+	}
+
+	return nil
+}
+
+func isAdditionalProvider(provider dnsv1alpha1.DNSProvider) bool {
+	return provider.Labels[v1beta1constants.GardenRole] == DNSProviderRoleAdditional
+}
+
+func isReplicatedProvider(provider dnsv1alpha1.DNSProvider) bool {
+	return provider.Labels[common.ShootDNSEntryLabelKey] != ""
 }

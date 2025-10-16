@@ -44,6 +44,7 @@ spec:
           - --kubeconfig=/var/run/secrets/gardener.cloud/shoot/generic-kubeconfig/kubeconfig
           - --kubeconfig.id={{ .Values.shootId }}
           - --kubeconfig.conditional-deploy-crds
+          - --kubeconfig.crds-shoot-no-cleanup-label
           - --target=IN-CLUSTER
           - --target-realms={{ .Release.Namespace }}
           - --target.id={{ .Values.seedId }}

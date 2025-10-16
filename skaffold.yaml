@@ -1,0 +1,123 @@
+apiVersion: skaffold/v4beta7
+kind: Config
+metadata:
+  name: shoot-dns-service
+build:
+  insecureRegistries:
+    - garden.local.gardener.cloud:5001
+  tagPolicy:
+    customTemplate:
+      template: "{{.version}}-{{.sha}}"
+      components:
+        - name: version
+          envTemplate:
+            template: "{{.EXTENSION_VERSION}}"
+        - name: sha
+          gitCommit:
+            variant: AbbrevCommitSha
+  artifacts:
+    - image: local-skaffold/gardener-extension-shoot-dns-service
+      ko:
+        dependencies:
+          paths:
+            - charts
+            - charts/internal
+            - cmd/gardener-extension-shoot-dns-service
+            - cmd/gardener-extension-shoot-dns-service/app
+            - imagevector
+            - imagevector/images.yaml
+            - pkg/apis
+            - pkg/apis/helper
+            - pkg/apis/install
+            - pkg/apis/service
+            - pkg/apis/service/install
+            - pkg/apis/service/v1alpha1
+            - pkg/apis/service/validation
+            - pkg/apis/v1alpha1
+            - pkg/cmd
+            - pkg/controller/common
+            - pkg/controller/config
+            - pkg/controller/healthcheck
+            - pkg/controller/lifecycle
+            - pkg/service
+            - VERSION
+        ldflags:
+          - '{{.LD_FLAGS}}'
+        main: ./cmd/gardener-extension-shoot-dns-service
+    - image: local-skaffold/gardener-extension-admission-shoot-dns-service
+      ko:
+        dependencies:
+          paths:
+            - charts
+            - charts/internal
+            - cmd/gardener-extension-admission-shoot-dns-service
+            - cmd/gardener-extension-admission-shoot-dns-service/app
+            - imagevector
+            - imagevector/images.yaml
+            - pkg/apis
+            - pkg/apis/helper
+            - pkg/apis/install
+            - pkg/apis/service
+            - pkg/apis/service/install
+            - pkg/apis/service/v1alpha1
+            - pkg/apis/service/validation
+            - pkg/apis/v1alpha1
+            - pkg/cmd
+            - pkg/controller/common
+            - pkg/controller/config
+            - pkg/controller/healthcheck
+            - pkg/controller/lifecycle
+            - pkg/service
+            - VERSION
+        ldflags:
+          - '{{.LD_FLAGS}}'
+        main: ./cmd/gardener-extension-admission-shoot-dns-service
+    - image: local-skaffold/gardener-extension-shoot-dns-service/charts/extension
+      custom:
+        buildCommand: |
+          bash {{.EXTENSION_GARDENER_HACK_DIR}}/push-helm.sh charts/gardener-extension-shoot-dns-service .skaffoldImage
+        dependencies:
+          paths:
+            - charts/gardener-extension-shoot-dns-service
+            - charts/gardener-extension-shoot-dns-service/templates
+      requires:
+        - image: local-skaffold/gardener-extension-shoot-dns-service
+          alias: IMG
+    - image: local-skaffold/gardener-extension-shoot-dns-service/charts/shoot-dns-service-admission-application
+      custom:
+        buildCommand: |
+          bash {{.EXTENSION_GARDENER_HACK_DIR}}/push-helm.sh charts/gardener-extension-admission-shoot-dns-service/charts/application .skaffoldImage
+        dependencies:
+          paths:
+            - charts/gardener-extension-admission-shoot-dns-service/charts/application
+            - charts/gardener-extension-admission-shoot-dns-service/charts/application/templates
+      requires:
+        - image: local-skaffold/gardener-extension-admission-shoot-dns-service
+          alias: IMG
+    - image: local-skaffold/gardener-extension-shoot-dns-service/charts/shoot-dns-service-admission-runtime
+      custom:
+        buildCommand: |
+          bash {{.EXTENSION_GARDENER_HACK_DIR}}/push-helm.sh charts/gardener-extension-admission-shoot-dns-service/charts/runtime .skaffoldImage
+        dependencies:
+          paths:
+            - charts/gardener-extension-admission-shoot-dns-service/charts/runtime
+            - charts/gardener-extension-admission-shoot-dns-service/charts/runtime/templates
+      requires:
+        - image: local-skaffold/gardener-extension-admission-shoot-dns-service
+          alias: IMG
+resourceSelector:
+  allow:
+    # instruct skaffold to inject the built image reference into the image fields in our Extension object
+    - groupKind: Extension.operator.gardener.cloud
+      image:
+        - .spec.deployment.extension.helm.ociRepository.ref
+        - .spec.deployment.extension.values.image.ref
+        - .spec.deployment.admission.runtimeCluster.helm.ociRepository.ref
+        - .spec.deployment.admission.values.image.ref
+        - .spec.deployment.admission.virtualCluster.helm.ociRepository.ref
+manifests:
+  kustomize:
+    paths:
+      - dev/extension
+deploy:
+  kubectl: {}
