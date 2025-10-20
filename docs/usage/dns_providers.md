@@ -69,7 +69,11 @@ spec:
 ```
 If `syncProvidersFromShootSpecDNS` is set to `true`, you need to set the providers in the `spec.dns.providers` section (see below)
 
-### Additional providers in the shoot specification (deprecated old ways)
+### Additional providers in the shoot specification (deprecated)
+
+> [!WARNING]  
+> This approach is deprecated. Please prefer keeping `syncProvidersFromShootSpecDNS` set to `false`
+> Instead, configure additional DNS providers as part of the `shoot-dns-service` provider config [as described above](#additional-providers-in-the-shoot-specification-preferred) or configure them as resources in the shoot cluster [as described below](#additional-providers-as-resources-in-the-shoot-cluster).
 
 To add a provider in the shoot spec, you need set them in the `spec.dns.providers` list.
 
