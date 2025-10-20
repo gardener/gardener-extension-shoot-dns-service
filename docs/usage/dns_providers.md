@@ -27,7 +27,8 @@ If you need to request DNS records for domains not managed by the [default provi
 be configured in the shoot specification.
 Alternatively, if it is enabled, it can be added as `DNSProvider` resources to the shoot cluster.
 
-### Additional providers in the shoot specification (new way)
+### Additional providers in the shoot specification (preferred)
+
 To add a provider in the shoot spec for the `shoot-dns-service`, you first need to take a look into the shoot
 manifest to check if it already has been migrated to the new separate configuration. If the flag 
 `.spec.extensions[@.type="shoot-dns-service"].providerConfig.syncProvidersFromShootSpecDNS` is set to `false`, 
