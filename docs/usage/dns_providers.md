@@ -27,9 +27,55 @@ If you need to request DNS records for domains not managed by the [default provi
 be configured in the shoot specification.
 Alternatively, if it is enabled, it can be added as `DNSProvider` resources to the shoot cluster.
 
-### Additional providers in the shoot specification
+### Additional providers in the shoot specification (preferred)
 
-To add a providers in the shoot spec, you need set them in the `spec.dns.providers` list.
+To add a provider in the shoot spec for the `shoot-dns-service`, you first need to take a look into the shoot
+manifest to check if it already has been migrated to the new separate configuration. If the flag 
+`.spec.extensions[@.type="shoot-dns-service"].providerConfig.syncProvidersFromShootSpecDNS` is set to `false`, 
+you need to set the providers in the `providerConfig` section of the extension. Additionally, the secret must be 
+referenced in the `spec.resources` section. The referenced secret needs to exist in the project namespace.
+
+For example:
+```yaml
+kind: Shoot
+...
+spec:
+  dns:
+    domain: shoot.project.default-domain.gardener.cloud
+    providers:
+    # define primary provider here if needed (used for the shoot's kube-apiserver record)
+  extensions:
+    - type: shoot-dns-service
+      providerConfig:
+        apiVersion: service.dns.extensions.gardener.cloud/v1alpha1
+        kind: DNSConfig
+        providers:
+          - secretName: my-aws-account
+            type: aws-route53
+          - secretName: my-gcp-account
+            type: google-clouddns
+        syncProvidersFromShootSpecDNS: false
+  resources:
+    - name: my-aws-account
+      resourceRef:
+        kind: Secret
+        name: my-aws-credentials # secret with this name must exist in the project namespace
+        apiVersion: v1
+    - name: my-gcp-account
+      resourceRef:
+        kind: Secret
+        name: my-gcp-credentials # secret with this name must exist in the project namespace
+        apiVersion: v1
+```
+If `syncProvidersFromShootSpecDNS` is set to `true`, you need to set the providers in the `spec.dns.providers` section (see below)
+
+### Additional providers in the shoot specification (deprecated)
+
+> [!WARNING]  
+> This approach is deprecated. Please prefer keeping `syncProvidersFromShootSpecDNS` set to `false`
+> Instead, configure additional DNS providers as part of the `shoot-dns-service` provider config [as described above](#additional-providers-in-the-shoot-specification-preferred) or configure them as resources in the shoot cluster [as described below](#additional-providers-as-resources-in-the-shoot-cluster).
+
+To add a provider in the shoot spec, you need set them in the `spec.dns.providers` list.
 
 For example:
 ```yaml
@@ -43,6 +89,17 @@ spec:
       type: aws-route53
     - secretName: my-gcp-account
       type: google-clouddns
+  extensions:
+    - type: shoot-dns-service
+      providerConfig: # this section is synced from spec.dns.providers if syncProvidersFromShootSpecDNS is true
+        apiVersion: service.dns.extensions.gardener.cloud/v1alpha1
+        kind: DNSConfig
+        providers:
+        - secretName: my-aws-account
+          type: aws-route53
+        - secretName: my-gcp-account
+          type: google-clouddns
+        syncProvidersFromShootSpecDNS: true # if this flag is set to true, the providerConfig is automatically synced from spec.dns.providers
 ```
 
 > Please consult the [API-Reference](https://gardener.cloud/docs/gardener/api-reference/core/#core.gardener.cloud/v1beta1.DNSProvider) to get a complete list of supported fields and configuration options.
