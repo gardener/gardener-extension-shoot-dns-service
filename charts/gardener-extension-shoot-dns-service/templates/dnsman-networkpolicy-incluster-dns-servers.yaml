@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  annotations:
+    gardener.cloud/description: 'Allows egress to all pods for namespaces labelled with `dns.gardener.cloud/allowed: "true"` to support in-cluster dns-servers'
+  name: allow-to-incluster-dns-servers
+  namespace: {{ .Release.Namespace }}
+spec:
+  egress:
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+        - port: 8053
+          protocol: UDP
+        - port: 8053
+          protocol: TCP
+      to:
+        - namespaceSelector:
+            matchLabels:
+              dns.gardener.cloud/allowed: "true"
+  podSelector:
+    matchLabels:
+{{ include "dnsmanLabels" . | indent 6 }}
+  policyTypes:
+    - Egress

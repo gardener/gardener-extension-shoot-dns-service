@@ -26,6 +26,7 @@ spec:
       labels:
         networking.gardener.cloud/to-runtime-apiserver: allowed
         networking.gardener.cloud/to-dns: allowed
+        networking.resources.gardener.cloud/to-all-shoots-kube-apiserver-tcp-443: allowed
 {{ include "labels" . | indent 8 }}
     spec:
       priorityClassName: gardener-system-900
@@ -34,8 +35,7 @@ spec:
       - name: gardener-extension-{{ .Values.serviceName }}
         image: {{ include "image" . }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command:
-        - /gardener-extension-shoot-dns-service
+        args:
         - --lifecycle-max-concurrent-reconciles={{ .Values.controllers.lifecycle.concurrentSyncs }}
         - --healthcheck-max-concurrent-reconciles={{ .Values.controllers.healthcheck.concurrentSyncs }}
         - --replication-max-concurrent-reconciles={{ .Values.controllers.replication.concurrentSyncs }}

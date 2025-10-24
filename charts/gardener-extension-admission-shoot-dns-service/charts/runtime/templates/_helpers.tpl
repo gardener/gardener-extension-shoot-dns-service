@@ -15,10 +15,14 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
 {{-  define "image" -}}
-  {{- if hasPrefix "sha256:" .tag }}
-  {{- printf "%s@%s" .repository .tag }}
+  {{- if .ref }}
+    {{- .ref }}
   {{- else }}
-  {{- printf "%s:%s" .repository .tag }}
+    {{- if hasPrefix "sha256:" .tag }}
+    {{- printf "%s@%s" .repository .tag }}
+    {{- else }}
+    {{- printf "%s:%s" .repository .tag }}
+    {{- end }}
   {{- end }}
 {{- end }}
 
