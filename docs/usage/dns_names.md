@@ -172,9 +172,9 @@ More examples can be found [here](https://github.com/gardener/external-dns-manag
 
 In rare cases it may not be possible to add annotations to a `Service` or `Ingress` resource object. 
 
-E.g.: the helm chart used to deploy the resource may not be adaptable for some reasons or some automation is used, which always restores the original content of the resource object by dropping any additional annotations.
+E.g.: the helm chart used to deploy the resource may not be adaptable for some reason or some automation is used, which always restores the original content of the resource object by dropping any additional annotations.
 
-In these cases, it is recommended to use an additional `DNSAnnotation` resource in order to have more flexibility that `DNSentry resources`. The `DNSAnnotation` resource makes the DNS shoot service behave as if annotations have been added to the referenced resource.
+In these cases, it is recommended to use an additional `DNSAnnotation` resource in order to have more flexibility than `DNSentry` resources. The `DNSAnnotation` resource makes the DNS shoot service behave as if annotations have been added to the referenced resource.
 
 For the Ingress example shown above, you can create a `DNSAnnotation` resource alternatively to provide the annotations.
 
