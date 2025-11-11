@@ -1,6 +1,6 @@
 module github.com/gardener/gardener-extension-shoot-dns-service
 
-go 1.24.0
+go 1.25.0
 
 toolchain go1.25.4
 
@@ -8,7 +8,7 @@ require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.1-0.20241014194617-ffc4efda75d4
 	github.com/andybalholm/brotli v1.2.0
 	github.com/gardener/controller-manager-library v0.2.1-0.20251016104111-a9eedfad962e
-	github.com/gardener/external-dns-management v0.30.0
+	github.com/gardener/external-dns-management v0.31.0
 	github.com/gardener/gardener v1.131.2
 	github.com/go-logr/logr v1.4.3
 	github.com/hashicorp/go-multierror v1.1.1
@@ -59,9 +59,9 @@ require (
 	github.com/go-jose/go-jose/v4 v4.1.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-logr/zapr v1.3.0 // indirect
-	github.com/go-openapi/errors v0.22.3 // indirect
+	github.com/go-openapi/errors v0.22.4 // indirect
 	github.com/go-openapi/jsonpointer v0.22.1 // indirect
-	github.com/go-openapi/jsonreference v0.21.2 // indirect
+	github.com/go-openapi/jsonreference v0.21.3 // indirect
 	github.com/go-openapi/swag v0.23.1 // indirect
 	github.com/go-openapi/swag/jsonname v0.25.1 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
@@ -169,7 +169,7 @@ require (
 	golang.org/x/mod v0.29.0 // indirect
 	golang.org/x/net v0.46.0 // indirect
 	golang.org/x/oauth2 v0.32.0 // indirect
-	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/telemetry v0.0.0-20251008203120-078029d740a8 // indirect
 	golang.org/x/term v0.36.0 // indirect
