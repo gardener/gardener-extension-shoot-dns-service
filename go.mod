@@ -8,7 +8,7 @@ require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.1-0.20241014194617-ffc4efda75d4
 	github.com/andybalholm/brotli v1.2.0
 	github.com/gardener/controller-manager-library v0.2.1-0.20251016104111-a9eedfad962e
-	github.com/gardener/external-dns-management v0.31.0
+	github.com/gardener/external-dns-management v0.32.0
 	github.com/gardener/gardener v1.131.2
 	github.com/go-logr/logr v1.4.3
 	github.com/hashicorp/go-multierror v1.1.1
