@@ -69,14 +69,6 @@ rules:
   - update
   - patch
 - apiGroups:
-  - apiextensions.k8s.io
-  resources:
-  - customresourcedefinitions
-  resourceNames:
-  - dnsowners.dns.gardener.cloud
-  verbs:
-  - delete
-- apiGroups:
   - "dns.gardener.cloud"
   resources:
   - "dnsentries"
