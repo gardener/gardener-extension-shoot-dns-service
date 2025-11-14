@@ -460,7 +460,7 @@ func (a *actuator) createOrUpdateDNSProviders(ctx context.Context, log logr.Logg
 		}
 	}
 
-	err = a.addCleanupOfOldAdditionalProviders(deployers, ctx, log, namespace)
+	err = a.addCleanupOfOldAdditionalProviders(deployers, ctx, log, namespace, true)
 	if err != nil {
 		result = multierror.Append(result, err)
 	}
@@ -473,7 +473,7 @@ func (a *actuator) createOrUpdateDNSProviders(ctx context.Context, log logr.Logg
 }
 
 // addCleanupOfOldAdditionalProviders adds destroy DeployWaiter to clean up old orphaned additional providers
-func (a *actuator) addCleanupOfOldAdditionalProviders(dnsProviders map[string]component.DeployWaiter, ctx context.Context, log logr.Logger, namespace string) error {
+func (a *actuator) addCleanupOfOldAdditionalProviders(dnsProviders map[string]component.DeployWaiter, ctx context.Context, log logr.Logger, namespace string, keepReplicatedProviders bool) error {
 	providerList := &dnsv1alpha1.DNSProviderList{}
 	if err := a.Client().List(
 		ctx,
@@ -484,7 +484,7 @@ func (a *actuator) addCleanupOfOldAdditionalProviders(dnsProviders map[string]co
 	}
 
 	for _, provider := range providerList.Items {
-		if !isAdditionalProvider(provider) && !isReplicatedProvider(provider) {
+		if !isAdditionalProvider(provider) && (keepReplicatedProviders || !isReplicatedProvider(provider)) {
 			continue
 		}
 		if _, ok := dnsProviders[provider.Name]; !ok {
@@ -894,7 +894,7 @@ func (a *actuator) collectProviderDetailsOnDeletingDNSEntries(ctx context.Contex
 func (a *actuator) deleteDNSProviders(ctx context.Context, log logr.Logger, namespace string) error {
 	dnsProviders := map[string]component.DeployWaiter{}
 
-	if err := a.addCleanupOfOldAdditionalProviders(dnsProviders, ctx, log, namespace); err != nil {
+	if err := a.addCleanupOfOldAdditionalProviders(dnsProviders, ctx, log, namespace, false); err != nil {
 		return err
 	}
 
