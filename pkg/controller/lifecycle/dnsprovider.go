@@ -72,6 +72,7 @@ func (p *provider) Deploy(ctx context.Context) error {
 }
 
 func (p *provider) Destroy(ctx context.Context) error {
+	p.logger.Info("Deleting DNSProvider", "name", p.dnsProvider.Name)
 	return client.IgnoreNotFound(p.client.Delete(ctx, p.dnsProvider))
 }
 
