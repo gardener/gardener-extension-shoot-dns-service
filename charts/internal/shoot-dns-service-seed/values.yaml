@@ -6,6 +6,7 @@ replicas: 1
 
 images:
   dns-controller-manager: any-repo:any-tag
+  dns-controller-manager-next-generation: any-repo:any-tag
 
 targetClusterSecret: "target-cluster"
 podAnnotations: {}
@@ -19,6 +20,10 @@ dnsClass: ""
 
 dnsProviderReplication:
   enabled: false
+
+nextGeneration:
+  enabled: false
+  dnsClass: gardendns-next-gen
 
 resources:
   requests:
