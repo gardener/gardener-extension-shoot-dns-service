@@ -120,7 +120,7 @@ var _ = Describe("#DNSProvider", func() {
 			},
 		}
 
-		defaultDepWaiter = NewProviderDeployWaiter(log, c, vals)
+		defaultDepWaiter = NewProviderDeployWaiter(log, c, vals, nil)
 	})
 
 	AfterEach(func() {
@@ -189,7 +189,7 @@ var _ = Describe("#DNSProvider", func() {
 					Namespace: deployNS,
 				}}).Times(1).Return(fmt.Errorf("some random error"))
 
-			Expect(NewProviderDeployWaiter(log, mc, vals).Destroy(ctx)).To(HaveOccurred())
+			Expect(NewProviderDeployWaiter(log, mc, vals, nil).Destroy(ctx)).To(HaveOccurred())
 		})
 	})
 
@@ -214,7 +214,7 @@ var _ = Describe("#DNSProvider", func() {
 			)
 
 			fakeOps.MaxAttempts = 2
-			defaultDepWaiter = NewProviderDeployWaiter(log, mc, vals)
+			defaultDepWaiter = NewProviderDeployWaiter(log, mc, vals, nil)
 			Expect(defaultDepWaiter.Wait(ctx)).To(Succeed())
 		})
 
