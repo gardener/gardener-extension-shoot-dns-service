@@ -29,6 +29,10 @@ type DNSConfig struct {
 	// are overwritten with the content of section `spec.dns.providers`.
 	// +optional
 	SyncProvidersFromShootSpecDNS *bool `json:"syncProvidersFromShootSpecDNS,omitempty"`
+
+	// UseNextGenerationController is an optional flag to enable the next generation DNS controller for this shoot cluster.
+	// +optional
+	UseNextGenerationController *bool `json:"useNextGenerationController,omitempty"`
 }
 
 // DNSProviderReplication contains enablement for replication of DNSProviders from shoot cluster to control plane

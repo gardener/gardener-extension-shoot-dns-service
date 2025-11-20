@@ -13,6 +13,8 @@ const (
 
 	// ImageName is the name of the dns controller manager.
 	ImageName = "dns-controller-manager"
+	// ImageNameNextGeneration is the name of the next generation dns controller manager.
+	ImageNameNextGeneration = "dns-controller-manager-next-generation"
 
 	// ShootAccessSecretName is the name of the shoot access secret in the seed.
 	ShootAccessSecretName = "extension-shoot-dns-service"

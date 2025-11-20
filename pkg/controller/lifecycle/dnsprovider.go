@@ -11,6 +11,7 @@ import (
 	"time"
 
 	dnsv1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
+	"github.com/gardener/external-dns-management/pkg/dnsman2/dns"
 	"github.com/gardener/gardener/extensions/pkg/util"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
@@ -35,11 +36,13 @@ func NewProviderDeployWaiter(
 	logger logr.Logger,
 	client client.Client,
 	new *dnsv1alpha1.DNSProvider,
+	class *string,
 ) component.DeployWaiter {
 	return &provider{
 		logger: logger,
 		client: client,
 		new:    new,
+		class:  class,
 
 		dnsProvider: &dnsv1alpha1.DNSProvider{
 			ObjectMeta: metav1.ObjectMeta{
@@ -54,6 +57,7 @@ type provider struct {
 	logger logr.Logger
 	client client.Client
 	new    *dnsv1alpha1.DNSProvider
+	class  *string
 
 	dnsProvider *dnsv1alpha1.DNSProvider
 }
@@ -64,7 +68,9 @@ func (p *provider) Deploy(ctx context.Context) error {
 		p.dnsProvider.Annotations = deepCopyMap(p.new.Annotations)
 		metav1.SetMetaDataAnnotation(&p.dnsProvider.ObjectMeta, v1beta1constants.GardenerTimestamp, TimeNow().UTC().String())
 		metav1.SetMetaDataAnnotation(&p.dnsProvider.ObjectMeta, ShootDNSServiceMaintainerAnnotation, "true")
-
+		if p.class != nil {
+			metav1.SetMetaDataAnnotation(&p.dnsProvider.ObjectMeta, dns.AnnotationClass, *p.class)
+		}
 		p.dnsProvider.Spec = *p.new.Spec.DeepCopy()
 		return nil
 	})
