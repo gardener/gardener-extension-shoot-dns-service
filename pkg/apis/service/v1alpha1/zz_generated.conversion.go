@@ -71,6 +71,7 @@ func autoConvert_v1alpha1_DNSConfig_To_service_DNSConfig(in *DNSConfig, out *ser
 	out.DNSProviderReplication = (*service.DNSProviderReplication)(unsafe.Pointer(in.DNSProviderReplication))
 	out.Providers = *(*[]service.DNSProvider)(unsafe.Pointer(&in.Providers))
 	out.SyncProvidersFromShootSpecDNS = (*bool)(unsafe.Pointer(in.SyncProvidersFromShootSpecDNS))
+	out.UseNextGenerationController = (*bool)(unsafe.Pointer(in.UseNextGenerationController))
 	return nil
 }
 
@@ -83,6 +84,7 @@ func autoConvert_service_DNSConfig_To_v1alpha1_DNSConfig(in *service.DNSConfig, 
 	out.DNSProviderReplication = (*DNSProviderReplication)(unsafe.Pointer(in.DNSProviderReplication))
 	out.Providers = *(*[]DNSProvider)(unsafe.Pointer(&in.Providers))
 	out.SyncProvidersFromShootSpecDNS = (*bool)(unsafe.Pointer(in.SyncProvidersFromShootSpecDNS))
+	out.UseNextGenerationController = (*bool)(unsafe.Pointer(in.UseNextGenerationController))
 	return nil
 }
 

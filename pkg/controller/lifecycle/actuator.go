@@ -82,6 +82,9 @@ const (
 	// DNSEntries in the extension status state. Nothing should be lost, but if source objects are deleted during the migration,
 	// the deletion of the DNS records cannot be guaranteed.
 	DropDNSEntriesStateOnMigration = "drop-dns-entries-state-on-migration"
+
+	// NextGenerationTargetClass is the target class for the next generation DNS controller.
+	NextGenerationTargetClass = "gardendns-next-gen"
 )
 
 // NewActuator returns an actuator responsible for Extension resources.
@@ -369,7 +372,7 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 		replicas = 0
 	}
 
-	chartValues := map[string]interface{}{
+	chartValues := map[string]any{
 		"serviceName":                      service.ServiceName,
 		"genericTokenKubeconfigSecretName": extensions.GenericTokenKubeconfigSecretNameFromCluster(cluster),
 		"replicas":                         controller.GetReplicas(cluster, replicas),
@@ -377,8 +380,12 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 		"shootId":                          shootID,
 		"seedId":                           seedID,
 		"dnsClass":                         a.Config().DNSClass,
-		"dnsProviderReplication": map[string]interface{}{
+		"dnsProviderReplication": map[string]any{
 			"enabled": a.replicateDNSProviders(dnsconfig),
+		},
+		"nextGeneration": map[string]any{
+			"enabled":  a.useNextGenerationController(dnsconfig),
+			"dnsClass": NextGenerationTargetClass,
 		},
 	}
 
@@ -387,9 +394,9 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 	}
 	chartValues["targetClusterSecret"] = gutil.SecretNamePrefixShootAccess + service.ShootAccessSecretName
 
-	chartValues, err = chart.InjectImages(chartValues, imagevector.ImageVector(), []string{service.ImageName})
+	chartValues, err = chart.InjectImages(chartValues, imagevector.ImageVector(), []string{service.ImageName, service.ImageNameNextGeneration})
 	if err != nil {
-		return fmt.Errorf("failed to find image version for %s: %v", service.ImageName, err)
+		return fmt.Errorf("failed to find image version for %s and %s: %v", service.ImageName, service.ImageNameNextGeneration, err)
 	}
 
 	a.Info("Component is being applied", "component", service.ExtensionServiceName, "namespace", namespace)
@@ -446,10 +453,14 @@ func (a *actuator) createOrUpdateDNSProviders(ctx context.Context, log logr.Logg
 
 		result = a.addAdditionalDNSProviders(providers, ctx, result, dnsconfig, namespace, resources)
 
+		var class *string
+		if a.useNextGenerationController(dnsconfig) {
+			class = ptr.To(NextGenerationTargetClass)
+		}
 		for name, p := range providers {
 			var dw component.DeployWaiter
 			if p != nil {
-				dw = NewProviderDeployWaiter(log, a.Client(), p)
+				dw = NewProviderDeployWaiter(log, a.Client(), p, class)
 			}
 			deployers[name] = dw
 		}
@@ -470,6 +481,10 @@ func (a *actuator) createOrUpdateDNSProviders(ctx context.Context, log logr.Logg
 		result = multierror.Append(result, err)
 	}
 	return result
+}
+
+func (a *actuator) useNextGenerationController(dnsconfig *apisservice.DNSConfig) bool {
+	return ptr.Deref(dnsconfig.UseNextGenerationController, false)
 }
 
 // addCleanupOfOldAdditionalProviders adds destroy DeployWaiter to clean up old orphaned additional providers
@@ -493,6 +508,7 @@ func (a *actuator) addCleanupOfOldAdditionalProviders(dnsProviders map[string]co
 				log,
 				a.Client(),
 				&p,
+				nil,
 			))
 		}
 	}
@@ -509,6 +525,7 @@ func (a *actuator) addCleanupOfOldAdditionalProviders(dnsProviders map[string]co
 				log,
 				a.Client(),
 				provider,
+				nil,
 			))
 		}
 	}
@@ -629,14 +646,14 @@ func lookupReference(resources []gardencorev1beta1.NamedResourceReference, secre
 	return "", fmt.Errorf("dns provider[%d] secretName %s not found in referenced resources", index, *secretName)
 }
 
-func (a *actuator) prepareDefaultExternalDNSProvider(ctx context.Context, _ *apisservice.DNSConfig, namespace string, cluster *controller.Cluster) (*apisservice.DNSProvider, error) {
+func (a *actuator) prepareDefaultExternalDNSProvider(ctx context.Context, dnsconfig *apisservice.DNSConfig, namespace string, cluster *controller.Cluster) (*apisservice.DNSProvider, error) {
 	for _, provider := range cluster.Shoot.Spec.DNS.Providers {
 		if provider.Primary != nil && *provider.Primary {
 			return nil, nil
 		}
 	}
 
-	if a.useRemoteDefaultDomain(cluster) {
+	if a.useRemoteDefaultDomain(cluster, dnsconfig) {
 		secretName, err := a.copyRemoteDefaultDomainSecret(ctx, namespace)
 		if err != nil {
 			return nil, err
@@ -672,7 +689,11 @@ func (a *actuator) prepareDefaultExternalDNSProvider(ctx context.Context, _ *api
 	return provider, nil
 }
 
-func (a *actuator) useRemoteDefaultDomain(cluster *controller.Cluster) bool {
+func (a *actuator) useRemoteDefaultDomain(cluster *controller.Cluster, dnsconfig *apisservice.DNSConfig) bool {
+	if a.useNextGenerationController(dnsconfig) {
+		// The next generation controller does not support remote default domain handling
+		return false
+	}
 	if a.Config().RemoteDefaultDomainSecret != nil && cluster.Seed.Labels != nil {
 		annot, ok := cluster.Seed.Labels[ShootDNSServiceUseRemoteDefaultDomainLabel]
 		return ok && annot == "true"
@@ -924,9 +945,9 @@ func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *
 		return fmt.Errorf("could not create chart renderer: %w", err)
 	}
 
-	chartValues := map[string]interface{}{
+	chartValues := map[string]any{
 		"serviceName": service.ServiceName,
-		"dnsProviderReplication": map[string]interface{}{
+		"dnsProviderReplication": map[string]any{
 			"enabled": a.replicateDNSProviders(dnsconfig),
 		},
 		"shootAccessServiceAccountName": service.ShootAccessServiceAccountName,
@@ -955,7 +976,7 @@ func (a *actuator) deleteShootResources(ctx context.Context, namespace string) e
 	return managedresources.WaitUntilDeleted(timeoutCtx2, a.Client(), namespace, KeptShootResourcesName)
 }
 
-func (a *actuator) createOrUpdateManagedResource(ctx context.Context, namespace, name, class string, renderer chartrenderer.Interface, chartName string, chartValues map[string]interface{}, injectedLabels map[string]string) error {
+func (a *actuator) createOrUpdateManagedResource(ctx context.Context, namespace, name, class string, renderer chartrenderer.Interface, chartName string, chartValues map[string]any, injectedLabels map[string]string) error {
 	chartPath := filepath.Join(charts.ChartsPath, chartName)
 	chart, err := renderer.RenderEmbeddedFS(charts.Internal, chartPath, chartName, namespace, chartValues)
 	if err != nil {
