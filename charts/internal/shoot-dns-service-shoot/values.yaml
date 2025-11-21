@@ -9,3 +9,6 @@ serviceName: dummy
 
 dnsProviderReplication:
   enabled: false
+
+nextGeneration:
+  enabled: false

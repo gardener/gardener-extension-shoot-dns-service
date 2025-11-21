@@ -97,6 +97,10 @@ rules:
   - secrets
   verbs:
   - get
+  {{- if .Values.nextGeneration.enabled }}
+  - list
+  - watch
+  {{- end }}
 {{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
