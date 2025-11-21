@@ -950,6 +950,9 @@ func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *
 		"dnsProviderReplication": map[string]any{
 			"enabled": a.replicateDNSProviders(dnsconfig),
 		},
+		"nextGeneration": map[string]any{
+			"enabled": a.useNextGenerationController(dnsconfig),
+		},
 		"shootAccessServiceAccountName": service.ShootAccessServiceAccountName,
 	}
 	injectedLabels := map[string]string{v1beta1constants.ShootNoCleanup: "true"}
