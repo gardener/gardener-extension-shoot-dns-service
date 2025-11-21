@@ -18,8 +18,11 @@ spec:
       release: {{ .Release.Name }}
   template:
     metadata:
-      {{- if .Values.podAnnotations }}
       annotations:
+      {{- if .Values.nextGeneration.enabled }}
+        checksum/next-generation-config: {{ include "next-generation-config" . | sha256sum }}
+      {{- end }}
+      {{- if .Values.podAnnotations }}
 {{ toYaml .Values.podAnnotations | indent 8 }}
       {{- end }}
       labels:
