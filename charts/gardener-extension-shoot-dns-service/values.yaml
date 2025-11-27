@@ -71,7 +71,7 @@ dnsControllerManager:
   deploy: true
   image:
     repository: europe-docker.pkg.dev/gardener-project/snapshots/dns-controller-manager
-    tag: "v0.34.0-6bd9e8c8378f18d623511f330eb63481fd3d9ae1" # marker-for-image-tag-dns-controller-manager (please keep this comment for automated update by set_dependency_version_dnsman)
+    tag: "v0.34.0-a679e04a1952cec92089fa6df6bff2e3665d6ccc" # marker-for-image-tag-dns-controller-manager (please keep this comment for automated update by set_dependency_version_dnsman)
     pullPolicy: IfNotPresent
 
   replicaCount: 1
