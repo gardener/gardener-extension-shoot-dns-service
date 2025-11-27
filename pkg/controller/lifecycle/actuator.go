@@ -87,6 +87,17 @@ const (
 	NextGenerationTargetClass = "gardendns-next-gen"
 )
 
+type controllerMode int
+
+const (
+	// controllerModeNormal is the normal operating mode of the shoot-dns-service controller manager: all controller are enabled or scaled down if hibernated.
+	controllerModeNormal controllerMode = iota
+	// controllerModeCleaningUp is the mode where the shoot-dns-service controller manager is cleaning up DNS entries in the control plane: only control plane controllers are enabled.
+	controllerModeCleaningUp
+	// controllerModeScaledDown is the mode where the shoot-dns-service controller manager is scaled down, e.g. during hibernation.
+	controllerModeScaledDown
+)
+
 // NewActuator returns an actuator responsible for Extension resources.
 func NewActuator(mgr manager.Manager, chartApplier kubernetes.ChartApplier, chartRenderer chartrenderer.Interface, config config.DNSServiceConfig) extension.Actuator {
 	return &actuator{
@@ -131,7 +142,7 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ex *extension
 	if err := a.createOrUpdateShootResources(ctx, dnsConfig, cluster, ex.Namespace); err != nil {
 		return err
 	}
-	if err := a.createOrUpdateSeedResources(ctx, dnsConfig, cluster, ex, true); err != nil {
+	if err := a.createOrUpdateSeedResources(ctx, dnsConfig, cluster, ex, controllerModeNormal); err != nil {
 		return err
 	}
 	return a.createOrUpdateDNSProviders(ctx, log, dnsConfig, cluster, ex)
@@ -342,7 +353,7 @@ func (a *actuator) isHibernated(cluster *controller.Cluster) bool {
 }
 
 func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *apisservice.DNSConfig, cluster *controller.Cluster, ex *extensionsv1alpha1.Extension,
-	deploymentEnabled bool) error {
+	mode controllerMode) error {
 	var err error
 	namespace := ex.Namespace
 
@@ -368,14 +379,23 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 	}
 
 	replicas := 1
-	if (!deploymentEnabled && !a.useNextGenerationController(dnsconfig)) || a.isHibernated(cluster) {
+	switch mode {
+	case controllerModeNormal:
+		if a.isHibernated(cluster) {
+			replicas = 0
+		}
+	case controllerModeCleaningUp:
+		if !a.useNextGenerationController(dnsconfig) {
+			replicas = 0
+		}
+	case controllerModeScaledDown:
 		replicas = 0
 	}
 
 	chartValues := map[string]any{
 		"serviceName":                      service.ServiceName,
 		"genericTokenKubeconfigSecretName": extensions.GenericTokenKubeconfigSecretNameFromCluster(cluster),
-		"replicas":                         controller.GetReplicas(cluster, replicas),
+		"replicas":                         replicas,
 		"creatorLabelValue":                creatorLabelValue,
 		"shootId":                          shootID,
 		"seedId":                           seedID,
@@ -386,7 +406,7 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 		"nextGeneration": map[string]any{
 			"enabled":                           a.useNextGenerationController(dnsconfig),
 			"dnsClass":                          NextGenerationTargetClass,
-			"restrictToControlPlaneControllers": !deploymentEnabled,
+			"restrictToControlPlaneControllers": mode == controllerModeCleaningUp,
 		},
 	}
 
@@ -854,29 +874,34 @@ func (a *actuator) deleteManagedDNSEntries(ctx context.Context, ex *extensionsv1
 		// need to wait until all shoot DNS entries have been deleted
 		// for robustness scale deployment of shoot-dns-service-seed down to 0
 		// and delete all shoot DNS entries
-		err := a.cleanupShootDNSEntries(entriesHelper)
-		if err != nil {
-			return fmt.Errorf("cleanupShootDNSEntries failed: %w", err)
+		if err := a.prepareSeedResources(entriesHelper, controllerModeCleaningUp); err != nil {
+			return fmt.Errorf("preparing shoot-dns-service deployment for cleanup failed: %w", err)
+		}
+		if err := entriesHelper.DeleteAll(); err != nil {
+			return fmt.Errorf("deleting all DNSEntries in control plane failed: %w", err)
 		}
 		a.Info("Waiting until all shoot DNS entries have been deleted", "component", service.ExtensionServiceName, "namespace", ex.Namespace)
 		for i := 0; i < 6; i++ {
 			time.Sleep(5 * time.Second)
 			list, err = entriesHelper.List()
-			if err != nil {
+			if err != nil || len(list) == 0 {
+				if err != nil {
+					a.Info("listing DNS entries failed", "error", err, "namespace", ex.Namespace)
+				}
 				break
 			}
-			if len(list) == 0 {
-				return nil
+		}
+		if len(list) > 0 {
+			details := a.collectProviderDetailsOnDeletingDNSEntries(ctx, list)
+			err = fmt.Errorf("waiting until shoot DNS entries have been deleted: %s", details)
+			return &reconcilerutils.RequeueAfterError{
+				Cause:        retry.RetriableError(util.DetermineError(err, helper.KnownCodes)),
+				RequeueAfter: 15 * time.Second,
 			}
 		}
-		details := a.collectProviderDetailsOnDeletingDNSEntries(ctx, list)
-		err = fmt.Errorf("waiting until shoot DNS entries have been deleted: %s", details)
-		return &reconcilerutils.RequeueAfterError{
-			Cause:        retry.RetriableError(util.DetermineError(err, helper.KnownCodes)),
-			RequeueAfter: 15 * time.Second,
-		}
 	}
-	return nil
+
+	return a.prepareSeedResources(entriesHelper, controllerModeScaledDown)
 }
 
 func (a *actuator) collectProviderDetailsOnDeletingDNSEntries(ctx context.Context, list []dnsv1alpha1.DNSEntry) string {
@@ -923,7 +948,7 @@ func (a *actuator) deleteDNSProviders(ctx context.Context, log logr.Logger, name
 	return a.deployDNSProviders(ctx, dnsProviders)
 }
 
-func (a *actuator) cleanupShootDNSEntries(helper *common.ShootDNSEntriesHelper) error {
+func (a *actuator) prepareSeedResources(helper *common.ShootDNSEntriesHelper, mode controllerMode) error {
 	cluster, err := helper.GetCluster()
 	if err != nil {
 		return err
@@ -932,12 +957,7 @@ func (a *actuator) cleanupShootDNSEntries(helper *common.ShootDNSEntriesHelper) 
 	if err != nil {
 		return err
 	}
-	err = a.createOrUpdateSeedResources(helper.Context(), dnsconfig, cluster, helper.Extension(), false)
-	if err != nil {
-		return err
-	}
-
-	return helper.DeleteAll()
+	return a.createOrUpdateSeedResources(helper.Context(), dnsconfig, cluster, helper.Extension(), mode)
 }
 
 func (a *actuator) createOrUpdateShootResources(ctx context.Context, dnsconfig *apisservice.DNSConfig, cluster *controller.Cluster, namespace string) error {

@@ -69,9 +69,6 @@ spec:
           - --controllers=dnssources,dnsentry-source,annotation{{- if .Values.dnsProviderReplication.enabled -}},dnsprovider-replication{{- end }}
           {{- if .Values.dnsProviderReplication.enabled }}
           - --dnsprovider-replication.target-realms={{ .Release.Namespace }},
-          {{- if .Values.nextGeneration.restrictToControlPlaneControllers }}
-          - --controllers=dnsprovider,dnsentry
-          {{- end }}
           {{- end }}
           - --namespace=kube-system
           - --target-namespace={{ .Release.Namespace }}
@@ -83,6 +80,9 @@ spec:
           - --lease-resource-lock=leases
           {{- else }}
           - --config=/etc/external-dns-management/next-generation/config.yaml
+          {{- if .Values.nextGeneration.restrictToControlPlaneControllers }}
+          - --controllers=dnsprovider,dnsentry
+          {{- end }}
           {{- end }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
