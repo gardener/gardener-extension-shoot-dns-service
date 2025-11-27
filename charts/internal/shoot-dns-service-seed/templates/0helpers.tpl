@@ -45,4 +45,7 @@ leaderElection:
   leaderElect: true
   resourceName: shoot-dns-service
   resourceNamespace: kube-system
+deployCRDs: true
+conditionalDeployCRDs: true
+addShootNoCleanupLabelToCRDs: true
 {{- end}}
