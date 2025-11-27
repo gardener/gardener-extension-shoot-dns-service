@@ -24,6 +24,7 @@ dnsProviderReplication:
 nextGeneration:
   enabled: false
   dnsClass: gardendns-next-gen
+  restrictToControlPlaneControllers: false
 
 resources:
   requests:

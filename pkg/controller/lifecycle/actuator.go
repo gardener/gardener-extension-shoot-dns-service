@@ -368,7 +368,7 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 	}
 
 	replicas := 1
-	if !deploymentEnabled || a.isHibernated(cluster) {
+	if (!deploymentEnabled && !a.useNextGenerationController(dnsconfig)) || a.isHibernated(cluster) {
 		replicas = 0
 	}
 
@@ -384,8 +384,9 @@ func (a *actuator) createOrUpdateSeedResources(ctx context.Context, dnsconfig *a
 			"enabled": a.replicateDNSProviders(dnsconfig),
 		},
 		"nextGeneration": map[string]any{
-			"enabled":  a.useNextGenerationController(dnsconfig),
-			"dnsClass": NextGenerationTargetClass,
+			"enabled":                           a.useNextGenerationController(dnsconfig),
+			"dnsClass":                          NextGenerationTargetClass,
+			"restrictToControlPlaneControllers": !deploymentEnabled,
 		},
 	}
 

@@ -69,12 +69,15 @@ spec:
           - --controllers=dnssources,dnsentry-source,annotation{{- if .Values.dnsProviderReplication.enabled -}},dnsprovider-replication{{- end }}
           {{- if .Values.dnsProviderReplication.enabled }}
           - --dnsprovider-replication.target-realms={{ .Release.Namespace }},
+          {{- if .Values.nextGeneration.restrictToControlPlaneControllers }}
+          - --controllers=dnsprovider,dnsentry
+          {{- end }}
           {{- end }}
           - --namespace=kube-system
           - --target-namespace={{ .Release.Namespace }}
           - --target-creator-label-name=gardener.cloud/shoot-id
           - --target-creator-label-value={{ .Values.creatorLabelValue }}
-          - --dns-target-class=gardendns
+          - --dns-target-class=gardendns,gardendns-next-gen
           - --dns-class={{ .Values.dnsClass }}
           - --lease-name=shoot-dns-service
           - --lease-resource-lock=leases
