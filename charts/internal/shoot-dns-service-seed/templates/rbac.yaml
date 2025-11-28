@@ -12,9 +12,13 @@ rules:
 - apiGroups:
   - "dns.gardener.cloud"
   resources:
-  - "dnsentries"
-  {{- if .Values.dnsProviderReplication.enabled }}
-  - "dnsproviders"
+  - dnsentries
+  {{- if (or .Values.dnsProviderReplication.enabled .Values.nextGeneration.enabled) }}
+  - dnsproviders
+  {{- end }}
+  {{- if .Values.nextGeneration.enabled }}
+  - dnsentries/status
+  - dnsproviders/status
   {{- end }}
   verbs:
   - create
@@ -24,7 +28,6 @@ rules:
   - update
   - patch
   - delete
-  - deletecollection
 - apiGroups:
   - ""
   resources:
@@ -39,12 +42,16 @@ rules:
   - ""
   resources:
   - "configmaps"
-  {{- if .Values.dnsProviderReplication.enabled }}
+  {{- if (or .Values.dnsProviderReplication.enabled .Values.nextGeneration.enabled) }}
   - "secrets"
   {{- end }}
   verbs:
   - create
   - get
+  {{- if .Values.nextGeneration.enabled }}
+  - list
+  - watch
+  {{- end }}
   - update
   - patch
   - delete
