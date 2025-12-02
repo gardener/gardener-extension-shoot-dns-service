@@ -11,7 +11,6 @@ import (
 
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
 	"github.com/gardener/gardener/pkg/chartrenderer"
-	"github.com/gardener/gardener/pkg/client/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -44,18 +43,17 @@ func AddToManager(ctx context.Context, mgr manager.Manager) error {
 
 // AddToManagerWithOptions adds a DNS Service Lifecycle controller to the given Controller Manager.
 func AddToManagerWithOptions(ctx context.Context, mgr manager.Manager, opts AddOptions) error {
-	chartApplier, err := kubernetes.NewChartApplierForConfig(mgr.GetConfig())
-	if err != nil {
-		return fmt.Errorf("failed to create chart applier: %v", err)
-	}
-
 	chartRenderer, err := chartrenderer.NewForConfig(mgr.GetConfig())
 	if err != nil {
 		return fmt.Errorf("failed to create chart renderer: %v", err)
 	}
 
 	return extension.Add(mgr, extension.AddArgs{
-		Actuator:          NewActuator(mgr, chartApplier, chartRenderer, config.DNSService),
+		Actuator: NewActuator(mgr.GetClient(), mgr.GetScheme(), chartRenderer, config.DNSService,
+			&realManagedResourcesAccess{client: mgr.GetClient()},
+			&realShootClient{seedClient: mgr.GetClient()},
+			&newProviderDeployWaiterFactory{client: mgr.GetClient()},
+			false),
 		ControllerOptions: opts.Controller,
 		Name:              Name,
 		FinalizerSuffix:   FinalizerSuffix,
