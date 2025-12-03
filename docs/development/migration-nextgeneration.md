@@ -70,7 +70,7 @@ From the end-user perspective, this migration is transparent.
 
 ### Back migration
 
-If the field `useNextGenerationController` is set to `false` again, the class annotations need to be removed from all `DNSProvider` and `DNSEntry` resources.
+If the field `useNextGenerationController` is set to `false` again, the class annotations will be removed from all `DNSProvider` and `DNSEntry` resources.
 The `DNSProvider` managed by the shoot-dns-service extension will be updated in-place.
 The `DNSEntry` and `DNSProvider` resources managed by the dns-controller-manager deployment named `shoot-dns-service` are updated in-place as well.
 This uses a feature of the old controller to allow multiple target classes. By specifying `gardendns,gardendns-next-gen` as target classes, the old controller will manage resources of both classes and uses the first one on the resources.

@@ -49,7 +49,7 @@ type testShootClientAccess struct {
 
 var _ shootClientAccess = &testShootClientAccess{}
 
-func (a *testShootClientAccess) GetShootClient(ctx context.Context, namespace string) (client.Client, error) {
+func (a *testShootClientAccess) GetShootClient(_ context.Context, namespace string) (client.Client, error) {
 	if a.expectedNamespace != namespace {
 		return nil, fmt.Errorf("unexpected namespace: got %s, want %s", namespace, a.expectedNamespace)
 	}
@@ -125,7 +125,7 @@ func (t *testManagedResourcesAccess) Delete(_ context.Context, namespace string,
 	return nil
 }
 
-func (t *testManagedResourcesAccess) WaitUntilDeleted(ctx context.Context, namespace, name string) error {
+func (t *testManagedResourcesAccess) WaitUntilDeleted(_ context.Context, namespace, name string) error {
 	expected := t.checkCall(managedResourceCallWaitUntilDeleted, namespace, name)
 	mmr := &mockManagedResource{
 		namespace: namespace,
@@ -151,7 +151,7 @@ func (t *testManagedResourcesAccess) checkCall(call managedResourceCall, namespa
 	return next
 }
 
-func (t *testManagedResourcesAccess) SetKeepObjects(ctx context.Context, namespace, name string, keepObjects bool) error {
+func (t *testManagedResourcesAccess) SetKeepObjects(_ context.Context, namespace, name string, keepObjects bool) error {
 	expected := t.checkCall(managedResourceCallSetKeepObjects, namespace, name)
 	mmr := &mockManagedResource{
 		namespace:   namespace,
@@ -244,9 +244,7 @@ func (d *dnsControllerMock) run() {
 
 var _ = Describe("Actuator", func() {
 	const (
-		deployNS           = "test-chart-namespace"
 		providerSecretName = "provider-secret"
-		dnsProviderName    = "test-deploy"
 	)
 
 	var (
@@ -265,16 +263,17 @@ var _ = Describe("Actuator", func() {
 		providerAdditional     *dnsv1alpha1.DNSProvider
 
 		prepareControlPlane = func(useNextGenerationController bool) {
-			ExpectWithOffset(1, seedClient.Create(ctx, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "shoot--foo--bar"}})).To(Succeed(), "failed to create shoot namespace")
+			GinkgoHelper()
+			Expect(seedClient.Create(ctx, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "shoot--foo--bar"}})).To(Succeed(), "failed to create shoot namespace")
 
 			cluster.Spec.Shoot.Object.(*gardencorev1beta1.Shoot).Spec.Extensions[0].ProviderConfig.Object.(*servicev1alpha1.DNSConfig).UseNextGenerationController = ptr.To(useNextGenerationController)
-			ExpectWithOffset(1, seedClient.Create(ctx, cluster)).To(Succeed(), "failed to create cluster resource")
+			Expect(seedClient.Create(ctx, cluster)).To(Succeed(), "failed to create cluster resource")
 
 			fetchedCluster := &extensionsv1alpha1.Cluster{}
-			ExpectWithOffset(1, seedClient.Get(ctx, client.ObjectKeyFromObject(cluster), fetchedCluster)).To(Succeed(), "failed to get cluster resource")
+			Expect(seedClient.Get(ctx, client.ObjectKeyFromObject(cluster), fetchedCluster)).To(Succeed(), "failed to get cluster resource")
 			shoot := &gardencorev1beta1.Shoot{}
 			_, _, err := decoder.Decode(fetchedCluster.Spec.Shoot.Raw, nil, shoot)
-			ExpectWithOffset(1, err).ToNot(HaveOccurred(), "failed to decode shoot from cluster resource")
+			Expect(err).ToNot(HaveOccurred(), "failed to decode shoot from cluster resource")
 			ex = &extensionsv1alpha1.Extension{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "shoot-dns-service",
@@ -287,7 +286,7 @@ var _ = Describe("Actuator", func() {
 					},
 				},
 			}
-			ExpectWithOffset(1, seedClient.Create(ctx, ex)).To(Succeed(), "failed to create extension resource")
+			Expect(seedClient.Create(ctx, ex)).To(Succeed(), "failed to create extension resource")
 
 			dnsExternal := &extensionsv1alpha1.DNSRecord{
 				ObjectMeta: metav1.ObjectMeta{
@@ -305,7 +304,7 @@ var _ = Describe("Actuator", func() {
 					Zone: ptr.To("zone-12345"),
 				},
 			}
-			ExpectWithOffset(1, seedClient.Create(ctx, dnsExternal)).To(Succeed(), "failed to create dnsrecord external resource")
+			Expect(seedClient.Create(ctx, dnsExternal)).To(Succeed(), "failed to create dnsrecord external resource")
 
 			providerSecret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -316,7 +315,7 @@ var _ = Describe("Actuator", func() {
 					"key": []byte("value"),
 				},
 			}
-			ExpectWithOffset(1, seedClient.Create(ctx, providerSecret)).To(Succeed(), "failed to create fake referenced provider secret")
+			Expect(seedClient.Create(ctx, providerSecret)).To(Succeed(), "failed to create fake referenced provider secret")
 
 			actuator = NewActuator(seedClient, scheme, nil, dnsServiceConfig,
 				managedResourcesAccess,
@@ -327,19 +326,21 @@ var _ = Describe("Actuator", func() {
 		}
 
 		hibernateShoot = func(hibernate bool) {
+			GinkgoHelper()
 			cluster.Spec.Shoot.Object.(*gardencorev1beta1.Shoot).Spec.Hibernation = &gardencorev1beta1.Hibernation{
 				Enabled: ptr.To(hibernate),
 			}
-			ExpectWithOffset(1, seedClient.Update(ctx, cluster)).To(Succeed(), "failed to update cluster resource")
+			Expect(seedClient.Update(ctx, cluster)).To(Succeed(), "failed to update cluster resource")
 		}
 
-		runReconcile = func(offset int, expectedTargetClass string, expectedProviders ...*dnsv1alpha1.DNSProvider) {
+		runReconcile = func(expectedTargetClass string, expectedProviders ...*dnsv1alpha1.DNSProvider) {
+			GinkgoHelper()
 			reconcileCtx, cancel := context.WithTimeout(ctx, 100*time.Second)
 			dnsController := newDNSControllerMock(reconcileCtx, seedClient, expectedTargetClass, expectedProviders...)
 			go dnsController.run()
-			ExpectWithOffset(offset+1, actuator.Reconcile(reconcileCtx, log, ex)).To(Succeed(), "failed to reconcile extension")
+			Expect(actuator.Reconcile(reconcileCtx, log, ex)).To(Succeed(), "failed to reconcile extension")
 			cancel()
-			ExpectWithOffset(offset+1, dnsController.providersReady.Len()).To(Equal(len(expectedProviders)), "expected DNSProviders to become ready")
+			Expect(dnsController.providersReady.Len()).To(Equal(len(expectedProviders)), "expected DNSProviders to become ready")
 		}
 
 		checkShootValues = func(useNextGenerationController bool) func(*mockManagedResource) {
@@ -385,7 +386,8 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service`, useNextGeneratio
 			}
 		}
 
-		createReplicatedProvider = func(offset int, namespace, name string, useNextGenerationController bool, secretName, providerType string) {
+		createReplicatedProvider = func(namespace, name string, useNextGenerationController bool, secretName, providerType string) {
+			GinkgoHelper()
 			provider := &dnsv1alpha1.DNSProvider{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      name,
@@ -407,10 +409,11 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service`, useNextGeneratio
 			if useNextGenerationController {
 				provider.Annotations = map[string]string{"dns.gardener.cloud/class": "gardendns-next-gen"}
 			}
-			ExpectWithOffset(offset+1, seedClient.Create(ctx, provider)).To(Succeed(), "failed to create replicated DNSProvider")
+			Expect(seedClient.Create(ctx, provider)).To(Succeed(), "failed to create replicated DNSProvider")
 		}
 
-		createShootProvider = func(offset int, namespace, name string, secretName, providerType string) {
+		createShootProvider = func(namespace, name string, secretName, providerType string) {
+			GinkgoHelper()
 			provider := &dnsv1alpha1.DNSProvider{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        name,
@@ -428,10 +431,11 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service`, useNextGeneratio
 					Zones:   &dnsv1alpha1.DNSSelection{},
 				},
 			}
-			ExpectWithOffset(offset+1, shootClient.Create(ctx, provider)).To(Succeed(), "failed to create source DNSProvider")
+			Expect(shootClient.Create(ctx, provider)).To(Succeed(), "failed to create source DNSProvider")
 		}
 
-		createEntry = func(offset int, namespace, name string, useNextGenerationController bool, domain string, finalizers ...string) {
+		createEntry = func(namespace, name string, useNextGenerationController bool, domain string, finalizers ...string) {
+			GinkgoHelper()
 			entry := &dnsv1alpha1.DNSEntry{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      name,
@@ -449,10 +453,11 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service`, useNextGeneratio
 			if useNextGenerationController {
 				entry.Annotations = map[string]string{"dns.gardener.cloud/class": "gardendns-next-gen"}
 			}
-			ExpectWithOffset(offset+1, seedClient.Create(ctx, entry)).To(Succeed(), "failed to create DNSEntry")
+			Expect(seedClient.Create(ctx, entry)).To(Succeed(), "failed to create DNSEntry")
 		}
 
-		createShootEntry = func(offset int, namespace, name string, domain string) {
+		createShootEntry = func(namespace, name string, domain string) {
+			GinkgoHelper()
 			entry := &dnsv1alpha1.DNSEntry{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        name,
@@ -465,51 +470,59 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service`, useNextGeneratio
 					Targets: []string{"1.2.3.4"},
 				},
 			}
-			ExpectWithOffset(offset+1, shootClient.Create(ctx, entry)).To(Succeed(), "failed to create source DNSEntry")
+			Expect(shootClient.Create(ctx, entry)).To(Succeed(), "failed to create source DNSEntry")
 		}
 
-		checkEntryDeleted = func(offset int, namespace, name string) {
+		checkEntryDeleted = func(namespace, name string) {
+			GinkgoHelper()
 			err := seedClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, &dnsv1alpha1.DNSEntry{})
-			ExpectWithOffset(offset+1, errors.IsNotFound(err)).To(BeTrue(), "expected DNSEntry to be deleted")
+			Expect(errors.IsNotFound(err)).To(BeTrue(), "expected DNSEntry to be deleted")
 		}
 
-		checkEntryExisting = func(offset int, namespace, name string) {
-			ExpectWithOffset(offset+1, seedClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, &dnsv1alpha1.DNSEntry{})).To(Succeed(), "expected DNSEntry to be existing")
+		checkEntryExisting = func(namespace, name string) {
+			GinkgoHelper()
+			Expect(seedClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, &dnsv1alpha1.DNSEntry{})).To(Succeed(), "expected DNSEntry to be existing")
 		}
 
-		checkProviderDeleted = func(offset int, namespace, name string) {
+		checkProviderDeleted = func(namespace, name string) {
+			GinkgoHelper()
 			err := seedClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, &dnsv1alpha1.DNSProvider{})
-			ExpectWithOffset(offset+1, errors.IsNotFound(err)).To(BeTrue(), "expected DNSProvider to be deleted")
+			Expect(errors.IsNotFound(err)).To(BeTrue(), "expected DNSProvider to be deleted")
 		}
 
-		checkProviderExisting = func(offset int, namespace, name string) {
-			ExpectWithOffset(offset+1, seedClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, &dnsv1alpha1.DNSProvider{})).To(Succeed(), "expected DNSProvider to be existing")
+		checkProviderExisting = func(namespace, name string) {
+			GinkgoHelper()
+			Expect(seedClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, &dnsv1alpha1.DNSProvider{})).To(Succeed(), "expected DNSProvider to be existing")
 		}
 
-		checkShootEntryDeleted = func(offset int, namespace, name string) {
+		checkShootEntryDeleted = func(namespace, name string) {
+			GinkgoHelper()
 			entry := &dnsv1alpha1.DNSEntry{}
 			// implicit deletion by deleting CRD does not work with fake client, so we check for finalizers removed
-			ExpectWithOffset(offset+1, shootClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, entry)).To(Succeed(), "expected shoot DNSEntry to be existing")
-			ExpectWithOffset(offset+1, entry.Finalizers).To(BeNil(), "expected shoot DNSEntry to have no finalizers")
+			Expect(shootClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, entry)).To(Succeed(), "expected shoot DNSEntry to be existing")
+			Expect(entry.Finalizers).To(BeNil(), "expected shoot DNSEntry to have no finalizers")
 		}
 
-		checkShootEntryExisting = func(offset int, namespace, name string) {
+		checkShootEntryExisting = func(namespace, name string) {
+			GinkgoHelper()
 			entry := &dnsv1alpha1.DNSEntry{}
-			ExpectWithOffset(offset+1, shootClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, entry)).To(Succeed(), "expected shoot DNSEntry to be existing")
-			ExpectWithOffset(offset+1, entry.Finalizers).To(ContainElement("dns.gardener.cloud/dummy-finalizer"), "expected shoot DNSEntry to have dummy finalizer")
+			Expect(shootClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, entry)).To(Succeed(), "expected shoot DNSEntry to be existing")
+			Expect(entry.Finalizers).To(ContainElement("dns.gardener.cloud/dummy-finalizer"), "expected shoot DNSEntry to have dummy finalizer")
 		}
 
-		checkShootProviderDeleted = func(offset int, namespace, name string) {
+		checkShootProviderDeleted = func(namespace, name string) {
+			GinkgoHelper()
 			provider := &dnsv1alpha1.DNSProvider{}
 			// implicit deletion by deleting CRD does not work with fake client, so we check for finalizers removed
-			ExpectWithOffset(offset+1, shootClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, provider)).To(Succeed(), "expected shoot DNSProvider to be existing")
-			ExpectWithOffset(offset+1, provider.Finalizers).To(BeNil(), "expected shoot DNSProvider to have no finalizers")
+			Expect(shootClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, provider)).To(Succeed(), "expected shoot DNSProvider to be existing")
+			Expect(provider.Finalizers).To(BeNil(), "expected shoot DNSProvider to have no finalizers")
 		}
 
-		checkShootProviderExisting = func(offset int, namespace, name string) {
+		checkShootProviderExisting = func(namespace, name string) {
+			GinkgoHelper()
 			provider := &dnsv1alpha1.DNSProvider{}
-			ExpectWithOffset(offset+1, shootClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, provider)).To(Succeed(), "expected shoot DNSProvider to be existing")
-			ExpectWithOffset(offset+1, provider.Finalizers).To(ContainElement("dns.gardener.cloud/dummy-finalizer"), "expected shoot DNSProvider to have dummy finalizer")
+			Expect(shootClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, provider)).To(Succeed(), "expected shoot DNSProvider to be existing")
+			Expect(provider.Finalizers).To(ContainElement("dns.gardener.cloud/dummy-finalizer"), "expected shoot DNSProvider to have dummy finalizer")
 		}
 
 		specialConfigValues = func(useNextGenerationController bool) (string, int) {
@@ -530,7 +543,7 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service`, useNextGeneratio
 				checkShootValues(useNextGenerationController))
 			managedResourcesAccess.ExpectCreateOrUpdate("shoot--foo--bar", "extension-shoot-dns-service-seed",
 				checkSeedValues(1, useNextGenerationController, false))
-			runReconcile(1, targetClass, providerExternal, providerAdditional)
+			runReconcile(targetClass, providerExternal, providerAdditional)
 
 			managedResourcesAccess.ConsumedAllExpectations()
 		}
@@ -538,8 +551,8 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service`, useNextGeneratio
 		checkHibernation = func(useNextGenerationController bool) {
 			targetClass, expectedReplicasOnCleaningUp := specialConfigValues(useNextGenerationController)
 
-			createReplicatedProvider(1, "shoot--foo--bar", "source-provider", useNextGenerationController, "source-provider-secret", "aws-route53")
-			createEntry(1, "shoot--foo--bar", "some-entry", useNextGenerationController, "foo.bar.external.example.com")
+			createReplicatedProvider("shoot--foo--bar", "source-provider", useNextGenerationController, "source-provider-secret", "aws-route53")
+			createEntry("shoot--foo--bar", "some-entry", useNextGenerationController, "foo.bar.external.example.com")
 
 			By("Hibernation")
 			hibernateShoot(true)
@@ -551,24 +564,24 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service`, useNextGeneratio
 			managedResourcesAccess.ExpectCreateOrUpdate("shoot--foo--bar", "extension-shoot-dns-service-seed",
 				checkSeedValues(expectedReplicasOnCleaningUp, useNextGenerationController, true),
 				func(_ *mockManagedResource) {
-					checkEntryExisting(1, "shoot--foo--bar", "some-entry")
-					checkProviderExisting(1, "shoot--foo--bar", "source-provider")
+					checkEntryExisting("shoot--foo--bar", "some-entry")
+					checkProviderExisting("shoot--foo--bar", "source-provider")
 				})
 			managedResourcesAccess.ExpectCreateOrUpdate("shoot--foo--bar", "extension-shoot-dns-service-seed",
 				checkSeedValues(expectedReplicasOnCleaningUp, useNextGenerationController, true),
 				func(_ *mockManagedResource) {
-					checkEntryDeleted(1, "shoot--foo--bar", "some-entry")
-					checkProviderExisting(1, "shoot--foo--bar", "source-provider")
+					checkEntryDeleted("shoot--foo--bar", "some-entry")
+					checkProviderExisting("shoot--foo--bar", "source-provider")
 				})
 			managedResourcesAccess.ExpectCreateOrUpdate("shoot--foo--bar", "extension-shoot-dns-service-seed",
 				checkSeedValues(0, useNextGenerationController, false),
 				func(_ *mockManagedResource) {
-					checkProviderDeleted(1, "shoot--foo--bar", "source-provider")
+					checkProviderDeleted("shoot--foo--bar", "source-provider")
 				})
-			runReconcile(1, targetClass)
+			runReconcile(targetClass)
 
 			By("Hibernation - second round without DNSEntry, but with replicated DNSProvider")
-			createReplicatedProvider(1, "shoot--foo--bar", "source-provider", useNextGenerationController, "source-provider-secret", "aws-route53")
+			createReplicatedProvider("shoot--foo--bar", "source-provider", useNextGenerationController, "source-provider-secret", "aws-route53")
 			managedResourcesAccess.ExpectCreateOrUpdate("shoot--foo--bar", "extension-shoot-dns-service-shoot",
 				checkShootValues(useNextGenerationController))
 			managedResourcesAccess.ExpectCreateOrUpdate("shoot--foo--bar", "extension-shoot-dns-service-seed",
@@ -576,14 +589,14 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service`, useNextGeneratio
 			managedResourcesAccess.ExpectCreateOrUpdate("shoot--foo--bar", "extension-shoot-dns-service-seed",
 				checkSeedValues(expectedReplicasOnCleaningUp, useNextGenerationController, true),
 				func(_ *mockManagedResource) {
-					checkProviderExisting(1, "shoot--foo--bar", "source-provider")
+					checkProviderExisting("shoot--foo--bar", "source-provider")
 				})
 			managedResourcesAccess.ExpectCreateOrUpdate("shoot--foo--bar", "extension-shoot-dns-service-seed",
 				checkSeedValues(0, useNextGenerationController, false),
 				func(_ *mockManagedResource) {
-					checkProviderDeleted(1, "shoot--foo--bar", "source-provider")
+					checkProviderDeleted("shoot--foo--bar", "source-provider")
 				})
-			runReconcile(1, targetClass)
+			runReconcile(targetClass)
 
 			By("Hibernation - third round without DNSEntry or replicated DNSProvider")
 			managedResourcesAccess.ExpectCreateOrUpdate("shoot--foo--bar", "extension-shoot-dns-service-shoot",
@@ -592,11 +605,12 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service`, useNextGeneratio
 				checkSeedValues(0, useNextGenerationController, false))
 			managedResourcesAccess.ExpectCreateOrUpdate("shoot--foo--bar", "extension-shoot-dns-service-seed",
 				checkSeedValues(0, useNextGenerationController, false))
-			runReconcile(1, targetClass)
+			runReconcile(targetClass)
 		}
 
 		prepareShootCRDsAndCRs = func() {
-			ExpectWithOffset(1, dnsapp.DeployCRDsWithClient(ctx, log, shootClient, &dnsapisconfig.DNSManagerConfiguration{
+			GinkgoHelper()
+			Expect(dnsapp.DeployCRDsWithClient(ctx, log, shootClient, &dnsapisconfig.DNSManagerConfiguration{
 				DeployCRDs: ptr.To(true),
 				Controllers: dnsapisconfig.ControllerConfiguration{
 					Source: dnsapisconfig.SourceControllerConfig{
@@ -604,48 +618,51 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service`, useNextGeneratio
 					},
 				},
 			})).To(Succeed(), "failed to deploy DNS CRDs to shoot cluster")
-			createShootProvider(1, "default", "shoot-provider", "shoot-provider-secret", "aws-route53")
-			createShootEntry(1, "default", "shoot-entry", "foo.bar.external.example.com")
+			createShootProvider("default", "shoot-provider", "shoot-provider-secret", "aws-route53")
+			createShootEntry("default", "shoot-entry", "foo.bar.external.example.com")
 		}
 
-		checkShootCRDsAndCRsExisting = func(offset int) {
-			checkShootProviderExisting(offset+1, "default", "shoot-provider")
-			checkShootEntryExisting(offset+1, "default", "shoot-entry")
+		checkShootCRDsAndCRsExisting = func() {
+			GinkgoHelper()
+			checkShootProviderExisting("default", "shoot-provider")
+			checkShootEntryExisting("default", "shoot-entry")
 			list := &apiextensionsv1.CustomResourceDefinitionList{}
-			ExpectWithOffset(offset+1, shootClient.List(ctx, list)).To(Succeed(), "failed to list CRDs in shoot cluster")
-			ExpectWithOffset(offset+1, list.Items).To(HaveLen(3), "expected DNS CRDs in shoot cluster")
+			Expect(shootClient.List(ctx, list)).To(Succeed(), "failed to list CRDs in shoot cluster")
+			Expect(list.Items).To(HaveLen(3), "expected DNS CRDs in shoot cluster")
 		}
 
-		checkShootCRDsAndCRsDeleted = func(offset int) {
-			checkShootProviderDeleted(offset+1, "default", "shoot-provider")
-			checkShootEntryDeleted(offset+1, "default", "shoot-entry")
+		checkShootCRDsAndCRsDeleted = func() {
+			GinkgoHelper()
+			checkShootProviderDeleted("default", "shoot-provider")
+			checkShootEntryDeleted("default", "shoot-entry")
 
 			list := &apiextensionsv1.CustomResourceDefinitionList{}
-			ExpectWithOffset(offset+1, shootClient.List(ctx, list)).To(Succeed(), "failed to list CRDs in shoot cluster")
-			ExpectWithOffset(offset+1, list.Items).To(BeEmpty(), "expected no CRDs in shoot cluster")
+			Expect(shootClient.List(ctx, list)).To(Succeed(), "failed to list CRDs in shoot cluster")
+			Expect(list.Items).To(BeEmpty(), "expected no CRDs in shoot cluster")
 		}
 
 		checkDeletion = func(migrate, useNextGenerationController bool,
 			checkFuncs ...func(*mockManagedResource)) {
+			GinkgoHelper()
 			_, expectedReplicasOnCleaningUp := specialConfigValues(useNextGenerationController)
 
-			createReplicatedProvider(1, "shoot--foo--bar", "source-provider", useNextGenerationController, "source-provider-secret", "aws-route53")
-			createEntry(1, "shoot--foo--bar", "some-entry", useNextGenerationController, "foo.bar.external.example.com")
+			createReplicatedProvider("shoot--foo--bar", "source-provider", useNextGenerationController, "source-provider-secret", "aws-route53")
+			createEntry("shoot--foo--bar", "some-entry", useNextGenerationController, "foo.bar.external.example.com")
 			prepareShootCRDsAndCRs()
 
 			By("Delete")
 			if migrate {
 				managedResourcesAccess.ExpectCall(managedResourceCallSetKeepObjects, "shoot--foo--bar", "extension-shoot-dns-service-shoot",
 					func(mmr *mockManagedResource) {
-						ExpectWithOffset(1, mmr.keepObjects).To(BeTrue(), "expected keepObjects to be true")
+						Expect(mmr.keepObjects).To(BeTrue(), "expected keepObjects to be true")
 					})
 			} else {
 				managedResourcesAccess.ExpectCreateOrUpdate("shoot--foo--bar", "extension-shoot-dns-service-seed",
 					checkSeedValues(expectedReplicasOnCleaningUp, useNextGenerationController, true),
 					func(mmr *mockManagedResource) {
-						checkEntryExisting(1, "shoot--foo--bar", "some-entry")
-						checkProviderExisting(1, "shoot--foo--bar", "source-provider")
-						checkShootCRDsAndCRsExisting(1)
+						checkEntryExisting("shoot--foo--bar", "some-entry")
+						checkProviderExisting("shoot--foo--bar", "source-provider")
+						checkShootCRDsAndCRsExisting()
 						for _, checkFunc := range checkFuncs {
 							checkFunc(mmr)
 						}
@@ -655,22 +672,22 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service`, useNextGeneratio
 				checkSeedValues(expectedReplicasOnCleaningUp, useNextGenerationController, true),
 				func(_ *mockManagedResource) {
 					if migrate {
-						checkEntryExisting(1, "shoot--foo--bar", "some-entry")
-						checkShootCRDsAndCRsExisting(1)
+						checkEntryExisting("shoot--foo--bar", "some-entry")
+						checkShootCRDsAndCRsExisting()
 					} else {
-						checkEntryDeleted(1, "shoot--foo--bar", "some-entry")
-						checkShootCRDsAndCRsDeleted(1)
+						checkEntryDeleted("shoot--foo--bar", "some-entry")
+						checkShootCRDsAndCRsDeleted()
 					}
-					checkProviderExisting(1, "shoot--foo--bar", "source-provider")
+					checkProviderExisting("shoot--foo--bar", "source-provider")
 				})
 			managedResourcesAccess.ExpectDelete("shoot--foo--bar", "extension-shoot-dns-service-seed",
 				func(_ *mockManagedResource) {
 					if migrate {
-						checkEntryExisting(1, "shoot--foo--bar", "some-entry")
+						checkEntryExisting("shoot--foo--bar", "some-entry")
 					} else {
-						checkEntryDeleted(1, "shoot--foo--bar", "some-entry")
+						checkEntryDeleted("shoot--foo--bar", "some-entry")
 					}
-					checkProviderDeleted(1, "shoot--foo--bar", "source-provider")
+					checkProviderDeleted("shoot--foo--bar", "source-provider")
 				})
 			managedResourcesAccess.ExpectWaitUntilDeleted("shoot--foo--bar", "extension-shoot-dns-service-seed")
 			managedResourcesAccess.ExpectDelete("shoot--foo--bar", "extension-shoot-dns-service-shoot")
@@ -687,39 +704,39 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service`, useNextGeneratio
 		checkForceDeletion = func(useNextGenerationController bool) {
 			_, expectedReplicasOnCleaningUp := specialConfigValues(useNextGenerationController)
 
-			createReplicatedProvider(1, "shoot--foo--bar", "source-provider", useNextGenerationController, "source-provider-secret", "aws-route53")
-			createEntry(1, "shoot--foo--bar", "some-entry", useNextGenerationController, "foo.bar.external.example.com")
-			createEntry(1, "shoot--foo--bar", "stuck-entry", useNextGenerationController, "stuck.bar.external.example.com", "dns.gardener.cloud/dummy-finalizer")
+			createReplicatedProvider("shoot--foo--bar", "source-provider", useNextGenerationController, "source-provider-secret", "aws-route53")
+			createEntry("shoot--foo--bar", "some-entry", useNextGenerationController, "foo.bar.external.example.com")
+			createEntry("shoot--foo--bar", "stuck-entry", useNextGenerationController, "stuck.bar.external.example.com", "dns.gardener.cloud/dummy-finalizer")
 
 			By("Force Delete")
 			managedResourcesAccess.ExpectCreateOrUpdate("shoot--foo--bar", "extension-shoot-dns-service-seed",
 				checkSeedValues(expectedReplicasOnCleaningUp, useNextGenerationController, true),
 				func(mmr *mockManagedResource) {
-					checkEntryExisting(1, "shoot--foo--bar", "some-entry")
-					checkEntryExisting(1, "shoot--foo--bar", "stuck-entry")
-					checkProviderExisting(1, "shoot--foo--bar", "source-provider")
+					checkEntryExisting("shoot--foo--bar", "some-entry")
+					checkEntryExisting("shoot--foo--bar", "stuck-entry")
+					checkProviderExisting("shoot--foo--bar", "source-provider")
 				})
 			managedResourcesAccess.ExpectDelete("shoot--foo--bar", "extension-shoot-dns-service-seed",
 				func(_ *mockManagedResource) {
-					checkEntryDeleted(1, "shoot--foo--bar", "some-entry")
-					checkEntryExisting(1, "shoot--foo--bar", "stuck-entry")
-					checkProviderExisting(1, "shoot--foo--bar", "source-provider")
+					checkEntryDeleted("shoot--foo--bar", "some-entry")
+					checkEntryExisting("shoot--foo--bar", "stuck-entry")
+					checkProviderExisting("shoot--foo--bar", "source-provider")
 				})
 			managedResourcesAccess.ExpectWaitUntilDeleted("shoot--foo--bar", "extension-shoot-dns-service-seed")
 
 			managedResourcesAccess.ExpectCreateOrUpdate("shoot--foo--bar", "extension-shoot-dns-service-seed",
 				checkSeedValues(expectedReplicasOnCleaningUp, useNextGenerationController, true),
 				func(mmr *mockManagedResource) {
-					checkEntryDeleted(1, "shoot--foo--bar", "some-entry")
-					checkEntryDeleted(1, "shoot--foo--bar", "stuck-entry")
-					checkProviderExisting(1, "shoot--foo--bar", "source-provider")
+					checkEntryDeleted("shoot--foo--bar", "some-entry")
+					checkEntryDeleted("shoot--foo--bar", "stuck-entry")
+					checkProviderExisting("shoot--foo--bar", "source-provider")
 				})
 
 			managedResourcesAccess.ExpectDelete("shoot--foo--bar", "extension-shoot-dns-service-seed",
 				func(mmr *mockManagedResource) {
-					checkEntryDeleted(1, "shoot--foo--bar", "some-entry")
-					checkEntryDeleted(1, "shoot--foo--bar", "stuck-entry")
-					checkProviderDeleted(1, "shoot--foo--bar", "source-provider")
+					checkEntryDeleted("shoot--foo--bar", "some-entry")
+					checkEntryDeleted("shoot--foo--bar", "stuck-entry")
+					checkProviderDeleted("shoot--foo--bar", "source-provider")
 				})
 			managedResourcesAccess.ExpectWaitUntilDeleted("shoot--foo--bar", "extension-shoot-dns-service-seed")
 			reconcileCtx, cancel := context.WithTimeout(ctx, 100*time.Second)
@@ -728,9 +745,10 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service`, useNextGeneratio
 		}
 
 		checkDNSEntriesIgnored = func(*mockManagedResource) {
+			GinkgoHelper()
 			entry := &dnsv1alpha1.DNSEntry{}
-			ExpectWithOffset(1, seedClient.Get(ctx, client.ObjectKey{Namespace: "shoot--foo--bar", Name: "some-entry"}, entry)).To(Succeed(), "expected DNSEntry to be existing")
-			ExpectWithOffset(1, entry.Annotations["dns.gardener.cloud/target-hard-ignore"]).To(Equal("true"), "expected DNSEntry to have hard-ignore annotation")
+			Expect(seedClient.Get(ctx, client.ObjectKey{Namespace: "shoot--foo--bar", Name: "some-entry"}, entry)).To(Succeed(), "expected DNSEntry to be existing")
+			Expect(entry.Annotations["dns.gardener.cloud/target-hard-ignore"]).To(Equal("true"), "expected DNSEntry to have hard-ignore annotation")
 		}
 	)
 
@@ -920,6 +938,7 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service`, useNextGeneratio
 })
 
 func checkValues(values map[string]any, expectedYAML string) {
+	GinkgoHelper()
 	if values["images"] != nil {
 		imageMap := values["images"].(map[string]any)
 		for _, key := range []string{"dns-controller-manager", "dns-controller-manager-next-generation"} {
@@ -927,6 +946,6 @@ func checkValues(values map[string]any, expectedYAML string) {
 		}
 	}
 	data, err := yaml.Marshal(values)
-	ExpectWithOffset(1, err).ToNot(HaveOccurred(), "failed to marshal chart values to YAML")
-	ExpectWithOffset(1, strings.TrimSpace(string(data))).To(Equal(strings.TrimSpace(expectedYAML)), "chart values do not match expected YAML")
+	Expect(err).ToNot(HaveOccurred(), "failed to marshal chart values to YAML")
+	Expect(strings.TrimSpace(string(data))).To(Equal(strings.TrimSpace(expectedYAML)), "chart values do not match expected YAML")
 }
