@@ -396,7 +396,7 @@ func (a *actuator) createOrUpdateSeedResources(exCtx extensionContext, mode cont
 	namespace := exCtx.ex.Namespace
 
 	exCtx.log.Info("Creating/updating seed resources", "namespace", namespace)
-	if !common.IsRestoring(exCtx.ex) {
+	if !common.IsRestoring(exCtx.ex) && !common.IsMigrating(exCtx.ex) {
 		if err := a.ensureStateDropped(exCtx); err != nil {
 			return err
 		}
