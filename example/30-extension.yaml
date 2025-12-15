@@ -30,3 +30,5 @@ spec:
         #  - Z2
 
     #syncProvidersFromShootSpecDNS: true
+
+    #useNextGenerationController: true
