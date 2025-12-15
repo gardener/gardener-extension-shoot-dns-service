@@ -911,8 +911,8 @@ func (a *actuator) deleteManagedDNSEntries(exCtx extensionContext) error {
 		exCtx.log.Info("Waiting until all shoot DNS entries have been deleted", "component", service.ExtensionServiceName, "namespace", exCtx.ex.Namespace)
 		for i := 0; i < 7; i++ {
 			waitTime := 5 * time.Second
-			if i == 0 && a.fastTestMode {
-				waitTime = 10 * time.Millisecond
+			if a.fastTestMode {
+				waitTime = 20 * time.Millisecond
 			}
 			time.Sleep(waitTime)
 			list, err = entriesHelper.List()

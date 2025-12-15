@@ -884,7 +884,7 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service`, useNextGeneratio
 		managedResourcesAccess.ConsumedAllExpectations()
 	})
 
-	Describe("#Reconcile", func() {
+	Describe("#Reconcile/#Restore", func() {
 		It("should reconcile the extension with useNextGenerationController != true", func() {
 			checkStandardReconciliation(false)
 			checkHibernation(false)
@@ -930,10 +930,6 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service`, useNextGeneratio
 			checkStandardReconciliation(true)
 			checkDeletion(true, true, checkDNSEntriesIgnored)
 		})
-	})
-
-	Describe("#Restore", func() {
-		// nothing to test: Restore is same as Reconcile
 	})
 })
 
