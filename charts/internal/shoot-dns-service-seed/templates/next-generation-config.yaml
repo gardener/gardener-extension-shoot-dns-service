@@ -1,0 +1,15 @@
+{{- if .Values.nextGeneration.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "service.name" . }}-next-generation-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "service.name" . }}
+    chart: {{ template "service.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  config: |
+{{- include "next-generation-config" . | indent 4 }}
+{{- end }}

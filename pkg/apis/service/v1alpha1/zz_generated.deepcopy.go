@@ -34,6 +34,11 @@ func (in *DNSConfig) DeepCopyInto(out *DNSConfig) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.UseNextGenerationController != nil {
+		in, out := &in.UseNextGenerationController, &out.UseNextGenerationController
+		*out = new(bool)
+		**out = **in
+	}
 	return
 }
 

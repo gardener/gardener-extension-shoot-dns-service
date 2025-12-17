@@ -85,6 +85,18 @@ shoot manifest at section <code>spec.dns.providers</code>. If true, any direct c
 are overwritten with the content of section <code>spec.dns.providers</code>.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>useNextGenerationController</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>UseNextGenerationController is an optional flag to enable the next generation DNS controller for this shoot cluster.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="service.dns.extensions.gardener.cloud/v1alpha1.DNSIncludeExclude">DNSIncludeExclude

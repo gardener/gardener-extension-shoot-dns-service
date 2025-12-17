@@ -122,11 +122,11 @@ format: $(GOIMPORTS) $(GOIMPORTSREVISER)
 
 .PHONY: sast
 sast: $(GOSEC)
-	@./hack/sast.sh
+	@./hack/sast.sh --exclude-dirs gardener # gardener directory is present locally after runnning 'make test-e2e-local'
 
 .PHONY: sast-report
 sast-report: $(GOSEC)
-	@./hack/sast.sh --gosec-report true
+	@./hack/sast.sh --exclude-dirs gardener --gosec-report true # gardener directory is present locally after runnning 'make test-e2e-local'
 
 .PHONY: test
 test: $(GINKGO)

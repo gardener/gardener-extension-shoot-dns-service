@@ -13,10 +13,12 @@ import (
 	dnsapi "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	"github.com/gardener/external-dns-management/pkg/dns"
 	extapi "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/helper"
@@ -54,8 +56,9 @@ func GetExtensionState(ext *extapi.Extension) (*apis.DNSState, error) {
 
 // StateHandler is a handler for the state of the extension.
 type StateHandler struct {
-	*Env
 	ctx      context.Context
+	log      logr.Logger
+	client   client.Client
 	ext      *extapi.Extension
 	state    *apis.DNSState
 	modified bool
@@ -64,7 +67,7 @@ type StateHandler struct {
 }
 
 // NewStateHandler creates a new state handler.
-func NewStateHandler(ctx context.Context, env *Env, ext *extapi.Extension) (*StateHandler, error) {
+func NewStateHandler(ctx context.Context, log logr.Logger, client client.Client, ext *extapi.Extension) (*StateHandler, error) {
 	var err error
 
 	elem := &unstructured.Unstructured{}
@@ -73,11 +76,12 @@ func NewStateHandler(ctx context.Context, env *Env, ext *extapi.Extension) (*Sta
 	elem.SetNamespace(ext.Namespace)
 
 	handler := &StateHandler{
-		Env:    env,
 		ctx:    ctx,
+		log:    log,
+		client: client,
 		ext:    ext,
 		elem:   elem,
-		helper: NewShootDNSEntriesHelper(ctx, env.Client(), ext),
+		helper: NewShootDNSEntriesHelper(ctx, client, ext),
 	}
 	handler.state, err = GetExtensionState(ext)
 	return handler, err
@@ -105,7 +109,7 @@ func (s *StateHandler) Refresh() (bool, error) {
 // DropAllEntries removes all entries from the state.
 func (s *StateHandler) DropAllEntries() {
 	if s.state == nil || !reflect.DeepEqual(s.state, &apis.DNSState{}) {
-		s.Info("dropping all entries from state", "namespace", s.ext.Namespace)
+		s.log.Info("dropping all entries from state", "namespace", s.ext.Namespace)
 		s.state = &apis.DNSState{}
 		s.modified = true
 	}
@@ -174,13 +178,13 @@ func (s *StateHandler) ensureEntryFor(entry *dnsapi.DNSEntry) bool {
 // Update updates the state in the extension status.
 func (s *StateHandler) Update(reason string) error {
 	if s.modified || s.ext.Status.State == nil {
-		s.Info("updating modified state", "namespace", s.ext.Namespace, "extension", s.ext.Name, "reason", reason)
+		s.log.Info("updating modified state", "namespace", s.ext.Namespace, "extension", s.ext.Name, "reason", reason)
 		wire := &wireapi.DNSState{}
 		wire.APIVersion = wireapi.SchemeGroupVersion.String()
 		wire.Kind = wireapi.DNSStateKind
 		err := helper.Scheme.Convert(s.state, wire, nil)
 		if err != nil {
-			s.Error(err, "state conversion failed")
+			s.log.Error(err, "state conversion failed")
 			return err
 		}
 		if s.ext.Status.State == nil {
@@ -188,18 +192,18 @@ func (s *StateHandler) Update(reason string) error {
 		}
 		data, err := json.Marshal(wire)
 		if err != nil {
-			s.Error(err, "marshalling failed")
+			s.log.Error(err, "marshalling failed")
 			return err
 		}
 		s.ext.Status.State.Raw, err = CompressEntriesState(data)
 		if err != nil {
-			s.Error(err, "compressing failed")
+			s.log.Error(err, "compressing failed")
 			return err
 		}
 		s.ext.Status.State.Object = nil
 		err = s.client.Status().Update(s.ctx, s.ext)
 		if err != nil {
-			s.Error(err, "update failed")
+			s.log.Error(err, "update failed")
 			return err
 		}
 		s.modified = false

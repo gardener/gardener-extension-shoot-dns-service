@@ -11,6 +11,7 @@ import (
 	"time"
 
 	dnsv1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
+	"github.com/gardener/external-dns-management/pkg/dnsman2/dns"
 	"github.com/gardener/gardener/extensions/pkg/util"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
@@ -22,6 +23,7 @@ import (
 	"github.com/gardener/gardener/pkg/utils/retry"
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/helper"
@@ -30,16 +32,48 @@ import (
 // TimeNow returns the current time. Exposed for testing.
 var TimeNow = time.Now
 
+type newProviderDeployWaiterFactory struct {
+	client       client.Client
+	waitInterval *time.Duration
+}
+
+// New creates a new DeployWaiter for the given DNSProvider.
+func (f *newProviderDeployWaiterFactory) New(exCtx extensionContext, provider *dnsv1alpha1.DNSProvider) component.DeployWaiter {
+	var class *string
+	if exCtx.useNextGenerationController() {
+		class = ptr.To(NextGenerationTargetClass)
+	}
+	var waitIntervals []time.Duration
+	if f.waitInterval != nil {
+		waitIntervals = []time.Duration{*f.waitInterval}
+	}
+	return NewProviderDeployWaiter(
+		exCtx.log,
+		f.client,
+		provider,
+		class,
+		waitIntervals...,
+	)
+}
+
 // NewProviderDeployWaiter creates a new instance of DeployWaiter for a specific DNSProvider.
 func NewProviderDeployWaiter(
 	logger logr.Logger,
 	client client.Client,
 	new *dnsv1alpha1.DNSProvider,
+	class *string,
+	waitInterval ...time.Duration,
 ) component.DeployWaiter {
+	interval := 5 * time.Second
+	if len(waitInterval) > 0 {
+		interval = waitInterval[0]
+	}
 	return &provider{
-		logger: logger,
-		client: client,
-		new:    new,
+		logger:       logger.WithValues("dnsprovider", fmt.Sprintf("%s/%s", new.Namespace, new.Name)),
+		client:       client,
+		new:          new,
+		class:        class,
+		waitInterval: interval,
 
 		dnsProvider: &dnsv1alpha1.DNSProvider{
 			ObjectMeta: metav1.ObjectMeta{
@@ -51,9 +85,11 @@ func NewProviderDeployWaiter(
 }
 
 type provider struct {
-	logger logr.Logger
-	client client.Client
-	new    *dnsv1alpha1.DNSProvider
+	logger       logr.Logger
+	client       client.Client
+	new          *dnsv1alpha1.DNSProvider
+	class        *string
+	waitInterval time.Duration
 
 	dnsProvider *dnsv1alpha1.DNSProvider
 }
@@ -64,7 +100,9 @@ func (p *provider) Deploy(ctx context.Context) error {
 		p.dnsProvider.Annotations = deepCopyMap(p.new.Annotations)
 		metav1.SetMetaDataAnnotation(&p.dnsProvider.ObjectMeta, v1beta1constants.GardenerTimestamp, TimeNow().UTC().String())
 		metav1.SetMetaDataAnnotation(&p.dnsProvider.ObjectMeta, ShootDNSServiceMaintainerAnnotation, "true")
-
+		if p.class != nil {
+			metav1.SetMetaDataAnnotation(&p.dnsProvider.ObjectMeta, dns.AnnotationClass, *p.class)
+		}
 		p.dnsProvider.Spec = *p.new.Spec.DeepCopy()
 		return nil
 	})
@@ -84,8 +122,8 @@ func (p *provider) Wait(ctx context.Context) error {
 		CheckDNSProvider,
 		p.dnsProvider,
 		dnsv1alpha1.DNSProviderKind,
-		5*time.Second,
-		15*time.Second,
+		p.waitInterval,
+		3*p.waitInterval,
 		2*time.Minute,
 		nil,
 	)

@@ -25,6 +25,9 @@ type DNSConfig struct {
 	// shoot manifest at section `spec.dns.providers`. If true, any direct changes on the `providers` section
 	// are overwritten with the content of section `spec.dns.providers`.
 	SyncProvidersFromShootSpecDNS *bool
+
+	// UseNextGenerationController is an optional flag to enable the next generation DNS controller for this shoot cluster.
+	UseNextGenerationController *bool
 }
 
 // DNSProviderReplication contains enablement for replication of DNSProviders from shoot cluster to control plane

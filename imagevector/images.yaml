@@ -3,3 +3,7 @@ images:
   sourceRepository: github.com/gardener/external-dns-management
   repository: europe-docker.pkg.dev/gardener-project/releases/dns-controller-manager
   tag: "v0.34.0"
+- name: dns-controller-manager-next-generation
+  sourceRepository: github.com/gardener/external-dns-management
+  repository: europe-docker.pkg.dev/gardener-project/releases/dns-controller-manager-next-generation
+  tag: "v0.34.0"

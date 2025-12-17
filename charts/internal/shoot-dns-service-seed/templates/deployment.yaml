@@ -18,8 +18,11 @@ spec:
       release: {{ .Release.Name }}
   template:
     metadata:
-      {{- if .Values.podAnnotations }}
       annotations:
+      {{- if .Values.nextGeneration.enabled }}
+        checksum/next-generation-config: {{ include "next-generation-config" . | sha256sum }}
+      {{- end }}
+      {{- if .Values.podAnnotations }}
 {{ toYaml .Values.podAnnotations | indent 8 }}
       {{- end }}
       labels:
@@ -29,18 +32,32 @@ spec:
         networking.gardener.cloud/to-dns: allowed
         networking.gardener.cloud/to-runtime-apiserver: allowed
         networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+        {{- if .Values.nextGeneration.enabled }}
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        {{- end }}
     spec:
       serviceAccountName: {{ template "service.name" . }}
       containers:
         - name: {{ template "service.name" . }}
+          {{- if not .Values.nextGeneration.enabled }}
           image: {{ index .Values.images "dns-controller-manager" }}
+          {{- else }}
+          image: {{ index .Values.images "dns-controller-manager-next-generation" }}
+          {{- end }}
           securityContext:
             allowPrivilegeEscalation: false
           volumeMounts:
           - mountPath: /var/run/secrets/gardener.cloud/shoot/generic-kubeconfig
             name: kubeconfig
             readOnly: true
+          {{- if .Values.nextGeneration.enabled }}
+          - mountPath: /etc/external-dns-management/next-generation
+            name: config-volume
+            readOnly: true
+          {{- end }}
           args:
+          {{- if not .Values.nextGeneration.enabled }}
           - --kubeconfig=/var/run/secrets/gardener.cloud/shoot/generic-kubeconfig/kubeconfig
           - --kubeconfig.id={{ .Values.shootId }}
           - --kubeconfig.conditional-deploy-crds
@@ -57,10 +74,16 @@ spec:
           - --target-namespace={{ .Release.Namespace }}
           - --target-creator-label-name=gardener.cloud/shoot-id
           - --target-creator-label-value={{ .Values.creatorLabelValue }}
-          - --dns-target-class=gardendns
+          - --dns-target-class=gardendns,gardendns-next-gen
           - --dns-class={{ .Values.dnsClass }}
           - --lease-name=shoot-dns-service
           - --lease-resource-lock=leases
+          {{- else }}
+          - --config=/etc/external-dns-management/next-generation/config.yaml
+          {{- if .Values.nextGeneration.restrictToControlPlaneControllers }}
+          - --controllers=dnsprovider,dnsentry
+          {{- end }}
+          {{- end }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
       priorityClassName: gardener-system-200
@@ -81,3 +104,11 @@ spec:
                 path: token
               name: {{ .Values.targetClusterSecret }}
               optional: false
+      {{- if .Values.nextGeneration.enabled }}
+      - name: config-volume
+        configMap:
+          name: {{ template "service.name" . }}-next-generation-config
+          items:
+          - key: config
+            path: config.yaml
+      {{- end }}
