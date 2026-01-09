@@ -7,6 +7,7 @@ package validation
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/gardener/controller-manager-library/pkg/resources"
@@ -89,12 +90,7 @@ func validateProviders(providers []service.DNSProvider, presources *[]core.Named
 }
 
 func isSupportedProviderType(providerType string) bool {
-	for _, typ := range supportedProviderTypes {
-		if typ == providerType {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(supportedProviderTypes, providerType)
 }
 
 func validateProviderSecret(secretName, providerType string, path *field.Path, getter SecretGetter, allErrs *field.ErrorList) {

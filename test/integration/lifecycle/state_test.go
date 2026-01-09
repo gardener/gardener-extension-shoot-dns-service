@@ -311,7 +311,7 @@ func teardownShootEnvironment(ctx context.Context, c client.Client, namespace *c
 
 func createDNSEntries(shootID, namespace string, count int) []*dnsv1alpha1.DNSEntry {
 	entries := make([]*dnsv1alpha1.DNSEntry, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		name := fmt.Sprintf("dnsentry-%d", i)
 		entries[i] = &dnsv1alpha1.DNSEntry{
 			ObjectMeta: metav1.ObjectMeta{

@@ -7,6 +7,7 @@ package lifecycle
 import (
 	"context"
 	"fmt"
+	"maps"
 	"strings"
 	"time"
 
@@ -222,8 +223,6 @@ func deepCopyMap(m map[string]string) map[string]string {
 		return nil
 	}
 	copy := map[string]string{}
-	for k, v := range m {
-		copy[k] = v
-	}
+	maps.Copy(copy, m)
 	return copy
 }
