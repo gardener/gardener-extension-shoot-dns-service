@@ -909,7 +909,7 @@ func (a *actuator) deleteManagedDNSEntries(exCtx extensionContext) error {
 			return fmt.Errorf("deleting all DNSEntries in control plane failed: %w", err)
 		}
 		exCtx.log.Info("Waiting until all shoot DNS entries have been deleted", "component", service.ExtensionServiceName, "namespace", exCtx.ex.Namespace)
-		for i := 0; i < 7; i++ {
+		for range 7 {
 			waitTime := 5 * time.Second
 			if a.fastTestMode {
 				waitTime = 20 * time.Millisecond
