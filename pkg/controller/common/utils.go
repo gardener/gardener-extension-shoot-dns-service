@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"hash/fnv"
+	"maps"
 	"strconv"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
@@ -23,9 +24,7 @@ func CopyMap(m map[string]string) map[string]string {
 		return nil
 	}
 	r := map[string]string{}
-	for k, v := range m {
-		r[k] = v
-	}
+	maps.Copy(r, m)
 	return r
 }
 

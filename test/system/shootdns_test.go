@@ -93,7 +93,7 @@ func (f *shootDNSFramework) createEchoheaders(ctx context.Context, svcLB, delete
 	namespace := fmt.Sprintf("shootdns-test-echoserver-%s", suffix)
 	ns := f.createNamespace(ctx, namespace)
 
-	values := map[string]interface{}{
+	values := map[string]any{
 		"EchoName":                fmt.Sprintf("echo-%s", suffix),
 		"Namespace":               namespace,
 		"ShootDnsName":            *f.cluster.Shoot.Spec.DNS.Domain,
@@ -137,7 +137,7 @@ var _ = Describe("ShootDNS test", func() {
 		ns := f.createNamespace(ctx, namespace)
 
 		domainName := "custom." + *f.cluster.Shoot.Spec.DNS.Domain
-		values := map[string]interface{}{
+		values := map[string]any{
 			"Namespace": namespace,
 			"DNSName":   domainName,
 		}
