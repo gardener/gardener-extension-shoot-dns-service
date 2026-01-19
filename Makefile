@@ -114,7 +114,7 @@ generate: $(CONTROLLER_GEN) $(GEN_CRD_API_REFERENCE_DOCS) $(HELM) $(MOCKGEN) $(Y
 	@VGOPATH=$(VGOPATH) REPO_ROOT=$(REPO_ROOT) GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) bash $(GARDENER_HACK_DIR)/generate-sequential.sh ./charts/... ./cmd/... ./pkg/... ./test/... ./example/...
 	@./hack/prepare-operator-extension.sh
 	$(MAKE) format
-	@./hack/generate-renovate-ignore-deps.sh
+	@GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) ./hack/generate-renovate-ignore-deps.sh
 
 .PHONY: format
 format: $(GOIMPORTS) $(GOIMPORTSREVISER)
