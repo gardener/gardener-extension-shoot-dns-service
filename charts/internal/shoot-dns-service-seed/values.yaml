@@ -37,3 +37,10 @@ vpa:
     memory: 25Mi
   updatePolicy:
     updateMode: "Recreate"
+
+workloadIdentity:
+  gcp:
+    allowedTokenURLs: []
+    # - https://sts.googleapis.com/v1/token
+    allowedServiceAccountImpersonationURLRegExps: []
+    # - ^https://iamcredentials\.googleapis\.com/v1/projects/-/serviceAccounts/.+:generateAccessToken$
