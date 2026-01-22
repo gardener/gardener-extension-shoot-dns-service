@@ -5,6 +5,7 @@
 package config
 
 import (
+	"github.com/gardener/external-dns-management/pkg/dnsman2/apis/config"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -13,9 +14,10 @@ var DNSService DNSServiceConfig
 
 // DNSServiceConfig contains configuration for the dns service.
 type DNSServiceConfig struct {
-	SeedID                    string
-	DNSClass                  string
-	RemoteDefaultDomainSecret *types.NamespacedName
-	ManageDNSProviders        bool
-	ReplicateDNSProviders     bool
+	SeedID                            string
+	DNSClass                          string
+	RemoteDefaultDomainSecret         *types.NamespacedName
+	ManageDNSProviders                bool
+	ReplicateDNSProviders             bool
+	InternalGCPWorkloadIdentityConfig config.InternalGCPWorkloadIdentityConfig
 }
