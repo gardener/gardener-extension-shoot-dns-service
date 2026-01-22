@@ -358,7 +358,7 @@ var _ = Describe("Validation", func() {
 					"Type":     Equal(field.ErrorTypeInvalid),
 					"Field":    Equal("spec.extensions.[@.type='shoot-dns-service'].providerConfig[1].credentials.ref.projectID"),
 					"BadValue": Equal(""),
-					"Detail":   Equal("does not match the expected format"),
+					"Detail":   ContainSubstring("does not match the expected format"),
 				}),
 				matchers.HaveFields(Fields{
 					"Type":     Equal(field.ErrorTypeForbidden),

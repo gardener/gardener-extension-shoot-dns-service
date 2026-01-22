@@ -9,8 +9,10 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/gardener/external-dns-management/pkg/dnsman2/apis/config"
 	extensionswebhook "github.com/gardener/gardener/extensions/pkg/webhook"
 	"github.com/gardener/gardener/pkg/apis/core"
+	securityv1alpha1 "github.com/gardener/gardener/pkg/apis/security/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -73,7 +75,7 @@ func (s *shoot) validateShoot(ctx context.Context, shoot, oldShoot *core.Shoot) 
 
 	allErrs := field.ErrorList{}
 	if dnsConfig != nil {
-		var getter validation.SecretGetter
+		var getter validation.ResourceGetter
 		if hasChanged := oldDnsConfig == nil || !reflect.DeepEqual(dnsConfig, oldDnsConfig); hasChanged {
 			// If the DNSConfig has changed, we want to validate the secrets.
 			// Otherwise, we skip the secret validation to avoid shoot manifests updates to fail due to an unrelated changed secret.
@@ -121,10 +123,33 @@ func (s *shoot) findExtension(shoot *core.Shoot) *core.Extension {
 	return nil
 }
 
-func (s *shoot) makeSecretGetter(ctx context.Context, namespace string) validation.SecretGetter {
-	return func(name string) (*corev1.Secret, error) {
-		secret := &corev1.Secret{}
-		err := s.client.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, secret)
-		return secret, err
+type resourceGetter struct {
+	ctx                               context.Context
+	client                            client.Client
+	namespace                         string
+	internalGCPWorkloadIdentityConfig config.InternalGCPWorkloadIdentityConfig
+}
+
+func (r *resourceGetter) GetSecret(name string) (*corev1.Secret, error) {
+	secret := &corev1.Secret{}
+	err := r.client.Get(r.ctx, client.ObjectKey{Namespace: r.namespace, Name: name}, secret)
+	return secret, err
+}
+
+func (r *resourceGetter) GetWorkloadIdentity(name string) (*securityv1alpha1.WorkloadIdentity, error) {
+	wl := &securityv1alpha1.WorkloadIdentity{}
+	err := r.client.Get(r.ctx, client.ObjectKey{Namespace: r.namespace, Name: name}, wl)
+	return wl, err
+}
+
+func (r *resourceGetter) GetInternalGCPWorkloadIdentityConfig() config.InternalGCPWorkloadIdentityConfig {
+	return r.internalGCPWorkloadIdentityConfig
+}
+
+func (s *shoot) makeSecretGetter(ctx context.Context, namespace string) validation.ResourceGetter {
+	return &resourceGetter{
+		ctx:       ctx,
+		client:    s.client,
+		namespace: namespace,
 	}
 }
