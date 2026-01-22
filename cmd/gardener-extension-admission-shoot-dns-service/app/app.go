@@ -14,6 +14,7 @@ import (
 	webhookcmd "github.com/gardener/gardener/extensions/pkg/webhook/cmd"
 	"github.com/gardener/gardener/pkg/apis/core/install"
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
+	securityv1alpha1 "github.com/gardener/gardener/pkg/apis/security/v1alpha1"
 	gardenerhealthz "github.com/gardener/gardener/pkg/healthz"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -30,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	admissioncmd "github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/cmd"
+	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/validator"
 	serviceinstall "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/install"
 )
 
@@ -59,13 +61,17 @@ func NewAdmissionCommand(ctx context.Context) *cobra.Command {
 			AdmissionName,
 			"",
 			nil,
+			nil,
 			webhookServerOptions,
 			webhookSwitches,
 		)
 
+		admissionOpts = &admissioncmd.ConfigOptions{}
+
 		aggOption = controllercmd.NewOptionAggregator(
 			restOpts,
 			mgrOpts,
+			admissionOpts,
 			webhookOptions,
 		)
 	)
@@ -93,6 +99,10 @@ func NewAdmissionCommand(ctx context.Context) *cobra.Command {
 			}, restOpts.Completed().Config)
 
 			managerOptions := mgrOpts.Completed().Options()
+
+			if admissionConfig := admissionOpts.Completed(); admissionConfig != nil {
+				validator.DefaultAddOptions.GCPWorkloadIdentityConfig = *admissionConfig
+			}
 
 			// Operators can enable the source cluster option via SOURCE_CLUSTER environment variable.
 			// In-cluster config will be used if no SOURCE_KUBECONFIG is specified.
@@ -130,6 +140,10 @@ func NewAdmissionCommand(ctx context.Context) *cobra.Command {
 				runtimelog.Log.Error(err, "Could not update manager scheme")
 				os.Exit(1)
 			}
+			if err := securityv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+				runtimelog.Log.Error(err, "Could not update manager scheme with securityv1alpha1")
+				os.Exit(1)
+			}
 
 			var sourceCluster cluster.Cluster
 			if sourceClusterConfig != nil {
@@ -151,7 +165,7 @@ func NewAdmissionCommand(ctx context.Context) *cobra.Command {
 			}
 
 			log.Info("Setting up webhook server")
-			if _, err := webhookOptions.Completed().AddToManager(ctx, mgr, sourceCluster, false); err != nil {
+			if _, err := webhookOptions.Completed().AddToManager(ctx, mgr, sourceCluster); err != nil {
 				return err
 			}
 
