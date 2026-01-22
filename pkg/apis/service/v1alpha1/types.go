@@ -50,6 +50,10 @@ type DNSProvider struct {
 	// provider.
 	// +optional
 	SecretName *string `json:"secretName,omitempty"`
+	// Credentials is the name of the resource reference containing the credentials for the provider.
+	// It is an alternative to SecretName and can reference either a secret or a workload identity.
+	// +optional
+	Credentials *string `json:"credentials,omitempty"`
 	// Type is the DNS provider type.
 	// +optional
 	Type *string `json:"type,omitempty"`

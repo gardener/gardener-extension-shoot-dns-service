@@ -188,6 +188,19 @@ provider.</p>
 </tr>
 <tr>
 <td>
+<code>credentials</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Credentials is the name of the resource reference containing the credentials for the provider.
+It is an alternative to SecretName and can reference either a secret or a workload identity.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>type</code></br>
 <em>
 string

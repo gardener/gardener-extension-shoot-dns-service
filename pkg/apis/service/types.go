@@ -43,6 +43,9 @@ type DNSProvider struct {
 	// SecretName is a name of a secret containing credentials for the stated domain and the
 	// provider.
 	SecretName *string
+	// Credentials is the name of the resource reference containing the credentials for the provider.
+	// It is an alternative to SecretName and can reference either a secret or a workload identity.
+	Credentials *string
 	// Type is the DNS provider type.
 	Type *string
 	// Zones contains information about which hosted zones shall be included/excluded for this provider.

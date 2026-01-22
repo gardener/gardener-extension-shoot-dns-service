@@ -99,6 +99,11 @@ func (in *DNSProvider) DeepCopyInto(out *DNSProvider) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.Credentials != nil {
+		in, out := &in.Credentials, &out.Credentials
+		*out = new(string)
+		**out = **in
+	}
 	if in.Type != nil {
 		in, out := &in.Type, &out.Type
 		*out = new(string)
