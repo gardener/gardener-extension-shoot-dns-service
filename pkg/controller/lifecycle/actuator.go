@@ -464,6 +464,18 @@ func (a *actuator) createOrUpdateSeedResources(exCtx extensionContext, mode cont
 			"restrictToControlPlaneControllers": mode == controllerModeCleaningUp,
 		},
 	}
+	if exCtx.useNextGenerationController() {
+		stringsList := []string{}
+		for _, re := range a.config.InternalGCPWorkloadIdentityConfig.AllowedServiceAccountImpersonationURLRegExps {
+			stringsList = append(stringsList, re.String())
+		}
+		chartValues["workloadIdentity"] = map[string]any{
+			"gcp": map[string]any{
+				"allowedTokenURLs": a.config.InternalGCPWorkloadIdentityConfig.AllowedTokenURLs,
+				"allowedServiceAccountImpersonationURLRegExps": stringsList,
+			},
+		}
+	}
 
 	if err := gutil.NewShootAccessSecret(service.ShootAccessSecretName, namespace).Reconcile(exCtx.ctx, a.client); err != nil {
 		return err

@@ -7,6 +7,7 @@ package lifecycle
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -365,6 +366,15 @@ shootAccessServiceAccountName: extension-shoot-dns-service`, useNextGenerationCo
 				Expect(mmr.chartName).To(Equal("shoot-dns-service-seed"))
 				Expect(mmr.class).To(Equal("seed"))
 				Expect(mmr.injectedLabels).To(BeNil())
+				workloadIdentityValues := ""
+				if useNextGenerationController {
+					workloadIdentityValues = `workloadIdentity:
+  gcp:
+    allowedServiceAccountImpersonationURLRegExps:
+    - ^https://iamcredentials\.googleapis\.com/v1/projects/-/serviceAccounts/.+:generateAccessToken$
+    allowedTokenURLs:
+    - https://sts.googleapis.com/v1/token`
+				}
 				checkValues(mmr.values, fmt.Sprintf(`
 creatorLabelValue: shoot--foo--bar-78897def-5208-4feb-b0f0-015950ead-32l64aynh256m
 dnsClass: source-class
@@ -382,7 +392,8 @@ replicas: %d
 seedId: test-seed
 serviceName: shoot-dns-service
 shootId: shoot--foo--bar-78897def-5208-4feb-b0f0-015950eadbb9-test-landscape
-targetClusterSecret: shoot-access-extension-shoot-dns-service`, useNextGenerationController, restrictToControlPlaneControllers, replicas))
+targetClusterSecret: shoot-access-extension-shoot-dns-service
+%s`, useNextGenerationController, restrictToControlPlaneControllers, replicas, workloadIdentityValues))
 			}
 		}
 
@@ -761,6 +772,10 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service`, useNextGeneratio
 			DNSClass:              "source-class",
 			ManageDNSProviders:    true,
 			ReplicateDNSProviders: true,
+			InternalGCPWorkloadIdentityConfig: dnsapisconfig.InternalGCPWorkloadIdentityConfig{
+				AllowedTokenURLs: []string{"https://sts.googleapis.com/v1/token"},
+				AllowedServiceAccountImpersonationURLRegExps: []*regexp.Regexp{regexp.MustCompile(`^https://iamcredentials\.googleapis\.com/v1/projects/-/serviceAccounts/.+:generateAccessToken$`)},
+			},
 		}
 
 		scheme = runtime.NewScheme()
