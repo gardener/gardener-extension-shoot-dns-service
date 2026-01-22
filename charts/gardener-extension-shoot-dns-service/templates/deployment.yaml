@@ -55,6 +55,16 @@ spec:
         {{- if .Values.remoteDefaultDomainSecret.enabled }}
         - --remote-default-domain-secret={{ .Release.Namespace }}/remote-default-domain
         {{- end }}
+        {{- if .Values.workloadIdentity.gcp.allowedTokenURLs }}
+        {{- range .Values.workloadIdentity.gcp.allowedTokenURLs }}
+        - --wi-gcp-allowed-token-url={{ . }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.workloadIdentity.gcp.allowedServiceAccountImpersonationURLRegExps }}
+        {{- range .Values.workloadIdentity.gcp.allowedServiceAccountImpersonationURLRegExps }}
+        - --wi-gcp-allowed-service-account-impersonation-url-regexp={{ . }}
+        {{- end }}
+        {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
         env:

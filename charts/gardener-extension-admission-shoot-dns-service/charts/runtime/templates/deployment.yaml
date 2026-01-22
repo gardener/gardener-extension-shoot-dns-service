@@ -52,6 +52,16 @@ spec:
         {{- end }}
         - --health-bind-address=:{{ .Values.healthPort }}
         - --leader-election-id={{ include "leaderelectionid" . }}
+        {{- if .Values.workloadIdentity.gcp.allowedTokenURLs }}
+        {{- range .Values.workloadIdentity.gcp.allowedTokenURLs }}
+        - --wi-gcp-allowed-token-url={{ . }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.workloadIdentity.gcp.allowedServiceAccountImpersonationURLRegExps }}
+        {{- range .Values.workloadIdentity.gcp.allowedServiceAccountImpersonationURLRegExps }}
+        - --wi-gcp-allowed-service-account-impersonation-url-regexp={{ . }}
+        {{- end }}
+        {{- end }}
         env:
         {{- if .Values.gardener.virtualCluster.enabled }}
         - name: SOURCE_CLUSTER
