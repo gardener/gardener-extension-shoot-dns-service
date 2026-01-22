@@ -30,6 +30,21 @@ controllers:
   dnsProvider:
     namespace: {{ .Release.Namespace }}
     migrationMode: true
+    {{- if (or .Values.workloadIdentity.gcp.allowedTokenURLs .Values.workloadIdentity.gcp.allowedServiceAccountImpersonationURLRegExps) }}
+    gcpWorkloadIdentityConfig:
+      {{- if .Values.workloadIdentity.gcp.allowedTokenURLs }}
+      allowedTokenURLs:
+      {{- range .Values.workloadIdentity.gcp.allowedTokenURLs }}
+      - {{ . }}
+      {{- end }}
+      {{- end }}
+      {{- if .Values.workloadIdentity.gcp.allowedServiceAccountImpersonationURLRegExps }}
+      allowedServiceAccountImpersonationURLRegExps:
+      {{- range .Values.workloadIdentity.gcp.allowedServiceAccountImpersonationURLRegExps }}
+      - {{ . }}
+      {{- end }}
+      {{- end }}
+    {{- end }}
   source:
     sourceClass: {{ .Values.dnsClass }}
     targetClass: {{ .Values.nextGeneration.dnsClass }}
