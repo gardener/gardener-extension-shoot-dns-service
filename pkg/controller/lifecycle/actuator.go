@@ -643,13 +643,14 @@ func (a *actuator) addAdditionalDNSProviders(providers map[string]*dnsv1alpha1.D
 			continue
 		}
 
-		mappedSecretName, err := lookupReference(resources, p.SecretName, i)
+		resourceName := oneOf(p.SecretName, p.Credentials)
+		mappedSecretName, err := lookupReference(resources, resourceName, i)
 		if err != nil {
 			result = multierror.Append(result, err)
 			continue
 		}
 
-		providerName := fmt.Sprintf("%s-%s", *providerType, *p.SecretName)
+		providerName := fmt.Sprintf("%s-%s", *providerType, resourceName)
 		providers[providerName] = nil
 
 		secret := &corev1.Secret{}
@@ -658,7 +659,7 @@ func (a *actuator) addAdditionalDNSProviders(providers map[string]*dnsv1alpha1.D
 			client.ObjectKey{Namespace: namespace, Name: mappedSecretName},
 			secret,
 		); err != nil {
-			result = multierror.Append(result, fmt.Errorf("could not get dns provider[%d] secret %q -> %q: %w", i, *p.SecretName, mappedSecretName, err))
+			result = multierror.Append(result, fmt.Errorf("could not get dns provider[%d] secret %q -> %q: %w", i, resourceName, mappedSecretName, err))
 			continue
 		}
 
@@ -677,7 +678,7 @@ func buildDNSProvider(p *apisservice.DNSProvider, namespace, name string, mapped
 		includeZones = zones.Include
 		excludeZones = zones.Exclude
 	}
-	secretName := *p.SecretName
+	secretName := oneOf(p.SecretName, p.Credentials)
 	if mappedSecretName != "" {
 		secretName = mappedSecretName
 	}
@@ -707,18 +708,21 @@ func buildDNSProvider(p *apisservice.DNSProvider, namespace, name string, mapped
 	}
 }
 
-func lookupReference(resources []gardencorev1beta1.NamedResourceReference, secretName *string, index int) (string, error) {
-	if secretName == nil {
-		return "", fmt.Errorf("dns provider[%d] doesn't specify a secretName", index)
+func lookupReference(resources []gardencorev1beta1.NamedResourceReference, resourceName string, index int) (string, error) {
+	if resourceName == "" {
+		return "", fmt.Errorf("dns provider[%d] doesn't specify a secretName or credentials field", index)
 	}
 
 	for _, res := range resources {
-		if res.Name == *secretName {
+		if res.Name == resourceName {
+			if res.ResourceRef.Kind == "WorkloadIdentity" {
+				return "workload-identity-" + v1beta1constants.ReferencedResourcesPrefix + res.ResourceRef.Name, nil
+			}
 			return v1beta1constants.ReferencedResourcesPrefix + res.ResourceRef.Name, nil
 		}
 	}
 
-	return "", fmt.Errorf("dns provider[%d] secretName %s not found in referenced resources", index, *secretName)
+	return "", fmt.Errorf("dns provider[%d] secretName/credentials %s not found in referenced resources", index, resourceName)
 }
 
 func (a *actuator) prepareDefaultExternalDNSProvider(exCtx extensionContext) (*apisservice.DNSProvider, error) {
@@ -1086,4 +1090,13 @@ func isAdditionalProvider(provider dnsv1alpha1.DNSProvider) bool {
 
 func isReplicatedProvider(provider dnsv1alpha1.DNSProvider) bool {
 	return provider.Labels[common.ShootDNSEntryLabelKey] != ""
+}
+
+func oneOf(strs ...*string) string {
+	for _, s := range strs {
+		if s != nil && *s != "" {
+			return *s
+		}
+	}
+	return ""
 }
