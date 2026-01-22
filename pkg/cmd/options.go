@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	dnsman2apisconfig "github.com/gardener/external-dns-management/pkg/dnsman2/apis/config"
 	healthcheckconfigv1alpha1 "github.com/gardener/gardener/extensions/pkg/apis/config/v1alpha1"
 	"github.com/gardener/gardener/extensions/pkg/controller/cmd"
 	extensionshealthcheckcontroller "github.com/gardener/gardener/extensions/pkg/controller/healthcheck"
@@ -17,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
+	admissioncmd "github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/cmd"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/healthcheck"
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/lifecycle"
@@ -24,12 +26,13 @@ import (
 
 // DNSServiceOptions holds options related to the dns service.
 type DNSServiceOptions struct {
-	SeedID                    string
-	DNSClass                  string
-	ManageDNSProviders        bool
-	ReplicateDNSProviders     bool
-	RemoteDefaultDomainSecret string
-	config                    *DNSServiceConfig
+	SeedID                     string
+	DNSClass                   string
+	ManageDNSProviders         bool
+	ReplicateDNSProviders      bool
+	RemoteDefaultDomainSecret  string
+	GCPWorkloadIdentityOptions admissioncmd.GCPWorkloadIdentityOptions
+	config                     *DNSServiceConfig
 }
 
 // HealthOptions holds options for health checks.
@@ -45,6 +48,7 @@ func (o *DNSServiceOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&o.ManageDNSProviders, "manage-dns-providers", false, "enables management of DNSProviders in control plane (must only be enable if Gardenlet has disabled it)")
 	fs.BoolVar(&o.ReplicateDNSProviders, "replicate-dns-providers", false, "enables replication of DNSProviders from shoot cluster to seed cluster")
 	fs.StringVar(&o.RemoteDefaultDomainSecret, "remote-default-domain-secret", "", "secret name for default 'external' DNSProvider DNS class used to filter DNS source resources in shoot clusters")
+	o.GCPWorkloadIdentityOptions.AddFlags(fs)
 }
 
 // AddFlags implements Flagger.AddFlags.
@@ -66,12 +70,21 @@ func (o *DNSServiceOptions) Complete() error {
 		}
 	}
 
+	gcpGCPWorkloadIdentityConfig, err := dnsman2apisconfig.NewInternalGCPWorkloadIdentityConfig(dnsman2apisconfig.GCPWorkloadIdentityConfig{
+		AllowedTokenURLs: o.GCPWorkloadIdentityOptions.AllowedTokenURLs,
+		AllowedServiceAccountImpersonationURLRegExps: o.GCPWorkloadIdentityOptions.AllowedServiceAccountImpersonationURLRegExps,
+	})
+	if err != nil {
+		return err
+	}
+
 	o.config = &DNSServiceConfig{
-		SeedID:                    o.SeedID,
-		DNSClass:                  o.DNSClass,
-		ManageDNSProviders:        o.ManageDNSProviders,
-		ReplicateDNSProviders:     o.ReplicateDNSProviders,
-		RemoteDefaultDomainSecret: remoteDefaultDomainSecret,
+		SeedID:                            o.SeedID,
+		DNSClass:                          o.DNSClass,
+		ManageDNSProviders:                o.ManageDNSProviders,
+		ReplicateDNSProviders:             o.ReplicateDNSProviders,
+		RemoteDefaultDomainSecret:         remoteDefaultDomainSecret,
+		InternalGCPWorkloadIdentityConfig: *gcpGCPWorkloadIdentityConfig,
 	}
 	return nil
 }
@@ -94,11 +107,12 @@ func (o *HealthOptions) Completed() *HealthConfig {
 
 // DNSServiceConfig contains configuration information about the dns service.
 type DNSServiceConfig struct {
-	SeedID                    string
-	DNSClass                  string
-	ManageDNSProviders        bool
-	ReplicateDNSProviders     bool
-	RemoteDefaultDomainSecret *types.NamespacedName
+	SeedID                            string
+	DNSClass                          string
+	ManageDNSProviders                bool
+	ReplicateDNSProviders             bool
+	RemoteDefaultDomainSecret         *types.NamespacedName
+	InternalGCPWorkloadIdentityConfig dnsman2apisconfig.InternalGCPWorkloadIdentityConfig
 }
 
 // Apply applies the DNSServiceOptions to the passed ControllerOptions instance.
@@ -108,6 +122,7 @@ func (c *DNSServiceConfig) Apply(cfg *config.DNSServiceConfig) {
 	cfg.ReplicateDNSProviders = c.ReplicateDNSProviders
 	cfg.ManageDNSProviders = c.ManageDNSProviders
 	cfg.RemoteDefaultDomainSecret = c.RemoteDefaultDomainSecret
+	cfg.InternalGCPWorkloadIdentityConfig = c.InternalGCPWorkloadIdentityConfig
 }
 
 // HealthConfig contains configuration information about the health check controller.
