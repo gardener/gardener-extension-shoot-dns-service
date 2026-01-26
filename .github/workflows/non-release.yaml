@@ -9,9 +9,9 @@ jobs:
   build:
     # only run if run was triggered by either:
     # - head-update (push to local branch)
-    # - pullrequest-label `reviewed/ok-to-test` was added
+    # - pullrequest-label `ok-to-test` was added
     # (the latter label is hardcoded in gardener/cc-utils's trusted-checkout action)
-    if: ${{ github.event.action != 'labeled' || github.event.label.name == 'reviewed/ok-to-test' }}
+    if: ${{ github.event.action != 'labeled' || (github.event.label.name == vars.DEFAULT_LABEL_OK_TO_TEST && vars.DEFAULT_LABEL_OK_TO_TEST != '') }}
     uses: ./.github/workflows/build.yaml
     with:
       mode: snapshot
