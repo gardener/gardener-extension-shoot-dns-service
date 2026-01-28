@@ -13,8 +13,6 @@ PROJECT_ROOT="$(dirname $0)"/..
 CODE_GEN_DIR=$(go list -m -f '{{.Dir}}' k8s.io/code-generator)
 source "${CODE_GEN_DIR}/kube_codegen.sh"
 
-rm -f $GOPATH/bin/*-gen
-
 kube::codegen::gen_helpers \
   --boilerplate "${GARDENER_HACK_DIR}/LICENSE_BOILERPLATE.txt" \
     --extra-peer-dir k8s.io/apimachinery/pkg/apis/meta/v1 \
