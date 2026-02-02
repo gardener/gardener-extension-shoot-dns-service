@@ -97,14 +97,26 @@ func (s *shoot) mutateShoot(_ context.Context, new *gardencorev1beta1.Shoot) err
 				Include: []string{*new.Spec.DNS.Domain},
 			}
 		}
-		if p.SecretName != nil {
-			secretName := pkgservice.ExtensionType + "-" + *p.SecretName
+		var ptrSecretName *string
+		if p.CredentialsRef != nil {
+			if p.CredentialsRef.Kind == "Secret" && p.CredentialsRef.APIVersion == "v1" {
+				ptrSecretName = &p.CredentialsRef.Name
+			} else if p.CredentialsRef.Kind == "WorkloadIdentity" && p.CredentialsRef.APIVersion == "security.gardener.cloud/v1alpha1" {
+				return fmt.Errorf("workload identity credentialsRef is not yet supported")
+			} else {
+				return fmt.Errorf("unsupported credentialsRef kind %q and apiVersion %q", p.CredentialsRef.Kind, p.CredentialsRef.APIVersion)
+			}
+		} else if p.SecretName != nil {
+			ptrSecretName = p.SecretName
+		}
+		if ptrSecretName != nil {
+			secretName := pkgservice.ExtensionType + "-" + *ptrSecretName
 			np.SecretName = &secretName
 			resource := gardencorev1beta1.NamedResourceReference{
 				Name: secretName,
 				ResourceRef: autoscalingv1.CrossVersionObjectReference{
 					Kind:       "Secret",
-					Name:       *p.SecretName,
+					Name:       *ptrSecretName,
 					APIVersion: "v1",
 				},
 			}
