@@ -101,7 +101,11 @@ type extensionContext struct {
 }
 
 func (exCtx *extensionContext) useNextGenerationController() bool {
-	switch exCtx.cluster.Seed.Labels[ShootDNSServiceUseNextGenerationController] {
+	value := ""
+	if exCtx.cluster != nil && exCtx.cluster.Seed != nil {
+		value = exCtx.cluster.Seed.Labels[ShootDNSServiceUseNextGenerationController]
+	}
+	switch value {
 	case "force-true":
 		return true
 	case "force-false":
