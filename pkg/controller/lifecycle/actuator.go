@@ -72,6 +72,10 @@ const (
 	// DNSEntries in the extension status state. Nothing should be lost, but if source objects are deleted during the migration,
 	// the deletion of the DNS records cannot be guaranteed.
 	DropDNSEntriesStateOnMigration = "drop-dns-entries-state-on-migration"
+	// ShootDNSServiceUseNextGenerationController is the label key for marking a seed to use the next generation DNS controller.
+	// The label values "true" or "false" specify the default value, if not specified otherwise in the DNSConfig with the field `useNextGenerationController`.
+	// The values "force-true" and "force-false" can be used to override the DNSConfig setting for all shoots in the seed.
+	ShootDNSServiceUseNextGenerationController = "service.dns.extensions.gardener.cloud/use-next-generation-controller"
 
 	// NextGenerationTargetClass is the target class for the next generation DNS controller.
 	NextGenerationTargetClass = "gardendns-next-gen"
@@ -97,7 +101,16 @@ type extensionContext struct {
 }
 
 func (exCtx *extensionContext) useNextGenerationController() bool {
-	return ptr.Deref(exCtx.dnsconfig.UseNextGenerationController, false)
+	switch exCtx.cluster.Seed.Labels[ShootDNSServiceUseNextGenerationController] {
+	case "force-true":
+		return true
+	case "force-false":
+		return false
+	case "true":
+		return ptr.Deref(exCtx.dnsconfig.UseNextGenerationController, true)
+	default:
+		return ptr.Deref(exCtx.dnsconfig.UseNextGenerationController, false)
+	}
 }
 
 // NewActuator returns an actuator responsible for Extension resources.
