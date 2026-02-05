@@ -26,6 +26,9 @@ build:
             - cmd/gardener-extension-shoot-dns-service/app
             - imagevector
             - imagevector/images.yaml
+            - pkg/admission/cmd
+            - pkg/admission/mutator
+            - pkg/admission/validator
             - pkg/apis
             - pkg/apis/helper
             - pkg/apis/install

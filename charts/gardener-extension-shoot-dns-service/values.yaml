@@ -70,8 +70,8 @@ remoteDefaultDomainSecret:
 dnsControllerManager:
   deploy: true
   image:
-    repository: europe-docker.pkg.dev/gardener-project/releases/dns-controller-manager
-    tag: "v0.35.0" # marker-for-image-tag-dns-controller-manager (please keep this comment for automated update by set_dependency_version_dnsman)
+    repository: europe-docker.pkg.dev/gardener-project/snapshots/dns-controller-manager
+    tag: "v0.36.0-ba62b95de5b530917b2a994d9c10da963cad82ba" # marker-for-image-tag-dns-controller-manager (please keep this comment for automated update by set_dependency_version_dnsman)
     pullPolicy: IfNotPresent
 
   replicaCount: 1
