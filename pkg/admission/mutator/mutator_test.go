@@ -54,11 +54,15 @@ var _ = Describe("Shoot Mutator", func() {
 				},
 			},
 		}
-		secretName1        = "my-secret1"
-		secretMappedName1  = "shoot-dns-service-my-secret1"
-		secretName2        = "my-secret2"
-		secretMappedName2  = "shoot-dns-service-my-secret2"
-		shootWithResources = &gardencorev1beta1.Shoot{
+		secretName1                 = "my-secret1"
+		secretMappedName1           = "shoot-dns-service-my-secret1"
+		secretName2                 = "my-secret2"
+		secretMappedName2           = "shoot-dns-service-my-secret2"
+		workloadIdentityName1       = "my-workload-identity1"
+		workloadIdentityMappedName1 = "shoot-dns-service-my-workload-identity1"
+		workloadIdentityName2       = "my-workload-identity2"
+		workloadIdentityMappedName2 = "shoot-dns-service-my-workload-identity2"
+		shootWithResources          = &gardencorev1beta1.Shoot{
 			Spec: gardencorev1beta1.ShootSpec{
 				DNS: &gardencorev1beta1.DNS{
 					Domain: &domain,
@@ -172,12 +176,22 @@ var _ = Describe("Shoot Mutator", func() {
 			Primary:    ptr.To(true),
 		}
 		primaryResource = gardencorev1beta1.NamedResourceReference{
-			Name: secretMappedName1,
-			ResourceRef: autoscalingv1.CrossVersionObjectReference{
-				Kind:       "Secret",
-				Name:       secretName1,
-				APIVersion: "v1",
+			Name:        secretMappedName1,
+			ResourceRef: *primary.CredentialsRef,
+		}
+		primaryWL = gardencorev1beta1.DNSProvider{
+			Domains: &gardencorev1beta1.DNSIncludeExclude{Include: []string{"my.domain.test"}, Exclude: []string{"private.my.domain.test"}},
+			Type:    &awsType,
+			CredentialsRef: &autoscalingv1.CrossVersionObjectReference{
+				Kind:       "WorkloadIdentity",
+				Name:       workloadIdentityName1,
+				APIVersion: "security.gardener.cloud/v1alpha1",
 			},
+			Primary: ptr.To(true),
+		}
+		primaryWLResource = gardencorev1beta1.NamedResourceReference{
+			Name:        workloadIdentityMappedName1,
+			ResourceRef: *primaryWL.CredentialsRef,
 		}
 		otherResource = gardencorev1beta1.NamedResourceReference{
 			Name: "other",
@@ -202,12 +216,21 @@ var _ = Describe("Shoot Mutator", func() {
 			},
 		}
 		additionalResource = gardencorev1beta1.NamedResourceReference{
-			Name: secretMappedName2,
-			ResourceRef: autoscalingv1.CrossVersionObjectReference{
-				Kind:       "Secret",
-				Name:       secretName2,
-				APIVersion: "v1",
+			Name:        secretMappedName2,
+			ResourceRef: *additional.CredentialsRef,
+		}
+		additionalWL = gardencorev1beta1.DNSProvider{
+			Zones: &gardencorev1beta1.DNSIncludeExclude{Include: []string{"Z1234"}},
+			Type:  &awsType,
+			CredentialsRef: &autoscalingv1.CrossVersionObjectReference{
+				Kind:       "WorkloadIdentity",
+				Name:       workloadIdentityName2,
+				APIVersion: "security.gardener.cloud/v1alpha1",
 			},
+		}
+		additionalWLResource = gardencorev1beta1.NamedResourceReference{
+			Name:        workloadIdentityMappedName2,
+			ResourceRef: *additionalWL.CredentialsRef,
 		}
 	)
 
@@ -267,8 +290,8 @@ var _ = Describe("Shoot Mutator", func() {
 					Domains: &servicev1alpha1.DNSIncludeExclude{
 						Include: []string{domain},
 					},
-					SecretName: &secretMappedName1,
-					Type:       &awsType,
+					Credentials: &secretMappedName1,
+					Type:        &awsType,
 				},
 			}
 		}), []gardencorev1beta1.NamedResourceReference{primaryResource}),
@@ -292,8 +315,8 @@ var _ = Describe("Shoot Mutator", func() {
 						Include: []string{"my.domain.test"},
 						Exclude: []string{"private.my.domain.test"},
 					},
-					SecretName: &secretMappedName1,
-					Type:       &awsType,
+					Credentials: &secretMappedName1,
+					Type:        &awsType,
 				},
 			}
 		}), []gardencorev1beta1.NamedResourceReference{primaryResource}),
@@ -318,18 +341,38 @@ var _ = Describe("Shoot Mutator", func() {
 						Include: []string{"my.domain.test"},
 						Exclude: []string{"private.my.domain.test"},
 					},
-					SecretName: &secretMappedName1,
-					Type:       &awsType,
+					Credentials: &secretMappedName1,
+					Type:        &awsType,
 				},
 				{
-					SecretName: &secretMappedName2,
-					Type:       &awsType,
+					Credentials: &secretMappedName2,
+					Type:        &awsType,
 					Zones: &servicev1alpha1.DNSIncludeExclude{
 						Include: []string{"Z1234"},
 					},
 				},
 			}
 		}), []gardencorev1beta1.NamedResourceReference{additionalResource, otherResource, primaryResource}),
+		Entry("primaryWL+additionalWL", dnsStyleEnabled, shootWithResources, []gardencorev1beta1.DNSProvider{primaryWL, additionalWL}, BeNil(), modifyCopy(dnsConfig, func(cfg *servicev1alpha1.DNSConfig) {
+			cfg.SyncProvidersFromShootSpecDNS = ptr.To(true)
+			cfg.Providers = []servicev1alpha1.DNSProvider{
+				{
+					Domains: &servicev1alpha1.DNSIncludeExclude{
+						Include: []string{"my.domain.test"},
+						Exclude: []string{"private.my.domain.test"},
+					},
+					Credentials: &workloadIdentityMappedName1,
+					Type:        &awsType,
+				},
+				{
+					Credentials: &workloadIdentityMappedName2,
+					Type:        &awsType,
+					Zones: &servicev1alpha1.DNSIncludeExclude{
+						Include: []string{"Z1234"},
+					},
+				},
+			}
+		}), []gardencorev1beta1.NamedResourceReference{otherResource, primaryWLResource, additionalWLResource}),
 		Entry("primaryLegacy+additionalLegacy", dnsStyleEnabled, shootWithResources, []gardencorev1beta1.DNSProvider{primaryLegacy, additionalLegacy}, BeNil(), modifyCopy(dnsConfig, func(cfg *servicev1alpha1.DNSConfig) {
 			cfg.SyncProvidersFromShootSpecDNS = ptr.To(true)
 			cfg.Providers = []servicev1alpha1.DNSProvider{

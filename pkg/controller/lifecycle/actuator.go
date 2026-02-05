@@ -728,7 +728,7 @@ func lookupReference(resources []gardencorev1beta1.NamedResourceReference, resou
 	for _, res := range resources {
 		if res.Name == resourceName {
 			if res.ResourceRef.Kind == "WorkloadIdentity" {
-				return "workload-identity-" + v1beta1constants.ReferencedResourcesPrefix + res.ResourceRef.Name, nil
+				return v1beta1constants.ReferencedWorkloadIdentityPrefix + res.ResourceRef.Name, nil
 			}
 			return v1beta1constants.ReferencedResourcesPrefix + res.ResourceRef.Name, nil
 		}

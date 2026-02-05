@@ -13,9 +13,11 @@ import (
 
 	extensionswebhook "github.com/gardener/gardener/extensions/pkg/webhook"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	securityv1alpha1 "github.com/gardener/gardener/pkg/apis/security/v1alpha1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -75,7 +77,7 @@ func (s *shoot) mutateShoot(_ context.Context, new *gardencorev1beta1.Shoot) err
 	for i, r := range new.Spec.Resources {
 		oldNamedResources[r.Name] = i
 	}
-	newNamedResources := map[string]struct{}{}
+	newNamedResources := sets.New[string]()
 
 	dnsConfig.Providers = nil
 	for _, p := range new.Spec.DNS.Providers {
@@ -97,52 +99,39 @@ func (s *shoot) mutateShoot(_ context.Context, new *gardencorev1beta1.Shoot) err
 				Include: []string{*new.Spec.DNS.Domain},
 			}
 		}
-		var ptrSecretName *string
-		if p.CredentialsRef != nil {
-			if p.CredentialsRef.Kind == "Secret" && p.CredentialsRef.APIVersion == "v1" {
-				ptrSecretName = &p.CredentialsRef.Name
-			} else if p.CredentialsRef.Kind == "WorkloadIdentity" && p.CredentialsRef.APIVersion == "security.gardener.cloud/v1alpha1" {
-				return fmt.Errorf("workload identity credentialsRef is not yet supported")
-			} else {
-				return fmt.Errorf("unsupported credentialsRef kind %q and apiVersion %q", p.CredentialsRef.Kind, p.CredentialsRef.APIVersion)
-			}
-		} else if p.SecretName != nil {
-			ptrSecretName = p.SecretName
+		namedRef, err := extractNamedResourceReference(p)
+		if err != nil {
+			return err
 		}
-		if ptrSecretName != nil {
-			secretName := pkgservice.ExtensionType + "-" + *ptrSecretName
-			np.SecretName = &secretName
-			resource := gardencorev1beta1.NamedResourceReference{
-				Name: secretName,
-				ResourceRef: autoscalingv1.CrossVersionObjectReference{
-					Kind:       "Secret",
-					Name:       *ptrSecretName,
-					APIVersion: "v1",
-				},
-			}
-			newNamedResources[secretName] = struct{}{}
-			if index, ok := oldNamedResources[secretName]; ok {
-				new.Spec.Resources[index].ResourceRef = resource.ResourceRef
+		if namedRef != nil {
+			if p.CredentialsRef != nil {
+				np.Credentials = &namedRef.Name
 			} else {
-				new.Spec.Resources = append(new.Spec.Resources, resource)
+				np.SecretName = &namedRef.Name
+			}
+			newNamedResources.Insert(namedRef.Name)
+			if index, ok := oldNamedResources[namedRef.Name]; ok {
+				new.Spec.Resources[index].ResourceRef = namedRef.ResourceRef
+			} else {
+				new.Spec.Resources = append(new.Spec.Resources, *namedRef)
 			}
 		}
 		dnsConfig.Providers = append(dnsConfig.Providers, np)
 	}
 
-	outdated := map[string]struct{}{}
+	outdated := sets.New[string]()
 	for key := range oldNamedResources {
 		if !strings.HasPrefix(key, pkgservice.ExtensionType+"-") {
 			continue
 		}
-		if _, ok := newNamedResources[key]; !ok {
-			outdated[key] = struct{}{}
+		if !newNamedResources.Has(key) {
+			outdated.Insert(key)
 		}
 	}
 	if len(outdated) > 0 {
 		newResources := []gardencorev1beta1.NamedResourceReference{}
 		for _, resource := range new.Spec.Resources {
-			if _, ok := outdated[resource.Name]; !ok {
+			if !outdated.Has(resource.Name) {
 				newResources = append(newResources, resource)
 			}
 		}
@@ -256,4 +245,28 @@ func (s *shoot) getEncoder() (runtime.Encoder, error) {
 	}
 	s.encoder = codec.EncoderForVersion(si.Serializer, servicev1alpha1.SchemeGroupVersion)
 	return s.encoder, nil
+}
+
+func extractNamedResourceReference(p gardencorev1beta1.DNSProvider) (*gardencorev1beta1.NamedResourceReference, error) {
+	if p.CredentialsRef != nil {
+		if p.CredentialsRef.Kind == "Secret" && p.CredentialsRef.APIVersion == "v1" ||
+			p.CredentialsRef.Kind == "WorkloadIdentity" && p.CredentialsRef.APIVersion == securityv1alpha1.SchemeGroupVersion.String() {
+			return &gardencorev1beta1.NamedResourceReference{
+				Name:        pkgservice.ExtensionType + "-" + p.CredentialsRef.Name,
+				ResourceRef: *p.CredentialsRef,
+			}, nil
+		}
+		return nil, fmt.Errorf("unsupported credentialsRef kind %q and apiVersion %q", p.CredentialsRef.Kind, p.CredentialsRef.APIVersion)
+	}
+	if p.SecretName != nil {
+		return &gardencorev1beta1.NamedResourceReference{
+			Name: pkgservice.ExtensionType + "-" + *p.SecretName,
+			ResourceRef: autoscalingv1.CrossVersionObjectReference{
+				Kind:       "Secret",
+				Name:       *p.SecretName,
+				APIVersion: "v1",
+			},
+		}, nil
+	}
+	return nil, nil
 }
