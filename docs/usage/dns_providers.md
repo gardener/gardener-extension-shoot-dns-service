@@ -52,20 +52,27 @@ spec:
         providers:
           - secretName: my-aws-account
             type: aws-route53
-          - secretName: my-gcp-account
+          - credentials: my-gcp-account # instead of the field `secretName`, the field `credentials` can be used for either secret references or workload identity references
+            type: google-clouddns
+          - credentials: my-gcp-workload-identity # the field `credentials` must be used for workload identity references
             type: google-clouddns
         syncProvidersFromShootSpecDNS: false
   resources:
     - name: my-aws-account
       resourceRef:
+        apiVersion: v1
         kind: Secret
         name: my-aws-credentials # secret with this name must exist in the project namespace
-        apiVersion: v1
     - name: my-gcp-account
       resourceRef:
+        apiVersion: v1
         kind: Secret
         name: my-gcp-credentials # secret with this name must exist in the project namespace
-        apiVersion: v1
+    - name: my-gcp-workload-identity
+      resourceRef:
+        apiVersion: security.gardener.cloud/v1alpha1
+        kind: WorkloadIdentity
+        name: my-gcp-workload-identity # workloadidentity resource with this name must exist in the project namespace
 ```
 If `syncProvidersFromShootSpecDNS` is set to `true`, you need to set the providers in the `spec.dns.providers` section (see below)
 
@@ -87,7 +94,15 @@ spec:
     providers:
     - secretName: my-aws-account
       type: aws-route53
-    - secretName: my-gcp-account
+    - credentialsRef:
+        apiVersion: v1
+        kind: Secret
+        name: my-gcp-credentials # secret with this name must exist in the project namespace      
+      type: google-clouddns
+    - credentialsRef:
+        apiVersion: security.gardener.cloud/v1alpha1
+        kind: WorkloadIdentity
+        name: my-gcp-workload-identity # workloadidentity resource with this name must exist in the project namespace      
       type: google-clouddns
   extensions:
     - type: shoot-dns-service
@@ -95,11 +110,15 @@ spec:
         apiVersion: service.dns.extensions.gardener.cloud/v1alpha1
         kind: DNSConfig
         providers:
-        - secretName: my-aws-account
+        - credentials: shoot-dns-service-my-aws-account
           type: aws-route53
-        - secretName: my-gcp-account
+        - credentials: shoot-dns-service-my-gcp-account
+          type: google-clouddns
+        - credentials: shoot-dns-service-my-gcp-workload-identity
           type: google-clouddns
         syncProvidersFromShootSpecDNS: true # if this flag is set to true, the providerConfig is automatically synced from spec.dns.providers
+  resources:
+    ... # will be updated with the referenced secrets from spec.dns.providers if syncProvidersFromShootSpecDNS is true
 ```
 
 > Please consult the [API-Reference](https://gardener.cloud/docs/gardener/api-reference/core/#core.gardener.cloud/v1beta1.DNSProvider) to get a complete list of supported fields and configuration options.
