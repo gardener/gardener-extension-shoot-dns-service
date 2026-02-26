@@ -732,6 +732,9 @@ spec:
         {{- if .Values.dnsControllerManager.configuration.kubeconfig }}
         - --kubeconfig={{ .Values.dnsControllerManager.configuration.kubeconfig }}
         {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.kubeconfigBurst }}
+        - --kubeconfig.burst={{ .Values.dnsControllerManager.configuration.kubeconfigBurst }}
+        {{- end }}
         {{- if .Values.dnsControllerManager.configuration.kubeconfigConditionalDeployCrds }}
         - --kubeconfig.conditional-deploy-crds={{ .Values.dnsControllerManager.configuration.kubeconfigConditionalDeployCrds }}
         {{- end }}
@@ -743,6 +746,9 @@ spec:
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.kubeconfigMigrationIds }}
         - --kubeconfig.migration-ids={{ .Values.dnsControllerManager.configuration.kubeconfigMigrationIds }}
+        {{- end }}
+        {{- if .Values.dnsControllerManager.configuration.kubeconfigQps }}
+        - --kubeconfig.qps={{ .Values.dnsControllerManager.configuration.kubeconfigQps }}
         {{- end }}
         {{- if .Values.dnsControllerManager.configuration.leaseDuration }}
         - --lease-duration={{ .Values.dnsControllerManager.configuration.leaseDuration }}
