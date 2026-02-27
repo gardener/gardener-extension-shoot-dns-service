@@ -155,7 +155,7 @@ func waitForShootDNSEntryReady(ctx context.Context, shootClient client.Client, d
 
 // ExecMake executes one or multiple make targets.
 func execMake(ctx context.Context, targets ...string) error {
-	cmd := exec.CommandContext(ctx, "make", targets...)
+	cmd := exec.CommandContext(ctx, "make", targets...) // #nosec G204 -- Used for e2e tests only.
 	cmd.Dir = os.Getenv("REPO_ROOT")
 	for _, key := range []string{"PATH", "GOPATH", "HOME", "KUBECONFIG"} {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", key, os.Getenv(key)))
