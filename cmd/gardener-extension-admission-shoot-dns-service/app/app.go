@@ -141,7 +141,7 @@ func NewAdmissionCommand(ctx context.Context) *cobra.Command {
 				os.Exit(1)
 			}
 			if err := securityv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-				runtimelog.Log.Error(err, "Could not update manager scheme with securityv1alpha1")
+				runtimelog.Log.Error(err, "Could not update manager scheme with security.gardener.cloud/v1alpha1 API version")
 				os.Exit(1)
 			}
 

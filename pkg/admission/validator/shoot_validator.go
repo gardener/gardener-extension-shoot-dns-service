@@ -79,7 +79,7 @@ func (s *shoot) validateShoot(ctx context.Context, shoot, oldShoot *core.Shoot) 
 		if hasChanged := oldDnsConfig == nil || !reflect.DeepEqual(dnsConfig, oldDnsConfig); hasChanged {
 			// If the DNSConfig has changed, we want to validate the secrets.
 			// Otherwise, we skip the secret validation to avoid shoot manifests updates to fail due to an unrelated changed secret.
-			getter = s.makeSecretGetter(ctx, shoot.Namespace)
+			getter = s.makeResourceGetter(ctx, shoot.Namespace)
 		}
 		allErrs = append(allErrs, validation.ValidateDNSConfig(dnsConfig, &shoot.Spec.Resources, getter)...)
 	}
@@ -146,7 +146,7 @@ func (r *resourceGetter) GetInternalGCPWorkloadIdentityConfig() config.InternalG
 	return r.internalGCPWorkloadIdentityConfig
 }
 
-func (s *shoot) makeSecretGetter(ctx context.Context, namespace string) validation.ResourceGetter {
+func (s *shoot) makeResourceGetter(ctx context.Context, namespace string) validation.ResourceGetter {
 	return &resourceGetter{
 		ctx:       ctx,
 		client:    s.client,

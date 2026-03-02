@@ -258,6 +258,7 @@ func extractNamedResourceReference(p gardencorev1beta1.DNSProvider) (*gardencore
 		}
 		return nil, fmt.Errorf("unsupported credentialsRef kind %q and apiVersion %q", p.CredentialsRef.Kind, p.CredentialsRef.APIVersion)
 	}
+	// TODO (MartinWeindel) Remove support for Secret reference in favor of CredentialsRef in a future release
 	if p.SecretName != nil {
 		return &gardencorev1beta1.NamedResourceReference{
 			Name: pkgservice.ExtensionType + "-" + *p.SecretName,

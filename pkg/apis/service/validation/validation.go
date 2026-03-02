@@ -83,12 +83,12 @@ func validateProviders(providers []service.DNSProvider, presources *[]core.Named
 			allErrs = append(allErrs, field.Invalid(path.Index(i).Child("secretName"), secretName, "only one of secretName or credentials must be provided"))
 			allErrs = append(allErrs, field.Invalid(path.Index(i).Child("credentials"), credentials, "only one of secretName or credentials must be provided"))
 		} else if presources != nil {
-			child := path.Index(i).Child("secretName")
+			subPath := path.Index(i).Child("secretName")
 			refName := secretName
 			fieldName := "secretName"
 			allowWorkloadIdentity := false
 			if credentials != "" {
-				child = path.Index(i).Child("credentials")
+				subPath = path.Index(i).Child("credentials")
 				refName = credentials
 				fieldName = "credentials"
 				allowWorkloadIdentity = true
@@ -101,14 +101,14 @@ func validateProviders(providers []service.DNSProvider, presources *[]core.Named
 				}
 			}
 			if credentialRef.Name == "" {
-				allErrs = append(allErrs, field.Invalid(child, refName, fieldName+" is not defined as named resource references at 'spec.resources'"))
+				allErrs = append(allErrs, field.Invalid(subPath, refName, fieldName+" is not defined as named resource references at 'spec.resources'"))
 				continue // skip validation if no resources are defined
 			}
 			if credentialRef.ResourceRef.Name == "" {
-				allErrs = append(allErrs, field.Invalid(child, refName, "incomplete resource reference at 'spec.resources'"))
+				allErrs = append(allErrs, field.Invalid(subPath, refName, "incomplete resource reference at 'spec.resources'"))
 				continue
 			}
-			validateProviderSecretOrWorkloadIdentity(credentialRef, allowWorkloadIdentity, ptr.Deref(p.Type, ""), path.Index(i), child, getter, &allErrs)
+			validateProviderSecretOrWorkloadIdentity(credentialRef, allowWorkloadIdentity, ptr.Deref(p.Type, ""), path.Index(i), subPath, getter, &allErrs)
 		}
 	}
 	return allErrs
@@ -118,29 +118,29 @@ func isSupportedProviderType(providerType string) bool {
 	return slices.Contains(supportedProviderTypes, providerType)
 }
 
-func validateProviderSecretOrWorkloadIdentity(resourceRef core.NamedResourceReference, allowWorkloadIdentity bool, providerType string, path, secretChild *field.Path, getter ResourceGetter, allErrs *field.ErrorList) {
+func validateProviderSecretOrWorkloadIdentity(resourceRef core.NamedResourceReference, allowWorkloadIdentity bool, providerType string, path, subPath *field.Path, getter ResourceGetter, allErrs *field.ErrorList) {
 	switch {
 	case resourceRef.ResourceRef.Kind == "Secret" && resourceRef.ResourceRef.APIVersion == "v1":
-		validateProviderSecret(resourceRef.ResourceRef.Name, providerType, path, secretChild, getter, allErrs)
+		validateProviderSecret(resourceRef.ResourceRef.Name, providerType, path, subPath, getter, allErrs)
 	case resourceRef.ResourceRef.Kind == "WorkloadIdentity" && resourceRef.ResourceRef.APIVersion == securityv1alpha1.SchemeGroupVersion.String():
 		if !allowWorkloadIdentity {
-			*allErrs = append(*allErrs, field.Invalid(secretChild.Child("kind"), resourceRef.ResourceRef.Kind, "only kind 'Secret' resource references are allowed. To use WorkloadIdentity, please use 'credentials' field instead of 'secretName'"))
+			*allErrs = append(*allErrs, field.Invalid(subPath.Child("kind"), resourceRef.ResourceRef.Kind, "only kind 'Secret' resource references are allowed. To use WorkloadIdentity, please use 'credentials' field instead of 'secretName'"))
 			return
 		}
-		validateProviderWorkloadIdentity(resourceRef.ResourceRef.Name, providerType, path, secretChild, getter, allErrs)
+		validateProviderWorkloadIdentity(resourceRef.ResourceRef.Name, providerType, path, subPath, getter, allErrs)
 	default:
-		*allErrs = append(*allErrs, field.Invalid(secretChild.Child("kind"), resourceRef.ResourceRef.Kind, "only Secret or WorkloadIdentity resource references are allowed"))
+		*allErrs = append(*allErrs, field.Invalid(subPath.Child("kind"), resourceRef.ResourceRef.Kind, "only Secret or WorkloadIdentity resource references are allowed"))
 	}
 }
 
-func validateProviderSecret(secretName, providerType string, path, secretChild *field.Path, getter ResourceGetter, allErrs *field.ErrorList) {
+func validateProviderSecret(secretName, providerType string, path, subPath *field.Path, getter ResourceGetter, allErrs *field.ErrorList) {
 	if os.Getenv("DISABLE_SECRET_VALIDATION") == "true" {
 		return
 	}
 	if providerType != "" && getter != nil {
 		secret, err := getter.GetSecret(secretName)
 		if err != nil {
-			*allErrs = append(*allErrs, field.Invalid(secretChild.Child("ref"), secretName, fmt.Sprintf("failed to get secret: %s", err)))
+			*allErrs = append(*allErrs, field.Invalid(subPath.Child("ref"), secretName, fmt.Sprintf("failed to get secret: %s", err)))
 			return
 		}
 		adapter, err := getDNSHandlerAdapter(providerType)
@@ -150,88 +150,115 @@ func validateProviderSecret(secretName, providerType string, path, secretChild *
 		}
 		props := resources.GetSecretPropertiesFrom(secret)
 		if err := adapter.ValidateCredentialsAndProviderConfig(props, nil); err != nil {
-			*allErrs = append(*allErrs, field.Invalid(secretChild.Child("ref"), secretName, fmt.Sprintf("validation of secret data or provider config failed: %s", err)))
+			*allErrs = append(*allErrs, field.Invalid(subPath.Child("ref"), secretName, fmt.Sprintf("validation of secret data or provider config failed: %s", err)))
 		}
 	}
 }
 
-func validateProviderWorkloadIdentity(workloadIdentityName, providerType string, path, secretChild *field.Path, getter ResourceGetter, allErrs *field.ErrorList) {
+func validateProviderWorkloadIdentity(workloadIdentityName, providerType string, path, subPath *field.Path, getter ResourceGetter, allErrs *field.ErrorList) {
 	if providerType != "" && getter != nil {
 		workloadIdentity, err := getter.GetWorkloadIdentity(workloadIdentityName)
 		if err != nil {
-			*allErrs = append(*allErrs, field.Invalid(secretChild.Child("ref"), workloadIdentityName,
+			*allErrs = append(*allErrs, field.Invalid(subPath.Child("ref"), workloadIdentityName,
 				fmt.Sprintf("failed to get the WorkloadIdentity resource: %s", err)))
 			return
 		}
 		if workloadIdentity.Spec.TargetSystem.ProviderConfig == nil || workloadIdentity.Spec.TargetSystem.ProviderConfig.Raw == nil {
-			*allErrs = append(*allErrs, field.Invalid(secretChild.Child("ref"), workloadIdentityName,
+			*allErrs = append(*allErrs, field.Invalid(subPath.Child("ref"), workloadIdentityName,
 				"the WorkloadIdentity resource does not contain a providerConfig"))
 			return
 		}
 
 		switch providerType {
 		case "aws-route53":
-			if workloadIdentity.Spec.TargetSystem.Type != "aws" {
-				*allErrs = append(*allErrs, field.Invalid(secretChild.Child("ref"), workloadIdentityName,
-					"the WorkloadIdentity provider must be 'aws' for AWS Route53 provider"))
-				return
-			}
-
-			var providerConfig workloadidentityaws.WorkloadIdentityConfig
-			if err := yaml.Unmarshal(workloadIdentity.Spec.TargetSystem.ProviderConfig.Raw, &providerConfig); err != nil {
-				*allErrs = append(*allErrs, field.Invalid(secretChild.Child("ref"), workloadIdentityName,
-					fmt.Sprintf("failed to unmarshal the WorkloadIdentity providerConfig: %s", err)))
-				return
-			}
-
-			errList := workloadidentityaws.ValidateWorkloadIdentityConfig(&providerConfig, secretChild.Child("ref"))
-			if len(errList) > 0 {
-				*allErrs = append(*allErrs, errList...)
-				return
-			}
+			validateAWSWorkloadIdentity(workloadIdentityName, workloadIdentity, allErrs, subPath)
 		case "google-clouddns":
-			if workloadIdentity.Spec.TargetSystem.Type != "gcp" {
-				*allErrs = append(*allErrs, field.Invalid(secretChild.Child("ref"), workloadIdentityName,
-					"the WorkloadIdentity provider must be 'gcp' for Google CloudDNS provider"))
-				return
-			}
-
-			var providerConfig workloadidentitygcp.WorkloadIdentityConfig
-			if err := yaml.Unmarshal(workloadIdentity.Spec.TargetSystem.ProviderConfig.Raw, &providerConfig); err != nil {
-				*allErrs = append(*allErrs, field.Invalid(secretChild.Child("ref"), workloadIdentityName,
-					fmt.Sprintf("failed to unmarshal the WorkloadIdentity providerConfig: %s", err)))
-				return
-			}
-
-			gcpConfig := getter.GetInternalGCPWorkloadIdentityConfig()
-			errList := workloadidentitygcp.ValidateWorkloadIdentityConfig(&providerConfig, secretChild.Child("ref"), gcpConfig.AllowedTokenURLs, gcpConfig.AllowedServiceAccountImpersonationURLRegExps)
-			if len(errList) > 0 {
-				*allErrs = append(*allErrs, errList...)
-				return
-			}
+			validateGCPWorkloadIdentity(workloadIdentityName, workloadIdentity, allErrs, subPath, getter)
 		case "azure-dns", "azure-private-dns":
-			if workloadIdentity.Spec.TargetSystem.Type != "azure" {
-				*allErrs = append(*allErrs, field.Invalid(secretChild.Child("ref"), workloadIdentityName,
-					"the WorkloadIdentity provider must be 'azure' for Azure DNS providers"))
-				return
-			}
-
-			var providerConfig workloadidentityazure.WorkloadIdentityConfig
-			if err := yaml.Unmarshal(workloadIdentity.Spec.TargetSystem.ProviderConfig.Raw, &providerConfig); err != nil {
-				*allErrs = append(*allErrs, field.Invalid(secretChild.Child("ref"), workloadIdentityName,
-					fmt.Sprintf("failed to unmarshal the WorkloadIdentity providerConfig: %s", err)))
-				return
-			}
-
-			errList := workloadidentityazure.ValidateWorkloadIdentityConfig(&providerConfig, secretChild.Child("ref"))
-			if len(errList) > 0 {
-				*allErrs = append(*allErrs, errList...)
-				return
-			}
+			validateAzureWorkloadIdentity(workloadIdentityName, workloadIdentity, allErrs, subPath)
 		default:
 			*allErrs = append(*allErrs, field.Invalid(path.Child("type"), providerType,
 				fmt.Sprintf("WorkloadIdentity is not supported for provider type %q", providerType)))
 		}
+	}
+}
+
+func validateAWSWorkloadIdentity(workloadIdentityName string, workloadIdentity *securityv1alpha1.WorkloadIdentity, allErrs *field.ErrorList, subPath *field.Path) {
+	if workloadIdentity.Spec.TargetSystem.Type != "aws" {
+		*allErrs = append(*allErrs, field.Invalid(subPath.Child("ref"), workloadIdentityName,
+			"the WorkloadIdentity provider must be 'aws' for AWS Route53 provider"))
+		return
+	}
+
+	if workloadIdentity.Spec.TargetSystem.ProviderConfig == nil || workloadIdentity.Spec.TargetSystem.ProviderConfig.Raw == nil {
+		*allErrs = append(*allErrs, field.Invalid(subPath.Child("ref"), workloadIdentityName,
+			"the WorkloadIdentity resource does not contain a providerConfig"))
+		return
+	}
+
+	var providerConfig workloadidentityaws.WorkloadIdentityConfig
+	if err := yaml.Unmarshal(workloadIdentity.Spec.TargetSystem.ProviderConfig.Raw, &providerConfig); err != nil {
+		*allErrs = append(*allErrs, field.Invalid(subPath.Child("ref"), workloadIdentityName,
+			fmt.Sprintf("failed to unmarshal the WorkloadIdentity providerConfig: %s", err)))
+		return
+	}
+
+	errList := workloadidentityaws.ValidateWorkloadIdentityConfig(&providerConfig, subPath.Child("ref"))
+	if len(errList) > 0 {
+		*allErrs = append(*allErrs, errList...)
+	}
+}
+
+func validateGCPWorkloadIdentity(workloadIdentityName string, workloadIdentity *securityv1alpha1.WorkloadIdentity, allErrs *field.ErrorList, subPath *field.Path, getter ResourceGetter) {
+	if workloadIdentity.Spec.TargetSystem.Type != "gcp" {
+		*allErrs = append(*allErrs, field.Invalid(subPath.Child("ref"), workloadIdentityName,
+			"the WorkloadIdentity provider must be 'gcp' for Google CloudDNS provider"))
+		return
+	}
+
+	if workloadIdentity.Spec.TargetSystem.ProviderConfig == nil || workloadIdentity.Spec.TargetSystem.ProviderConfig.Raw == nil {
+		*allErrs = append(*allErrs, field.Invalid(subPath.Child("ref"), workloadIdentityName,
+			"the WorkloadIdentity resource does not contain a providerConfig"))
+		return
+	}
+
+	var providerConfig workloadidentitygcp.WorkloadIdentityConfig
+	if err := yaml.Unmarshal(workloadIdentity.Spec.TargetSystem.ProviderConfig.Raw, &providerConfig); err != nil {
+		*allErrs = append(*allErrs, field.Invalid(subPath.Child("ref"), workloadIdentityName,
+			fmt.Sprintf("failed to unmarshal the WorkloadIdentity providerConfig: %s", err)))
+		return
+	}
+
+	gcpConfig := getter.GetInternalGCPWorkloadIdentityConfig()
+	errList := workloadidentitygcp.ValidateWorkloadIdentityConfig(&providerConfig, subPath.Child("ref"), gcpConfig.AllowedTokenURLs, gcpConfig.AllowedServiceAccountImpersonationURLRegExps)
+	if len(errList) > 0 {
+		*allErrs = append(*allErrs, errList...)
+	}
+}
+
+func validateAzureWorkloadIdentity(workloadIdentityName string, workloadIdentity *securityv1alpha1.WorkloadIdentity, allErrs *field.ErrorList, subPath *field.Path) {
+	if workloadIdentity.Spec.TargetSystem.Type != "azure" {
+		*allErrs = append(*allErrs, field.Invalid(subPath.Child("ref"), workloadIdentityName,
+			"the WorkloadIdentity provider must be 'azure' for Azure DNS providers"))
+		return
+	}
+
+	if workloadIdentity.Spec.TargetSystem.ProviderConfig == nil || workloadIdentity.Spec.TargetSystem.ProviderConfig.Raw == nil {
+		*allErrs = append(*allErrs, field.Invalid(subPath.Child("ref"), workloadIdentityName,
+			"the WorkloadIdentity resource does not contain a providerConfig"))
+		return
+	}
+
+	var providerConfig workloadidentityazure.WorkloadIdentityConfig
+	if err := yaml.Unmarshal(workloadIdentity.Spec.TargetSystem.ProviderConfig.Raw, &providerConfig); err != nil {
+		*allErrs = append(*allErrs, field.Invalid(subPath.Child("ref"), workloadIdentityName,
+			fmt.Sprintf("failed to unmarshal the WorkloadIdentity providerConfig: %s", err)))
+		return
+	}
+
+	errList := workloadidentityazure.ValidateWorkloadIdentityConfig(&providerConfig, subPath.Child("ref"))
+	if len(errList) > 0 {
+		*allErrs = append(*allErrs, errList...)
 	}
 }
 

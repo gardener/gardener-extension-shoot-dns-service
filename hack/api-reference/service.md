@@ -183,7 +183,8 @@ string
 <td>
 <em>(Optional)</em>
 <p>SecretName is a name of a secret containing credentials for the stated domain and the
-provider.</p>
+provider.
+Deprecated: This field is deprecated and will be removed in the future. Please use <code>Credentials</code> instead.</p>
 </td>
 </tr>
 <tr>

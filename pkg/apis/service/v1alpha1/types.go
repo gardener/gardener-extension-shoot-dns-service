@@ -48,6 +48,7 @@ type DNSProvider struct {
 	Domains *DNSIncludeExclude `json:"domains,omitempty"`
 	// SecretName is a name of a secret containing credentials for the stated domain and the
 	// provider.
+	// Deprecated: This field is deprecated and will be removed in the future. Please use `Credentials` instead.
 	// +optional
 	SecretName *string `json:"secretName,omitempty"`
 	// Credentials is the name of the resource reference containing the credentials for the provider.
