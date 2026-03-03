@@ -72,8 +72,10 @@ spec:
             - ^https://iamcredentials\.googleapis\.com/v1/projects/-/serviceAccounts/.+:generateAccessToken$ # default value
 ```
 
-Please note that the overwritten GCP `WorkloadIdentity` validation configuration is only available with the next-generation dns-controller-manager (currently enabled with the `useNextGenerationController` field in the extension provider config of the shoot manifest).
-For the legacy dns-controller-manager, the default GCP `WorkloadIdentity` configuration is always used and cannot be overwritten.
+> [!NOTE]
+> Please note that the overwritten GCP `WorkloadIdentity` validation configuration is only available with the next-generation dns-controller-manager (currently enabled with the `useNextGenerationController` field in the extension provider config of the shoot manifest).
+> For the legacy dns-controller-manager, the default GCP `WorkloadIdentity` configuration is always used and cannot be overwritten.
+
 
 ## Shoot Extension
 
