@@ -1,0 +1,17 @@
+ocm:
+  component_name: github.com/gardener/external-dns-management
+  component_version: v0.36.1
+release_notes:
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: The `dnsprovider-replication` controller no longer replicates DNSProvider
+    objects that carry a foreign dns.gardener.cloud/class annotation. Previously,
+    such providers were copied to the target cluster and then instantly deleted, leading
+    to avoidable processing.
+  mimetype: text/markdown
+  reference: '[#812](https://github.com/gardener/external-dns-management/pull/812)'
+  type: standard
