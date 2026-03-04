@@ -17,6 +17,7 @@ rules:
   - get
   - list
   - update
+  - patch
   - watch
 - apiGroups:
   - extensions
@@ -27,6 +28,7 @@ rules:
   - get
   - list
   - update
+  - patch
   - watch
 - apiGroups:
   - "gateway.networking.k8s.io"
@@ -37,6 +39,7 @@ rules:
   - get
   - list
   - update
+  - patch
   - watch
 - apiGroups:
   - "networking.istio.io"
@@ -47,6 +50,7 @@ rules:
   - get
   - list
   - update
+  - patch
   - watch
 - apiGroups:
   - dns.gardener.cloud
@@ -67,6 +71,7 @@ rules:
   - get
   - list
   - update
+  - patch
   - watch
   - create
   - delete
@@ -78,6 +83,17 @@ rules:
   - create
   - patch
 - apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - patch
+  - watch
+- apiGroups:
   - apiextensions.k8s.io
   resources:
   - customresourcedefinitions
@@ -85,6 +101,7 @@ rules:
   - get
   - list
   - update
+  - patch
   - create
   - watch
 - apiGroups:
