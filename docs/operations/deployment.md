@@ -51,6 +51,50 @@ spec:
     workerlessSupported: true
 ```
 
+### Overwriting the GCP `WorkloadIdentity` validation configuration
+
+The default GCP `WorkloadIdentity` configuration can be overwritten in the `Extension` resource, e.g.
+
+```yaml
+apiVersion: operator.gardener.cloud/v1alpha1
+kind: Extension
+metadata:
+  name: extension-shoot-dns-service
+spec:
+  deployment:
+    extension:
+      values:
+        workloadIdentity:
+          gcp:
+            allowedTokenURLs:
+            - https://sts.googleapis.com/v1/token # default value
+            allowedServiceAccountImpersonationURLRegExps:
+            - ^https://iamcredentials\.googleapis\.com/v1/projects/-/serviceAccounts/.+:generateAccessToken$ # default value
+```
+
+> [!NOTE]
+> Please note that the overwritten GCP `WorkloadIdentity` validation configuration is only available with the next-generation dns-controller-manager (currently enabled with the `useNextGenerationController` field in the extension provider config of the shoot manifest).
+> For the legacy dns-controller-manager, the default GCP `WorkloadIdentity` configuration is always used and cannot be overwritten.
+
+
+## Shoot Extension
+
+Additional configuration for the `shoot-dns-service` extension can be provided in the shoot manifest.
+
+```yaml
+Kind: Shoot
+...
+spec:
+  extensions:
+    - type: shoot-dns-service
+      providerConfig:
+        apiVersion: service.dns.extensions.gardener.cloud/v1alpha1
+        kind: DNSConfig
+        ...
+```
+
+See the following sections for details on the possible configuration options.
+
 ### Providing Base Domains usable for a Shoot
 
 So, far only the external DNS domain of a shoot already used

@@ -183,7 +183,21 @@ string
 <td>
 <em>(Optional)</em>
 <p>SecretName is a name of a secret containing credentials for the stated domain and the
-provider.</p>
+provider.
+Deprecated: This field is deprecated and will be removed in the future. Please use <code>Credentials</code> instead.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>credentials</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Credentials is the name of the resource reference containing the credentials for the provider.
+It is an alternative to SecretName and can reference either a secret or a workload identity.</p>
 </td>
 </tr>
 <tr>
