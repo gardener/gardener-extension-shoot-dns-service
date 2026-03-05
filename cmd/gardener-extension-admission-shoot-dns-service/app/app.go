@@ -102,6 +102,8 @@ func NewAdmissionCommand(ctx context.Context) *cobra.Command {
 
 			if admissionConfig := admissionOpts.Completed(); admissionConfig != nil {
 				validator.DefaultAddOptions.GCPWorkloadIdentityConfig = *admissionConfig
+			} else {
+				return fmt.Errorf("could not complete admission options")
 			}
 
 			// Operators can enable the source cluster option via SOURCE_CLUSTER environment variable.

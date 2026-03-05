@@ -26,6 +26,7 @@ import (
 )
 
 // NewShootValidator returns a new instance of a shoot validator.
+// The parameter gcpConfig is used to validate the GCP Workload Identity configuration in the DNSConfig if present.
 func NewShootValidator(mgr manager.Manager, gcpConfig config.InternalGCPWorkloadIdentityConfig) extensionswebhook.Validator {
 	return &shoot{
 		decoder:   serializer.NewCodecFactory(mgr.GetScheme()).UniversalDecoder(),
