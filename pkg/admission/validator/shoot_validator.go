@@ -26,17 +26,19 @@ import (
 )
 
 // NewShootValidator returns a new instance of a shoot validator.
-func NewShootValidator(mgr manager.Manager) extensionswebhook.Validator {
+func NewShootValidator(mgr manager.Manager, gcpConfig config.InternalGCPWorkloadIdentityConfig) extensionswebhook.Validator {
 	return &shoot{
-		decoder: serializer.NewCodecFactory(mgr.GetScheme()).UniversalDecoder(),
-		client:  mgr.GetClient(),
+		decoder:   serializer.NewCodecFactory(mgr.GetScheme()).UniversalDecoder(),
+		client:    mgr.GetClient(),
+		gcpConfig: gcpConfig,
 	}
 }
 
 // shoot validates shoots
 type shoot struct {
-	decoder runtime.Decoder
-	client  client.Client
+	decoder   runtime.Decoder
+	client    client.Client
+	gcpConfig config.InternalGCPWorkloadIdentityConfig
 }
 
 // Validate implements extensionswebhook.Validator.Validate
@@ -148,8 +150,9 @@ func (r *resourceGetter) GetInternalGCPWorkloadIdentityConfig() config.InternalG
 
 func (s *shoot) makeResourceGetter(ctx context.Context, namespace string) validation.ResourceGetter {
 	return &resourceGetter{
-		ctx:       ctx,
-		client:    s.client,
-		namespace: namespace,
+		ctx:                               ctx,
+		client:                            s.client,
+		namespace:                         namespace,
+		internalGCPWorkloadIdentityConfig: s.gcpConfig,
 	}
 }
