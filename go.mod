@@ -7,7 +7,7 @@ require (
 	github.com/andybalholm/brotli v1.2.0
 	github.com/gardener/controller-manager-library v0.2.1-0.20260223090032-ae6be22010f5
 	github.com/gardener/external-dns-management v0.36.1
-	github.com/gardener/gardener v1.137.4
+	github.com/gardener/gardener v1.137.5
 	github.com/gardener/gardener/pkg/apis v1.137.0
 	github.com/go-logr/logr v1.4.3
 	github.com/hashicorp/go-multierror v1.1.1
@@ -244,7 +244,7 @@ require (
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/exp v0.0.0-20260218203240-3dfff04db8fa // indirect
 	golang.org/x/mod v0.33.0 // indirect
-	golang.org/x/net v0.50.0 // indirect
+	golang.org/x/net v0.51.0 // indirect
 	golang.org/x/oauth2 v0.35.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
