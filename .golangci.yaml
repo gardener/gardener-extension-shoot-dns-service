@@ -22,6 +22,10 @@ linters:
         text: 'SA1019:'
       - linters:
           - staticcheck
+        path: test/system
+        text: 'SA1019:'
+      - linters:
+          - staticcheck
         text: 'ST1001:' # should not use dot imports
     paths:
       - example$
