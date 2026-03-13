@@ -26,13 +26,14 @@ import (
 
 // DNSServiceOptions holds options related to the dns service.
 type DNSServiceOptions struct {
-	SeedID                     string
-	DNSClass                   string
-	ManageDNSProviders         bool
-	ReplicateDNSProviders      bool
-	RemoteDefaultDomainSecret  string
-	GCPWorkloadIdentityOptions admissioncmd.GCPWorkloadIdentityOptions
-	config                     *DNSServiceConfig
+	SeedID                                  string
+	DNSClass                                string
+	ManageDNSProviders                      bool
+	ReplicateDNSProviders                   bool
+	RemoteDefaultDomainSecret               string
+	GCPWorkloadIdentityOptions              admissioncmd.GCPWorkloadIdentityOptions
+	NextGenerationControllerZoneNameservers []string
+	config                                  *DNSServiceConfig
 }
 
 // HealthOptions holds options for health checks.
@@ -48,6 +49,7 @@ func (o *DNSServiceOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&o.ManageDNSProviders, "manage-dns-providers", false, "enables management of DNSProviders in control plane (must only be enable if Gardenlet has disabled it)")
 	fs.BoolVar(&o.ReplicateDNSProviders, "replicate-dns-providers", false, "enables replication of DNSProviders from shoot cluster to seed cluster")
 	fs.StringVar(&o.RemoteDefaultDomainSecret, "remote-default-domain-secret", "", "secret name for default 'external' DNSProvider DNS class used to filter DNS source resources in shoot clusters")
+	fs.StringSliceVar(&o.NextGenerationControllerZoneNameservers, "nextgen-zone-to-nameserver", nil, "static mapping from zone to nameserver (for testing), can be specified multiple times, e.g. --nextgen-zone-to-nameserver=example.com=ns1.example.com --nextgen-zone-to-nameserver=example.org=ns1.example.org")
 	o.GCPWorkloadIdentityOptions.AddFlags(fs)
 }
 
@@ -78,13 +80,23 @@ func (o *DNSServiceOptions) Complete() error {
 		return err
 	}
 
+	zoneNameservers := make(map[string]string)
+	for _, mapping := range o.NextGenerationControllerZoneNameservers {
+		parts := strings.Split(mapping, "=")
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid format for nextgen-zone-to-nameserver: %s (expected '<zone>=<nameserver>')", mapping)
+		}
+		zoneNameservers[parts[0]] = parts[1]
+	}
+
 	o.config = &DNSServiceConfig{
-		SeedID:                            o.SeedID,
-		DNSClass:                          o.DNSClass,
-		ManageDNSProviders:                o.ManageDNSProviders,
-		ReplicateDNSProviders:             o.ReplicateDNSProviders,
-		RemoteDefaultDomainSecret:         remoteDefaultDomainSecret,
-		InternalGCPWorkloadIdentityConfig: *gcpGCPWorkloadIdentityConfig,
+		SeedID:                                  o.SeedID,
+		DNSClass:                                o.DNSClass,
+		ManageDNSProviders:                      o.ManageDNSProviders,
+		ReplicateDNSProviders:                   o.ReplicateDNSProviders,
+		RemoteDefaultDomainSecret:               remoteDefaultDomainSecret,
+		InternalGCPWorkloadIdentityConfig:       *gcpGCPWorkloadIdentityConfig,
+		NextGenerationControllerZoneNameservers: zoneNameservers,
 	}
 	return nil
 }
@@ -107,12 +119,13 @@ func (o *HealthOptions) Completed() *HealthConfig {
 
 // DNSServiceConfig contains configuration information about the dns service.
 type DNSServiceConfig struct {
-	SeedID                            string
-	DNSClass                          string
-	ManageDNSProviders                bool
-	ReplicateDNSProviders             bool
-	RemoteDefaultDomainSecret         *types.NamespacedName
-	InternalGCPWorkloadIdentityConfig dnsman2apisconfig.InternalGCPWorkloadIdentityConfig
+	SeedID                                  string
+	DNSClass                                string
+	ManageDNSProviders                      bool
+	ReplicateDNSProviders                   bool
+	RemoteDefaultDomainSecret               *types.NamespacedName
+	InternalGCPWorkloadIdentityConfig       dnsman2apisconfig.InternalGCPWorkloadIdentityConfig
+	NextGenerationControllerZoneNameservers map[string]string
 }
 
 // Apply applies the DNSServiceOptions to the passed ControllerOptions instance.
@@ -123,6 +136,7 @@ func (c *DNSServiceConfig) Apply(cfg *config.DNSServiceConfig) {
 	cfg.ManageDNSProviders = c.ManageDNSProviders
 	cfg.RemoteDefaultDomainSecret = c.RemoteDefaultDomainSecret
 	cfg.InternalGCPWorkloadIdentityConfig = c.InternalGCPWorkloadIdentityConfig
+	cfg.NextGenerationControllerZoneNameservers = c.NextGenerationControllerZoneNameservers
 }
 
 // HealthConfig contains configuration information about the health check controller.

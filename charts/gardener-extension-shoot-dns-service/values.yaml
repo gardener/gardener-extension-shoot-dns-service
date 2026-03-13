@@ -152,3 +152,6 @@ workloadIdentity:
     # - https://sts.googleapis.com/v1/token
     allowedServiceAccountImpersonationURLRegExps: []
     # - ^https://iamcredentials\.googleapis\.com/v1/projects/-/serviceAccounts/.+:generateAccessToken$
+
+nextGenerationController:
+  zoneToNameserver: {}
