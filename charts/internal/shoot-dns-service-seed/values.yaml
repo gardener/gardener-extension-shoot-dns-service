@@ -44,3 +44,8 @@ workloadIdentity:
     # - https://sts.googleapis.com/v1/token
     allowedServiceAccountImpersonationURLRegExps: []
     # - ^https://iamcredentials\.googleapis\.com/v1/projects/-/serviceAccounts/.+:generateAccessToken$
+
+# Example for setting a static known nameserver for a zone, e.g. for testing purposes.
+#env:
+#- name: DNSMAN_NAMESERVER_EXAMPLE_COM
+#  value: 1.2.3.4:53

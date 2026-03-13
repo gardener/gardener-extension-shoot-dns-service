@@ -14,10 +14,11 @@ var DNSService DNSServiceConfig
 
 // DNSServiceConfig contains configuration for the dns service.
 type DNSServiceConfig struct {
-	SeedID                            string
-	DNSClass                          string
-	RemoteDefaultDomainSecret         *types.NamespacedName
-	ManageDNSProviders                bool
-	ReplicateDNSProviders             bool
-	InternalGCPWorkloadIdentityConfig config.InternalGCPWorkloadIdentityConfig
+	SeedID                                  string
+	DNSClass                                string
+	RemoteDefaultDomainSecret               *types.NamespacedName
+	ManageDNSProviders                      bool
+	ReplicateDNSProviders                   bool
+	InternalGCPWorkloadIdentityConfig       config.InternalGCPWorkloadIdentityConfig
+	NextGenerationControllerZoneNameservers map[string]string
 }

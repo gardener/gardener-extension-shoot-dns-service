@@ -7,6 +7,7 @@ package lifecycle
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -474,6 +475,9 @@ func (a *actuator) createOrUpdateSeedResources(exCtx extensionContext, mode cont
 				"allowedTokenURLs": a.config.InternalGCPWorkloadIdentityConfig.AllowedTokenURLs,
 				"allowedServiceAccountImpersonationURLRegExps": stringsList,
 			},
+		}
+		if env := a.buildNextGenerationEnv(); env != nil {
+			chartValues["env"] = env
 		}
 	}
 
@@ -1046,6 +1050,31 @@ func (a *actuator) deleteShootResources(ctx context.Context, namespace string) e
 	timeoutCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 	return a.managedResourceAccess.WaitUntilDeleted(timeoutCtx, namespace, ShootResourcesName)
+}
+
+var regexpPortSuffix = regexp.MustCompile(`:[0-9]+$`)
+
+// ensurePortInNameserver adds the default DNS port (:53) to a nameserver address if no port is specified.
+func ensurePortInNameserver(nameserver string) string {
+	if !regexpPortSuffix.MatchString(nameserver) {
+		return nameserver + ":53"
+	}
+	return nameserver
+}
+
+func (a *actuator) buildNextGenerationEnv() []map[string]string {
+	if len(a.config.NextGenerationControllerZoneNameservers) == 0 {
+		return nil
+	}
+
+	var nextGenerationEnv []map[string]string
+	for k, v := range a.config.NextGenerationControllerZoneNameservers {
+		nextGenerationEnv = append(nextGenerationEnv, map[string]string{
+			"name":  "DNSMAN_NAMESERVER_" + strings.ToUpper(strings.ReplaceAll(strings.TrimRight(k, "."), ".", "_")),
+			"value": ensurePortInNameserver(v),
+		})
+	}
+	return nextGenerationEnv
 }
 
 func enableDNSProviderForShootDNSEntries(seedNamespace string) map[string]string {

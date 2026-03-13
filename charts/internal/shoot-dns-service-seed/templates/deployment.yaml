@@ -2,7 +2,7 @@ apiVersion: {{ include "deploymentversion" . }}
 kind: Deployment
 metadata:
   name: {{ template "service.name" . }}
-  namespace: {{ .Release.Namespace | quote }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "service.name" . }}
     chart: {{ template "service.chart" . }}
@@ -82,6 +82,13 @@ spec:
           - --config=/etc/external-dns-management/next-generation/config.yaml
           {{- if .Values.nextGeneration.restrictToControlPlaneControllers }}
           - --controllers=dnsprovider,dnsentry
+          {{- end }}
+          {{- end }}
+          {{- if .Values.env }}
+          env:
+          {{- range .Values.env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
           {{- end }}
           {{- end }}
           resources:
