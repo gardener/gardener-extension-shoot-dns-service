@@ -1,0 +1,15 @@
+reference_version: v1.78.0
+ocm:
+  component_name: github.com/gardener/external-dns-management
+  component_version: v0.36.2
+release_notes:
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: [remote provider]: Set `MaxCallRecvMsgSize` for `getZoneState` from default of 4MB to `16 MB`.
+  mimetype: text/markdown
+  reference: '[#830](https://github.com/gardener/external-dns-management/pull/830)'
+  type: standard
