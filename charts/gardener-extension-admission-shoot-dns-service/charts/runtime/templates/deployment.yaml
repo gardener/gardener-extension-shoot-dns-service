@@ -44,6 +44,9 @@ spec:
         - --webhook-config-mode=service
         {{- end}}
         - --webhook-config-namespace={{ .Release.Namespace }}
+        {{- if .Values.gardener.virtualCluster.namespace }}
+        - --webhook-config-owner-namespace={{ .Values.gardener.virtualCluster.namespace }}
+        {{- end }}
         {{- if .Values.kubeconfig }}
         - --kubeconfig=/etc/gardener-extension-admission-shoot-dns-service/kubeconfig/kubeconfig
         {{- end }}
