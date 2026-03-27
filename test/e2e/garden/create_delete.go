@@ -6,6 +6,7 @@ package garden
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	dnsv1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
@@ -39,154 +40,179 @@ var _ = Describe("Shoot-DNS-Service Tests", func() {
   "syncProvidersFromShootSpecDNS": true
 }`),
 		}
+		rawExtensionNextGen = &runtime.RawExtension{
+			Raw: []byte(`{
+  "apiVersion": "service.dns.extensions.gardener.cloud/v1alpha1",
+  "kind": "DNSConfig",
+  "dnsProviderReplication": {
+	"enabled": true
+  },
+  "syncProvidersFromShootSpecDNS": true,
+  "useNextGenerationController": true
+}`),
+		}
+
+		createDelete = func(name string, providerConfig *runtime.RawExtension, subdomain string) {
+			ctx, cancel := context.WithTimeout(parentCtx, 15*time.Minute)
+			defer cancel()
+
+			By("Deploy Extension")
+			Expect(execMake(ctx, "extension-up")).To(Succeed())
+
+			By("Get Virtual Garden Client")
+			gardenClientSet, err := kubernetes.NewClientFromSecret(ctx, runtimeClient, v1beta1constants.GardenNamespace, "gardener",
+				kubernetes.WithDisabledCachedClient(),
+				kubernetes.WithClientOptions(client.Options{Scheme: operatorclient.VirtualScheme}),
+			)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Create workerless shoot")
+			shoot := &gardencorev1beta1.Shoot{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name,
+					Namespace: "garden-local",
+				},
+			}
+			_, err = controllerutil.CreateOrUpdate(ctx, gardenClientSet.Client(), shoot, func() error {
+				shoot.Spec.CloudProfile = &gardencorev1beta1.CloudProfileReference{
+					Name: "local",
+				}
+				shoot.Spec.Region = "local"
+				shoot.Spec.Provider = gardencorev1beta1.Provider{
+					Type: "local",
+				}
+				shoot.Spec.Extensions = []gardencorev1beta1.Extension{
+					{
+						Type:           "shoot-dns-service",
+						ProviderConfig: providerConfig,
+					},
+				}
+				return nil
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Wait for Shoot to be in 'Processing' state >= 70%")
+			waitForShootReconciliationToBeProcessing(ctx, gardenClientSet.Client(), shoot, 70)
+
+			By("Patching external DNS provider")
+			// as the dns-controller-manager cannot delete with provider "local", we patch it to "Ready"
+			patchExternalProvider(ctx, client.ObjectKey{Namespace: "shoot--local--" + name, Name: "external"})
+
+			By("Wait for Shoot to be 'Ready'")
+			waitForShootToBeReconciled(ctx, gardenClientSet.Client(), shoot)
+
+			By("Check Operator Extension status")
+			waitForOperatorExtensionToBeReconciled(ctx, operatorExtension)
+
+			By("Check CRDs with no-cleanup label on shoot cluster")
+			crdList := apiextensionsv1.CustomResourceDefinitionList{}
+			shootClient, err := access.CreateShootClientFromAdminKubeconfig(ctx, gardenClientSet, shoot)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dnsv1alpha1.AddToScheme(shootClient.Client().Scheme())).To(Succeed())
+
+			Eventually(func(g Gomega) {
+				g.Expect(shootClient.Client().List(ctx, &crdList)).To(Succeed())
+				var foundDNSEntryCRD, foundDNSProviderCRD, foundDNSAnnotationCRD bool
+				for _, crd := range crdList.Items {
+					if crd.Name == "dnsentries.dns.gardener.cloud" {
+						foundDNSEntryCRD = true
+						g.Expect(crd.Labels["shoot.gardener.cloud/no-cleanup"]).To(Equal("true"), "CRD dnsentries.dns.gardener.cloud should have label shoot.gardener.cloud/no-cleanup=true")
+					}
+					if crd.Name == "dnsproviders.dns.gardener.cloud" {
+						foundDNSProviderCRD = true
+						g.Expect(crd.Labels["shoot.gardener.cloud/no-cleanup"]).To(Equal("true"), "CRD dnsproviders.dns.gardener.cloud should have label shoot.gardener.cloud/no-cleanup=true")
+					}
+					if crd.Name == "dnsannotations.dns.gardener.cloud" {
+						foundDNSAnnotationCRD = true
+						g.Expect(crd.Labels["shoot.gardener.cloud/no-cleanup"]).To(Equal("true"), "CRD dnsannotations.dns.gardener.cloud should have label shoot.gardener.cloud/no-cleanup=true")
+					}
+				}
+				g.Expect(foundDNSEntryCRD).To(BeTrue(), "CRD dnsentries.dns.gardener.cloud not found on shoot cluster")
+				g.Expect(foundDNSProviderCRD).To(BeTrue(), "CRD dnsproviders.dns.gardener.cloud not found on shoot cluster")
+				g.Expect(foundDNSAnnotationCRD).To(BeTrue(), "CRD dnsannotations.dns.gardener.cloud not found on shoot cluster")
+			})
+
+			By("Check DNS provider replication")
+			secret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "knot-dns",
+					Name:      "knot-dns-secret",
+				},
+			}
+			Expect(runtimeClient.Get(ctx, client.ObjectKeyFromObject(secret), secret)).To(Succeed())
+			providerSecret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "default",
+					Name:      "knot-dns-secret",
+				},
+			}
+			_, err = controllerutil.CreateOrUpdate(ctx, shootClient.Client(), providerSecret, func() error {
+				providerSecret.Data = secret.Data
+				providerSecret.Type = secret.Type
+				return nil
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(func() error {
+				return shootClient.Client().List(ctx, &dnsv1alpha1.DNSProviderList{})
+			}).To(Succeed())
+
+			provider := &dnsv1alpha1.DNSProvider{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "default",
+					Name:      "knot-dns",
+				},
+			}
+			_, err = controllerutil.CreateOrUpdate(ctx, shootClient.Client(), provider, func() error {
+				if provider.Annotations == nil {
+					provider.Annotations = map[string]string{}
+				}
+				provider.Annotations["dns.gardener.cloud/class"] = "garden"
+				provider.Spec.Type = "rfc2136"
+				provider.Spec.SecretRef = &corev1.SecretReference{
+					Name: "knot-dns-secret",
+				}
+				return nil
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Check DNSProvider has been successfully reconciled")
+			waitForProviderReady(ctx, shootClient.Client(), provider, "shoot-dns-e2e-test.kind")
+
+			By("Create shoot DNS entry")
+			dnsEntry := &dnsv1alpha1.DNSEntry{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "default",
+					Name:      "shoot-dns-entry",
+				},
+			}
+			_, err = controllerutil.CreateOrUpdate(ctx, shootClient.Client(), dnsEntry, func() error {
+				if dnsEntry.Annotations == nil {
+					dnsEntry.Annotations = map[string]string{}
+				}
+				dnsEntry.Annotations["dns.gardener.cloud/class"] = "garden"
+				dnsEntry.Spec.DNSName = fmt.Sprintf("%s.shoot-dns-e2e-test.kind", subdomain)
+				dnsEntry.Spec.Targets = []string{"1.2.3.4"}
+				return nil
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Check shoot DNS entry")
+			waitForShootDNSEntryReady(ctx, shootClient.Client(), dnsEntry)
+
+			By("Delete Shoot")
+			deleteShoot(ctx, gardenClientSet.Client(), shoot)
+
+			By("Wait for Shoot deletion")
+			waitForShootToBeDeleted(ctx, gardenClientSet.Client(), shoot)
+		}
 	)
 
 	It("Create, Delete", Label("simple"), func() {
-		ctx, cancel := context.WithTimeout(parentCtx, 15*time.Minute)
-		defer cancel()
+		createDelete("local-wl", rawExtension, "legacy")
+	})
 
-		By("Deploy Extension")
-		Expect(execMake(ctx, "extension-up")).To(Succeed())
-
-		By("Get Virtual Garden Client")
-		gardenClientSet, err := kubernetes.NewClientFromSecret(ctx, runtimeClient, v1beta1constants.GardenNamespace, "gardener",
-			kubernetes.WithDisabledCachedClient(),
-			kubernetes.WithClientOptions(client.Options{Scheme: operatorclient.VirtualScheme}),
-		)
-		Expect(err).NotTo(HaveOccurred())
-
-		By("Create workerless shoot")
-		shoot := &gardencorev1beta1.Shoot{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "local-wl",
-				Namespace: "garden-local",
-			},
-		}
-		_, err = controllerutil.CreateOrUpdate(ctx, gardenClientSet.Client(), shoot, func() error {
-			shoot.Spec.CloudProfile = &gardencorev1beta1.CloudProfileReference{
-				Name: "local",
-			}
-			shoot.Spec.Region = "local"
-			shoot.Spec.Provider = gardencorev1beta1.Provider{
-				Type: "local",
-			}
-			shoot.Spec.Extensions = []gardencorev1beta1.Extension{
-				{
-					Type:           "shoot-dns-service",
-					ProviderConfig: rawExtension,
-				},
-			}
-			return nil
-		})
-		Expect(err).NotTo(HaveOccurred())
-
-		By("Wait for Shoot to be in 'Processing' state >= 70%")
-		waitForShootReconciliationToBeProcessing(ctx, gardenClientSet.Client(), shoot, 70)
-
-		By("Patching external DNS provider")
-		// as the dns-controller-manager cannot delete with provider "local", we patch it to "Ready"
-		patchExternalProvider(ctx, client.ObjectKey{Namespace: "shoot--local--local-wl", Name: "external"})
-
-		By("Wait for Shoot to be 'Ready'")
-		waitForShootToBeReconciled(ctx, gardenClientSet.Client(), shoot)
-
-		By("Check Operator Extension status")
-		waitForOperatorExtensionToBeReconciled(ctx, operatorExtension)
-
-		By("Check CRDs with no-cleanup label on shoot cluster")
-		crdList := apiextensionsv1.CustomResourceDefinitionList{}
-		shootClient, err := access.CreateShootClientFromAdminKubeconfig(ctx, gardenClientSet, shoot)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(dnsv1alpha1.AddToScheme(shootClient.Client().Scheme())).To(Succeed())
-
-		Expect(shootClient.Client().List(ctx, &crdList)).To(Succeed())
-		var foundDNSEntryCRD, foundDNSProviderCRD, foundDNSAnnotationCRD bool
-		for _, crd := range crdList.Items {
-			if crd.Name == "dnsentries.dns.gardener.cloud" {
-				foundDNSEntryCRD = true
-				Expect(crd.Labels["shoot.gardener.cloud/no-cleanup"]).To(Equal("true"), "CRD dnsentries.dns.gardener.cloud should have label shoot.gardener.cloud/no-cleanup=true")
-			}
-			if crd.Name == "dnsproviders.dns.gardener.cloud" {
-				foundDNSProviderCRD = true
-				Expect(crd.Labels["shoot.gardener.cloud/no-cleanup"]).To(Equal("true"), "CRD dnsproviders.dns.gardener.cloud should have label shoot.gardener.cloud/no-cleanup=true")
-			}
-			if crd.Name == "dnsannotations.dns.gardener.cloud" {
-				foundDNSAnnotationCRD = true
-				Expect(crd.Labels["shoot.gardener.cloud/no-cleanup"]).To(Equal("true"), "CRD dnsannotations.dns.gardener.cloud should have label shoot.gardener.cloud/no-cleanup=true")
-			}
-		}
-		Expect(foundDNSEntryCRD).To(BeTrue(), "CRD dnsentries.dns.gardener.cloud not found on shoot cluster")
-		Expect(foundDNSProviderCRD).To(BeTrue(), "CRD dnsproviders.dns.gardener.cloud not found on shoot cluster")
-		Expect(foundDNSAnnotationCRD).To(BeTrue(), "CRD dnsannotations.dns.gardener.cloud not found on shoot cluster")
-
-		By("Check DNS provider replication")
-		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: "knot-dns",
-				Name:      "knot-dns-secret",
-			},
-		}
-		Expect(runtimeClient.Get(ctx, client.ObjectKeyFromObject(secret), secret)).To(Succeed())
-		providerSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: "default",
-				Name:      "knot-dns-secret",
-			},
-		}
-		_, err = controllerutil.CreateOrUpdate(ctx, shootClient.Client(), providerSecret, func() error {
-			providerSecret.Data = secret.Data
-			providerSecret.Type = secret.Type
-			return nil
-		})
-		Expect(err).NotTo(HaveOccurred())
-
-		provider := &dnsv1alpha1.DNSProvider{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: "default",
-				Name:      "knot-dns",
-			},
-		}
-		_, err = controllerutil.CreateOrUpdate(ctx, shootClient.Client(), provider, func() error {
-			if provider.Annotations == nil {
-				provider.Annotations = map[string]string{}
-			}
-			provider.Annotations["dns.gardener.cloud/class"] = "garden"
-			provider.Spec.Type = "rfc2136"
-			provider.Spec.SecretRef = &corev1.SecretReference{
-				Name: "knot-dns-secret",
-			}
-			return nil
-		})
-		Expect(err).NotTo(HaveOccurred())
-
-		By("Check DNSProvider has been successfully reconciled")
-		waitForProviderReady(ctx, shootClient.Client(), provider, "shoot-dns-e2e-test.kind")
-
-		By("Create shoot DNS entry")
-		dnsEntry := &dnsv1alpha1.DNSEntry{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: "default",
-				Name:      "shoot-dns-entry",
-			},
-		}
-		_, err = controllerutil.CreateOrUpdate(ctx, shootClient.Client(), dnsEntry, func() error {
-			if dnsEntry.Annotations == nil {
-				dnsEntry.Annotations = map[string]string{}
-			}
-			dnsEntry.Annotations["dns.gardener.cloud/class"] = "garden"
-			dnsEntry.Spec.DNSName = "txt.shoot-dns-e2e-test.kind"
-			dnsEntry.Spec.Targets = []string{"1.2.3.4"}
-			return nil
-		})
-		Expect(err).NotTo(HaveOccurred())
-
-		By("Check shoot DNS entry")
-		waitForShootDNSEntryReady(ctx, shootClient.Client(), dnsEntry)
-
-		By("Delete Shoot")
-		deleteShoot(ctx, gardenClientSet.Client(), shoot)
-
-		By("Wait for Shoot deletion")
-		waitForShootToBeDeleted(ctx, gardenClientSet.Client(), shoot)
+	It("Create, Delete (NextGeneration)", Label("simple"), func() {
+		createDelete("local-wl-ng", rawExtensionNextGen, "nextgen")
 	})
 })
