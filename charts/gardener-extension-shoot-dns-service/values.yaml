@@ -6,6 +6,10 @@ image:
 serviceName: shoot-dns-service
 dnsClass: garden
 
+# defaultExternalProviderEntriesQuota defines the entries quota for the default 'external' DNSProvider
+# 0 means no quota (default)
+#defaultExternalProviderEntriesQuota: 0
+
 dnsProviderReplication:
   enabled: false
 
