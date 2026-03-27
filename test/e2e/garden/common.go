@@ -78,17 +78,6 @@ func waitForShootReconciliationToBeProcessing(ctx context.Context, gardenClient 
 	}).WithPolling(20 * time.Millisecond).Should(Succeed())
 }
 
-func patchExternalProvider(ctx context.Context, providerKey client.ObjectKey) {
-	CEventually(ctx, func(g Gomega) {
-		provider := &dnsv1alpha1.DNSProvider{}
-		g.Expect(runtimeClient.Get(ctx, providerKey, provider)).To(Succeed())
-		patch := client.MergeFrom(provider.DeepCopy())
-		provider.Status.State = "Ready"
-		provider.Status.ObservedGeneration = provider.Generation
-		g.Expect(runtimeClient.SubResource("status").Patch(ctx, provider, patch)).To(Succeed())
-	}).Should(Succeed())
-}
-
 func waitForOperatorExtensionToBeReconciled(ctx context.Context, extension *operatorv1alpha1.Extension) {
 	CEventually(ctx, func(g Gomega) []gardencorev1beta1.Condition {
 		g.Expect(runtimeClient.Get(ctx, client.ObjectKeyFromObject(extension), extension)).To(Succeed())

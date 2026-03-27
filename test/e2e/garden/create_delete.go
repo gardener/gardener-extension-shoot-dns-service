@@ -94,10 +94,6 @@ var _ = Describe("Shoot-DNS-Service Tests", func() {
 			By("Wait for Shoot to be in 'Processing' state >= 70%")
 			waitForShootReconciliationToBeProcessing(ctx, gardenClientSet.Client(), shoot, 70)
 
-			By("Patching external DNS provider")
-			// as the dns-controller-manager cannot delete with provider "local", we patch it to "Ready"
-			patchExternalProvider(ctx, client.ObjectKey{Namespace: "shoot--local--" + name, Name: "external"})
-
 			By("Wait for Shoot to be 'Ready'")
 			waitForShootToBeReconciled(ctx, gardenClientSet.Client(), shoot)
 
