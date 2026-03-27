@@ -40,6 +40,23 @@ spec:
       helm:
         ociRepository:
           ref: ... # OCI reference to the Helm chart
+        values:
+        # controllers:
+        #   lifecycle:
+        #     concurrentSyncs: 5
+        #   healthcheck:
+        #     concurrentSyncs: 5
+        #   heartbeat:
+        #     renewIntervalSeconds: 30
+        #   replication:
+        #     concurrentSyncs: 5
+        
+        #defaultExternalProviderEntriesQuota: 100      # the DNS entries quota for the 'external' provider when using the default domain (0 = unlimited). Shoots can override this via annotation within limits set by 'defaultExternalProviderEntriesQuotaMax'.
+        #defaultExternalProviderEntriesQuotaMax: 200   # maximum allowed quota when shoots override via annotation 'service.dns.extensions.gardener.cloud/default-external-provider-entries-quota'. 0 means the default quota is also the maximum (default). Prevents accidentally setting unreasonably high quotas.
+
+        # dnsClass: my-dns-class                       # (default "garden") dns class for source resources on shoot cluster 
+        # dnsProviderReplication:
+        #   enabled: true                              # (default false) If set to true, the provider replication is enabled for all shoots by default. Otherwise, it must be enabled in the shoot extension provider config.
 
   resources:
   - autoEnable:
