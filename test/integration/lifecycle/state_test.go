@@ -118,14 +118,14 @@ var _ = BeforeSuite(func() {
 	shoot = &gardencorev1beta1.Shoot{
 		Spec: gardencorev1beta1.ShootSpec{
 			DNS: &gardencorev1beta1.DNS{
-				Domain: ptr.To(testName + "example.com"),
+				Domain: new(testName + "example.com"),
 			},
 			Kubernetes: gardencorev1beta1.Kubernetes{
 				Version: "1.31.0",
 			},
 		},
 		Status: gardencorev1beta1.ShootStatus{
-			ClusterIdentity: ptr.To(testName + "-12345678"),
+			ClusterIdentity: new(testName + "-12345678"),
 		},
 	}
 	cluster = &extensionsv1alpha1.Cluster{
@@ -323,16 +323,16 @@ func createDNSEntries(shootID, namespace string, count int) []*dnsv1alpha1.DNSEn
 			},
 			Spec: dnsv1alpha1.DNSEntrySpec{
 				DNSName: name + "some.blabla.example.com",
-				TTL:     ptr.To[int64](300),
+				TTL:     new(int64(300)),
 			},
 			Status: dnsv1alpha1.DNSEntryStatus{
-				Provider:       ptr.To("shoot--foo--barbar/some-test-provider"),
-				LastUpdateTime: ptr.To(metav1.Now()),
-				ProviderType:   ptr.To("aws-route53"),
+				Provider:       new("shoot--foo--barbar/some-test-provider"),
+				LastUpdateTime: new(metav1.Now()),
+				ProviderType:   new("aws-route53"),
 				State:          "Ready",
 				Targets:        []string{fmt.Sprintf("f00aa479c3011153f4bdd5f65b89e7ff-f000-%04x.elb.eu-central-1.amazonaws.com", i)},
-				TTL:            ptr.To[int64](300),
-				Zone:           ptr.To("ZFOOBAR4ROWB4VQ"),
+				TTL:            new(int64(300)),
+				Zone:           new("ZFOOBAR4ROWB4VQ"),
 			},
 		}
 	}

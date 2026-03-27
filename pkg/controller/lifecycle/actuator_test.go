@@ -267,7 +267,7 @@ var _ = Describe("Actuator", func() {
 			GinkgoHelper()
 			Expect(seedClient.Create(ctx, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "shoot--foo--bar"}})).To(Succeed(), "failed to create shoot namespace")
 
-			cluster.Spec.Shoot.Object.(*gardencorev1beta1.Shoot).Spec.Extensions[0].ProviderConfig.Object.(*servicev1alpha1.DNSConfig).UseNextGenerationController = ptr.To(useNextGenerationController)
+			cluster.Spec.Shoot.Object.(*gardencorev1beta1.Shoot).Spec.Extensions[0].ProviderConfig.Object.(*servicev1alpha1.DNSConfig).UseNextGenerationController = new(useNextGenerationController)
 			Expect(seedClient.Create(ctx, cluster)).To(Succeed(), "failed to create cluster resource")
 
 			fetchedCluster := &extensionsv1alpha1.Cluster{}
@@ -302,7 +302,7 @@ var _ = Describe("Actuator", func() {
 						Name:      "external-dns-secret",
 						Namespace: cluster.Name,
 					},
-					Zone: ptr.To("zone-12345"),
+					Zone: new("zone-12345"),
 				},
 			}
 			Expect(seedClient.Create(ctx, dnsExternal)).To(Succeed(), "failed to create dnsrecord external resource")
@@ -329,7 +329,7 @@ var _ = Describe("Actuator", func() {
 		hibernateShoot = func(hibernate bool) {
 			GinkgoHelper()
 			cluster.Spec.Shoot.Object.(*gardencorev1beta1.Shoot).Spec.Hibernation = &gardencorev1beta1.Hibernation{
-				Enabled: ptr.To(hibernate),
+				Enabled: new(hibernate),
 			}
 			Expect(seedClient.Update(ctx, cluster)).To(Succeed(), "failed to update cluster resource")
 		}
@@ -622,10 +622,10 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service
 		prepareShootCRDsAndCRs = func() {
 			GinkgoHelper()
 			Expect(dnsapp.DeployCRDsWithClient(ctx, log, shootClient, &dnsapisconfig.DNSManagerConfiguration{
-				DeployCRDs: ptr.To(true),
+				DeployCRDs: new(true),
 				Controllers: dnsapisconfig.ControllerConfiguration{
 					Source: dnsapisconfig.SourceControllerConfig{
-						DNSProviderReplication: ptr.To(true),
+						DNSProviderReplication: new(true),
 					},
 				},
 			})).To(Succeed(), "failed to deploy DNS CRDs to shoot cluster")
@@ -810,7 +810,7 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service
 						},
 						Spec: gardencorev1beta1.ShootSpec{
 							DNS: &gardencorev1beta1.DNS{
-								Domain: ptr.To("foo.bar.external.example.com"),
+								Domain: new("foo.bar.external.example.com"),
 							},
 							Extensions: []gardencorev1beta1.Extension{
 								{
@@ -824,13 +824,13 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service
 											Providers: []servicev1alpha1.DNSProvider{
 												{
 													SecretName: ptr.To(providerSecretName),
-													Type:       ptr.To("aws-route53"),
+													Type:       new("aws-route53"),
 												},
 											},
 											DNSProviderReplication: &servicev1alpha1.DNSProviderReplication{
 												Enabled: true,
 											},
-											SyncProvidersFromShootSpecDNS: ptr.To(false),
+											SyncProvidersFromShootSpecDNS: new(false),
 										},
 									},
 								},
@@ -850,7 +850,7 @@ targetClusterSecret: shoot-access-extension-shoot-dns-service
 							},
 						},
 						Status: gardencorev1beta1.ShootStatus{
-							ClusterIdentity: ptr.To("shoot--foo--bar-78897def-5208-4feb-b0f0-015950eadbb9-test-landscape"),
+							ClusterIdentity: new("shoot--foo--bar-78897def-5208-4feb-b0f0-015950eadbb9-test-landscape"),
 						},
 					},
 				},

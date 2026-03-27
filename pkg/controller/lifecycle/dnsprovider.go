@@ -24,7 +24,6 @@ import (
 	"github.com/gardener/gardener/pkg/utils/retry"
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/helper"
@@ -42,7 +41,7 @@ type newProviderDeployWaiterFactory struct {
 func (f *newProviderDeployWaiterFactory) New(exCtx extensionContext, provider *dnsv1alpha1.DNSProvider) component.DeployWaiter {
 	var class *string
 	if exCtx.useNextGenerationController() {
-		class = ptr.To(NextGenerationTargetClass)
+		class = new(NextGenerationTargetClass)
 	}
 	var waitIntervals []time.Duration
 	if f.waitInterval != nil {

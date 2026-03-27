@@ -749,14 +749,13 @@ func (a *actuator) prepareDefaultExternalDNSProvider(exCtx extensionContext) (*a
 		if err != nil {
 			return nil, err
 		}
-		remoteType := "remote"
 		return &apisservice.DNSProvider{
 			Domains: &apisservice.DNSIncludeExclude{
 				Include: []string{*exCtx.cluster.Shoot.Spec.DNS.Domain},
 				Exclude: []string{"api." + *exCtx.cluster.Shoot.Spec.DNS.Domain}, // exclude external kube-apiserver domain
 			},
 			SecretName: &secretName,
-			Type:       &remoteType,
+			Type:       new("remote"),
 		}, nil
 	}
 
