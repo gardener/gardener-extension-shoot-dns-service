@@ -20,7 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/utils/ptr"
 
 	admissionmutator "github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/mutator"
 	serviceinstall "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/install"
@@ -74,7 +73,7 @@ var _ = Describe("Shoot Mutator", func() {
 						ProviderConfig: &runtime.RawExtension{
 							Raw: []byte(`{"syncProvidersFromShootSpecDNS": true}`),
 						},
-						Disabled: ptr.To(false),
+						Disabled: new(false),
 					},
 				},
 				Resources: []gardencorev1beta1.NamedResourceReference{
@@ -124,7 +123,7 @@ var _ = Describe("Shoot Mutator", func() {
 						ProviderConfig: &runtime.RawExtension{
 							Raw: []byte(`{"syncProvidersFromShootSpecDNS": false}`),
 						},
-						Disabled: ptr.To(false),
+						Disabled: new(false),
 					},
 				},
 			},
@@ -142,7 +141,7 @@ var _ = Describe("Shoot Mutator", func() {
 				APIVersion: servicev1alpha1.SchemeGroupVersion.String(),
 				Kind:       "DNSConfig",
 			},
-			SyncProvidersFromShootSpecDNS: ptr.To(true),
+			SyncProvidersFromShootSpecDNS: new(true),
 		}
 		awsType        = "aws-route53"
 		primaryDefault = gardencorev1beta1.DNSProvider{
@@ -152,12 +151,12 @@ var _ = Describe("Shoot Mutator", func() {
 				Name:       secretName1,
 				APIVersion: "v1",
 			},
-			Primary: ptr.To(true),
+			Primary: new(true),
 		}
 		primaryDefaultLegacy = gardencorev1beta1.DNSProvider{
 			Type:       &awsType,
 			SecretName: &secretName1,
-			Primary:    ptr.To(true),
+			Primary:    new(true),
 		}
 		primary = gardencorev1beta1.DNSProvider{
 			Domains: &gardencorev1beta1.DNSIncludeExclude{Include: []string{"my.domain.test"}, Exclude: []string{"private.my.domain.test"}},
@@ -167,13 +166,13 @@ var _ = Describe("Shoot Mutator", func() {
 				Name:       secretName1,
 				APIVersion: "v1",
 			},
-			Primary: ptr.To(true),
+			Primary: new(true),
 		}
 		primaryLegacy = gardencorev1beta1.DNSProvider{
 			Domains:    &gardencorev1beta1.DNSIncludeExclude{Include: []string{"my.domain.test"}, Exclude: []string{"private.my.domain.test"}},
 			Type:       &awsType,
 			SecretName: &secretName1,
-			Primary:    ptr.To(true),
+			Primary:    new(true),
 		}
 		primaryResource = gardencorev1beta1.NamedResourceReference{
 			Name:        secretMappedName1,
@@ -187,7 +186,7 @@ var _ = Describe("Shoot Mutator", func() {
 				Name:       workloadIdentityName1,
 				APIVersion: "security.gardener.cloud/v1alpha1",
 			},
-			Primary: ptr.To(true),
+			Primary: new(true),
 		}
 		primaryWLResource = gardencorev1beta1.NamedResourceReference{
 			Name:        workloadIdentityMappedName1,
@@ -258,7 +257,7 @@ var _ = Describe("Shoot Mutator", func() {
 			case dnsStyleDisabled:
 				newShoot.Spec.Extensions = append(newShoot.Spec.Extensions, gardencorev1beta1.Extension{
 					Type:     service2.ExtensionType,
-					Disabled: ptr.To(true),
+					Disabled: new(true),
 				})
 			case dnsStyleEnabled:
 				newShoot.Spec.DNS.Providers = providers
@@ -281,10 +280,10 @@ var _ = Describe("Shoot Mutator", func() {
 		Entry("no DNS", dnsStyleNone, shoot, nil, BeNil(), nil, nil),
 		Entry("extension disabled", dnsStyleDisabled, shoot, nil, BeNil(), nil, nil),
 		Entry("extension enabled - default domain", dnsStyleEnabled, shoot, nil, BeNil(), modifyCopy(dnsConfig, func(cfg *servicev1alpha1.DNSConfig) {
-			cfg.SyncProvidersFromShootSpecDNS = ptr.To(true)
+			cfg.SyncProvidersFromShootSpecDNS = new(true)
 		}), nil),
 		Entry("primaryDefault", dnsStyleEnabled, shoot, []gardencorev1beta1.DNSProvider{primaryDefault}, BeNil(), modifyCopy(dnsConfig, func(cfg *servicev1alpha1.DNSConfig) {
-			cfg.SyncProvidersFromShootSpecDNS = ptr.To(true)
+			cfg.SyncProvidersFromShootSpecDNS = new(true)
 			cfg.Providers = []servicev1alpha1.DNSProvider{
 				{
 					Domains: &servicev1alpha1.DNSIncludeExclude{
@@ -296,7 +295,7 @@ var _ = Describe("Shoot Mutator", func() {
 			}
 		}), []gardencorev1beta1.NamedResourceReference{primaryResource}),
 		Entry("primaryDefaultLegacy", dnsStyleEnabled, shoot, []gardencorev1beta1.DNSProvider{primaryDefaultLegacy}, BeNil(), modifyCopy(dnsConfig, func(cfg *servicev1alpha1.DNSConfig) {
-			cfg.SyncProvidersFromShootSpecDNS = ptr.To(true)
+			cfg.SyncProvidersFromShootSpecDNS = new(true)
 			cfg.Providers = []servicev1alpha1.DNSProvider{
 				{
 					Domains: &servicev1alpha1.DNSIncludeExclude{
@@ -308,7 +307,7 @@ var _ = Describe("Shoot Mutator", func() {
 			}
 		}), []gardencorev1beta1.NamedResourceReference{primaryResource}),
 		Entry("primary", dnsStyleEnabled, shoot, []gardencorev1beta1.DNSProvider{primary}, BeNil(), modifyCopy(dnsConfig, func(cfg *servicev1alpha1.DNSConfig) {
-			cfg.SyncProvidersFromShootSpecDNS = ptr.To(true)
+			cfg.SyncProvidersFromShootSpecDNS = new(true)
 			cfg.Providers = []servicev1alpha1.DNSProvider{
 				{
 					Domains: &servicev1alpha1.DNSIncludeExclude{
@@ -321,7 +320,7 @@ var _ = Describe("Shoot Mutator", func() {
 			}
 		}), []gardencorev1beta1.NamedResourceReference{primaryResource}),
 		Entry("primaryLegacy", dnsStyleEnabled, shoot, []gardencorev1beta1.DNSProvider{primaryLegacy}, BeNil(), modifyCopy(dnsConfig, func(cfg *servicev1alpha1.DNSConfig) {
-			cfg.SyncProvidersFromShootSpecDNS = ptr.To(true)
+			cfg.SyncProvidersFromShootSpecDNS = new(true)
 			cfg.Providers = []servicev1alpha1.DNSProvider{
 				{
 					Domains: &servicev1alpha1.DNSIncludeExclude{
@@ -334,7 +333,7 @@ var _ = Describe("Shoot Mutator", func() {
 			}
 		}), []gardencorev1beta1.NamedResourceReference{primaryResource}),
 		Entry("primary+additional", dnsStyleEnabled, shootWithResources, []gardencorev1beta1.DNSProvider{primary, additional}, BeNil(), modifyCopy(dnsConfig, func(cfg *servicev1alpha1.DNSConfig) {
-			cfg.SyncProvidersFromShootSpecDNS = ptr.To(true)
+			cfg.SyncProvidersFromShootSpecDNS = new(true)
 			cfg.Providers = []servicev1alpha1.DNSProvider{
 				{
 					Domains: &servicev1alpha1.DNSIncludeExclude{
@@ -354,7 +353,7 @@ var _ = Describe("Shoot Mutator", func() {
 			}
 		}), []gardencorev1beta1.NamedResourceReference{additionalResource, otherResource, primaryResource}),
 		Entry("primaryWL+additionalWL", dnsStyleEnabled, shootWithResources, []gardencorev1beta1.DNSProvider{primaryWL, additionalWL}, BeNil(), modifyCopy(dnsConfig, func(cfg *servicev1alpha1.DNSConfig) {
-			cfg.SyncProvidersFromShootSpecDNS = ptr.To(true)
+			cfg.SyncProvidersFromShootSpecDNS = new(true)
 			cfg.Providers = []servicev1alpha1.DNSProvider{
 				{
 					Domains: &servicev1alpha1.DNSIncludeExclude{
@@ -374,7 +373,7 @@ var _ = Describe("Shoot Mutator", func() {
 			}
 		}), []gardencorev1beta1.NamedResourceReference{otherResource, primaryWLResource, additionalWLResource}),
 		Entry("primaryLegacy+additionalLegacy", dnsStyleEnabled, shootWithResources, []gardencorev1beta1.DNSProvider{primaryLegacy, additionalLegacy}, BeNil(), modifyCopy(dnsConfig, func(cfg *servicev1alpha1.DNSConfig) {
-			cfg.SyncProvidersFromShootSpecDNS = ptr.To(true)
+			cfg.SyncProvidersFromShootSpecDNS = new(true)
 			cfg.Providers = []servicev1alpha1.DNSProvider{
 				{
 					Domains: &servicev1alpha1.DNSIncludeExclude{
@@ -394,7 +393,7 @@ var _ = Describe("Shoot Mutator", func() {
 			}
 		}), []gardencorev1beta1.NamedResourceReference{additionalResource, otherResource, primaryResource}),
 		Entry("disabled sync", dnsStyleEnabled, shootWithDisabledSync, []gardencorev1beta1.DNSProvider{additional}, BeNil(), modifyCopy(dnsConfig, func(cfg *servicev1alpha1.DNSConfig) {
-			cfg.SyncProvidersFromShootSpecDNS = ptr.To(false)
+			cfg.SyncProvidersFromShootSpecDNS = new(false)
 		}), nil),
 		Entry("shoot in deletion", dnsStyleEnabled, shootInDeletion, []gardencorev1beta1.DNSProvider{additional}, BeNil(), nil, nil),
 	)

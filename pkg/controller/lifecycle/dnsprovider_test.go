@@ -29,7 +29,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -220,7 +219,7 @@ var _ = Describe("#DNSProvider", func() {
 
 		It("should return error when it's not ready", func() {
 			expected.Status.State = "dummy-not-ready"
-			expected.Status.Message = ptr.To("some-error-message")
+			expected.Status.Message = new("some-error-message")
 
 			Expect(c.Create(ctx, expected)).ToNot(HaveOccurred(), "adding pre-existing emptyProvider succeeds")
 
@@ -229,7 +228,7 @@ var _ = Describe("#DNSProvider", func() {
 
 		It("should return Coder when error contains error code", func() {
 			expected.Status.State = "Error"
-			expected.Status.Message = ptr.To("duplicate zones X and Y")
+			expected.Status.Message = new("duplicate zones X and Y")
 
 			Expect(c.Create(ctx, expected)).ToNot(HaveOccurred(), "adding pre-existing emptyProvider succeeds")
 
