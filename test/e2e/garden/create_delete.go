@@ -153,6 +153,10 @@ var _ = Describe("Shoot-DNS-Service Tests", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
+			Eventually(func() error {
+				return shootClient.Client().List(ctx, &dnsv1alpha1.DNSProviderList{})
+			}).To(Succeed())
+
 			provider := &dnsv1alpha1.DNSProvider{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "default",
