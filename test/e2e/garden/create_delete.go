@@ -100,6 +100,9 @@ var _ = Describe("Shoot-DNS-Service Tests", func() {
 			By("Check Operator Extension status")
 			waitForOperatorExtensionToBeReconciled(ctx, operatorExtension)
 
+			By("Check `external` DNSProvider has been successfully reconciled")
+			waitForExternalProviderReady(ctx, runtimeClient, client.ObjectKey{Namespace: "shoot--local--local-wl", Name: "external"})
+
 			By("Check CRDs with no-cleanup label on shoot cluster")
 			crdList := apiextensionsv1.CustomResourceDefinitionList{}
 			shootClient, err := access.CreateShootClientFromAdminKubeconfig(ctx, gardenClientSet, shoot)
@@ -172,8 +175,8 @@ var _ = Describe("Shoot-DNS-Service Tests", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Check DNSProvider has been successfully reconciled")
-			waitForProviderReady(ctx, shootClient.Client(), provider, "shoot-dns-e2e-test.kind")
+			By("Check shoot DNSProvider has been successfully reconciled")
+			waitForClientProviderReady(ctx, shootClient.Client(), provider, "shoot-dns-e2e-test.kind")
 
 			By("Create shoot DNS entry")
 			dnsEntry := &dnsv1alpha1.DNSEntry{

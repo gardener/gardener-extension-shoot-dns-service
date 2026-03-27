@@ -103,13 +103,25 @@ func waitForOperatorExtensionToBeReconciled(ctx context.Context, extension *oper
 	})))
 }
 
-func waitForProviderReady(ctx context.Context, shootClient client.Client, provider *dnsv1alpha1.DNSProvider, expectedDomain string) {
+func waitForClientProviderReady(ctx context.Context, shootClient client.Client, provider *dnsv1alpha1.DNSProvider, expectedDomain string) {
 	CEventually(ctx, func(g Gomega) {
 		g.Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(provider), provider)).To(Succeed())
 		g.Expect(provider.Status.State).To(Equal("Ready"))
 		g.Expect(provider.Status.Domains.Included).To(ContainElement(expectedDomain))
 		g.Expect(provider.Status.Zones.Included).To(ContainElement(expectedDomain + "."))
 		g.Expect(provider.Finalizers).To(ContainElement("garden.dns.gardener.cloud/dnsprovider-replication"))
+	}).WithPolling(1 * time.Second).Should(Succeed())
+}
+
+func waitForExternalProviderReady(ctx context.Context, c client.Client, key client.ObjectKey) {
+	CEventually(ctx, func(g Gomega) {
+		provider := &dnsv1alpha1.DNSProvider{}
+		g.Expect(c.Get(ctx, key, provider)).To(Succeed())
+		g.Expect(provider.Status.State).To(Equal("Ready"))
+		g.Expect(provider.Status.Domains.Included).To(ContainElement("local-wl.local.external.local.gardener.cloud"))
+		g.Expect(provider.Status.Zones.Included).To(ContainElement("local.gardener.cloud"))
+		g.Expect(provider.Finalizers).To(ContainElement("dns.gardener.cloud/compound"))
+		g.Expect(provider.Spec.Quotas).To(Equal(&dnsv1alpha1.Quotas{Entries: new(int32(10))}))
 	}).WithPolling(1 * time.Second).Should(Succeed())
 }
 
