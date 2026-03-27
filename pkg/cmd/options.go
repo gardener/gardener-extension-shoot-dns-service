@@ -31,6 +31,7 @@ type DNSServiceOptions struct {
 	ManageDNSProviders                      bool
 	ReplicateDNSProviders                   bool
 	RemoteDefaultDomainSecret               string
+	DefaultExternalProviderEntriesQuota     int32
 	GCPWorkloadIdentityOptions              admissioncmd.GCPWorkloadIdentityOptions
 	NextGenerationControllerZoneNameservers []string
 	config                                  *DNSServiceConfig
@@ -49,6 +50,7 @@ func (o *DNSServiceOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&o.ManageDNSProviders, "manage-dns-providers", false, "enables management of DNSProviders in control plane (must only be enable if Gardenlet has disabled it)")
 	fs.BoolVar(&o.ReplicateDNSProviders, "replicate-dns-providers", false, "enables replication of DNSProviders from shoot cluster to seed cluster")
 	fs.StringVar(&o.RemoteDefaultDomainSecret, "remote-default-domain-secret", "", "secret name for default 'external' DNSProvider DNS class used to filter DNS source resources in shoot clusters")
+	fs.Int32Var(&o.DefaultExternalProviderEntriesQuota, "default-external-provider-entries-quota", 0, "entries quota for the default 'external' DNSProvider (0 means no quota)")
 	fs.StringSliceVar(&o.NextGenerationControllerZoneNameservers, "nextgen-zone-to-nameserver", nil, "static mapping from zone to nameserver (for testing), can be specified multiple times, e.g. --nextgen-zone-to-nameserver=example.com=ns1.example.com --nextgen-zone-to-nameserver=example.org=ns1.example.org")
 	o.GCPWorkloadIdentityOptions.AddFlags(fs)
 }
@@ -98,6 +100,7 @@ func (o *DNSServiceOptions) Complete() error {
 		ManageDNSProviders:                      o.ManageDNSProviders,
 		ReplicateDNSProviders:                   o.ReplicateDNSProviders,
 		RemoteDefaultDomainSecret:               remoteDefaultDomainSecret,
+		DefaultExternalProviderEntriesQuota:     o.DefaultExternalProviderEntriesQuota,
 		InternalGCPWorkloadIdentityConfig:       *gcpGCPWorkloadIdentityConfig,
 		NextGenerationControllerZoneNameservers: zoneNameservers,
 	}
@@ -127,6 +130,7 @@ type DNSServiceConfig struct {
 	ManageDNSProviders                      bool
 	ReplicateDNSProviders                   bool
 	RemoteDefaultDomainSecret               *types.NamespacedName
+	DefaultExternalProviderEntriesQuota     int32
 	InternalGCPWorkloadIdentityConfig       dnsman2apisconfig.InternalGCPWorkloadIdentityConfig
 	NextGenerationControllerZoneNameservers map[string]string
 }
@@ -138,6 +142,7 @@ func (c *DNSServiceConfig) Apply(cfg *config.DNSServiceConfig) {
 	cfg.ReplicateDNSProviders = c.ReplicateDNSProviders
 	cfg.ManageDNSProviders = c.ManageDNSProviders
 	cfg.RemoteDefaultDomainSecret = c.RemoteDefaultDomainSecret
+	cfg.DefaultExternalProviderEntriesQuota = c.DefaultExternalProviderEntriesQuota
 	cfg.InternalGCPWorkloadIdentityConfig = c.InternalGCPWorkloadIdentityConfig
 	cfg.NextGenerationControllerZoneNameservers = c.NextGenerationControllerZoneNameservers
 }

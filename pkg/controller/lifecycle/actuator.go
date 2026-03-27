@@ -540,7 +540,7 @@ func (a *actuator) createOrUpdateDNSProviders(exCtx extensionContext) error {
 		providers := map[string]*dnsv1alpha1.DNSProvider{}
 		providers[ExternalDNSProviderName] = nil // remember for deletion
 		if external != nil {
-			providers[ExternalDNSProviderName] = buildDNSProvider(external, namespace, ExternalDNSProviderName, "")
+			providers[ExternalDNSProviderName] = buildDNSProviderWithQuota(external, namespace, ExternalDNSProviderName, "", config.DNSService.DefaultExternalProviderEntriesQuota)
 		}
 
 		result = a.addAdditionalDNSProviders(providers, exCtx, result, resources)
@@ -685,6 +685,10 @@ func (a *actuator) addAdditionalDNSProviders(providers map[string]*dnsv1alpha1.D
 }
 
 func buildDNSProvider(p *apisservice.DNSProvider, namespace, name string, mappedSecretName string) *dnsv1alpha1.DNSProvider {
+	return buildDNSProviderWithQuota(p, namespace, name, mappedSecretName, 0)
+}
+
+func buildDNSProviderWithQuota(p *apisservice.DNSProvider, namespace, name string, mappedSecretName string, entriesQuota int32) *dnsv1alpha1.DNSProvider {
 	var includeDomains, excludeDomains, includeZones, excludeZones []string
 	if domains := p.Domains; domains != nil {
 		includeDomains = domains.Include
@@ -698,6 +702,14 @@ func buildDNSProvider(p *apisservice.DNSProvider, namespace, name string, mapped
 	if mappedSecretName != "" {
 		secretName = mappedSecretName
 	}
+
+	var quotas *dnsv1alpha1.Quotas
+	if entriesQuota > 0 {
+		quotas = &dnsv1alpha1.Quotas{
+			Entries: &entriesQuota,
+		}
+	}
+
 	return &dnsv1alpha1.DNSProvider{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -720,6 +732,7 @@ func buildDNSProvider(p *apisservice.DNSProvider, namespace, name string, mapped
 				Include: includeZones,
 				Exclude: excludeZones,
 			},
+			Quotas: quotas,
 		},
 	}
 }
