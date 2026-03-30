@@ -16,7 +16,6 @@
   ignoreDeps: [
     "github.com/ahmetb/gen-crd-api-reference-docs",
     "github.com/andybalholm/brotli",
-    "github.com/gardener/gardener/pkg/apis",
     "github.com/go-logr/logr",
     "github.com/hashicorp/go-multierror",
     "github.com/onsi/ginkgo/v2",
