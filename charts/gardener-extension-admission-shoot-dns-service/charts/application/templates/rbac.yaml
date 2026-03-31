@@ -35,6 +35,7 @@ rules:
   - watch
   - patch
   - update
+  - delete
 - apiGroups:
   - security.gardener.cloud
   resources:
