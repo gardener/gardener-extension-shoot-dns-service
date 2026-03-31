@@ -28,13 +28,19 @@ rules:
   resources:
   - mutatingwebhookconfigurations
   - validatingwebhookconfigurations
-  resourceNames:
-  - {{ include "name" . }}
   verbs:
   - create
   - get
   - list
   - watch
+- apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - mutatingwebhookconfigurations
+  - validatingwebhookconfigurations
+  resourceNames:
+  - {{ include "name" . }}
+  verbs:
   - patch
   - update
   - delete
