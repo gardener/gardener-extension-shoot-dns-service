@@ -109,7 +109,7 @@ check: $(GOIMPORTS) $(GOLANGCI_LINT) $(HELM)
 	@GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) $(REPO_ROOT)/hack/check-skaffold-deps.sh
 
 .PHONY: generate
-generate: $(CONTROLLER_GEN) $(GEN_CRD_API_REFERENCE_DOCS) $(HELM) $(MOCKGEN) $(YQ) $(EXTENSION_GEN) $(KUBECTL)
+generate: $(CONTROLLER_GEN) $(CRD_REF_DOCS) $(HELM) $(MOCKGEN) $(YQ) $(EXTENSION_GEN) $(KUBECTL)
 	@./hack/update-dnsman-crds.sh
 	@REPO_ROOT=$(REPO_ROOT) GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) bash $(GARDENER_HACK_DIR)/generate-sequential.sh ./charts/... ./cmd/... ./pkg/... ./test/... ./example/...
 	@./hack/prepare-operator-extension.sh
