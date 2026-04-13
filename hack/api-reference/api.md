@@ -4,21 +4,24 @@
 <a href="#dns.extensions.gardener.cloud%2fv1alpha1">dns.extensions.gardener.cloud/v1alpha1</a>
 </li>
 </ul>
+
 <h2 id="dns.extensions.gardener.cloud/v1alpha1">dns.extensions.gardener.cloud/v1alpha1</h2>
 <p>
-<p>Package v1alpha1 contains the vSphere provider API resources.</p>
+
 </p>
-Resource Types:
-<ul><li>
-<a href="#dns.extensions.gardener.cloud/v1alpha1.DNSState">DNSState</a>
-</li></ul>
-<h3 id="dns.extensions.gardener.cloud/v1alpha1.DNSState">DNSState
+
+<h3 id="dnsentry">DNSEntry
 </h3>
+
+
 <p>
-<p>DNSState describes the set of DNS entries maintained by the dns shoot service
-for a dedicated shoot cluster used to reconstruct the DNS entry objects after
-a migration.</p>
+(<em>Appears on:</em><a href="#dnsstate">DNSState</a>)
 </p>
+
+<p>
+
+</p>
+
 <table>
 <thead>
 <tr>
@@ -27,53 +30,7 @@ a migration.</p>
 </tr>
 </thead>
 <tbody>
-<tr>
-<td>
-<code>apiVersion</code></br>
-string</td>
-<td>
-<code>
-dns.extensions.gardener.cloud/v1alpha1
-</code>
-</td>
-</tr>
-<tr>
-<td>
-<code>kind</code></br>
-string
-</td>
-<td><code>DNSState</code></td>
-</tr>
-<tr>
-<td>
-<code>entries</code></br>
-<em>
-<a href="#dns.extensions.gardener.cloud/v1alpha1.DNSEntry">
-[]DNSEntry
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="dns.extensions.gardener.cloud/v1alpha1.DNSEntry">DNSEntry
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#dns.extensions.gardener.cloud/v1alpha1.DNSState">DNSState</a>)
-</p>
-<p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
+
 <tr>
 <td>
 <code>name</code></br>
@@ -82,45 +39,79 @@ string
 </em>
 </td>
 <td>
+<p></p>
 </td>
 </tr>
 <tr>
 <td>
 <code>labels</code></br>
 <em>
-map[string]string
+object (keys:string, values:string)
 </em>
 </td>
 <td>
+<p></p>
 </td>
 </tr>
 <tr>
 <td>
 <code>annotations</code></br>
 <em>
-map[string]string
+object (keys:string, values:string)
 </em>
 </td>
 <td>
+<p></p>
 </td>
 </tr>
 <tr>
 <td>
 <code>spec</code></br>
 <em>
-github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1.DNSEntrySpec
+<a href="#dnsentryspec">DNSEntrySpec</a>
 </em>
 </td>
 <td>
-<br/>
-<br/>
-<table>
-</table>
+<p></p>
 </td>
 </tr>
+
 </tbody>
 </table>
-<hr/>
-<p><em>
-Generated with <a href="https://github.com/ahmetb/gen-crd-api-reference-docs">gen-crd-api-reference-docs</a>
-</em></p>
+
+
+<h3 id="dnsstate">DNSState
+</h3>
+
+
+<p>
+DNSState describes the set of DNS entries maintained by the dns shoot service
+for a dedicated shoot cluster used to reconstruct the DNS entry objects after
+a migration.
+</p>
+
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+
+<tr>
+<td>
+<code>entries</code></br>
+<em>
+<a href="#dnsentry">DNSEntry</a> array
+</em>
+</td>
+<td>
+<p></p>
+</td>
+</tr>
+
+</tbody>
+</table>
+
+
