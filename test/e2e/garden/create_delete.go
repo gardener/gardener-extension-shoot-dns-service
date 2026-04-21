@@ -87,6 +87,9 @@ var _ = Describe("Shoot-DNS-Service Tests", func() {
 						ProviderConfig: providerConfig,
 					},
 				}
+				if shoot.Annotations != nil {
+					delete(shoot.Annotations, "service.dns.extensions.gardener.cloud/default-external-provider-entries-quota")
+				}
 				return nil
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -94,15 +97,21 @@ var _ = Describe("Shoot-DNS-Service Tests", func() {
 			By("Wait for Shoot to be in 'Processing' state >= 70%")
 			waitForShootReconciliationToBeProcessing(ctx, gardenClientSet.Client(), shoot, 70)
 
-			By("Patching external DNS provider")
-			// as the dns-controller-manager cannot delete with provider "local", we patch it to "Ready"
-			patchExternalProvider(ctx, client.ObjectKey{Namespace: "shoot--local--" + name, Name: "external"})
-
 			By("Wait for Shoot to be 'Ready'")
 			waitForShootToBeReconciled(ctx, gardenClientSet.Client(), shoot)
 
 			By("Check Operator Extension status")
 			waitForOperatorExtensionToBeReconciled(ctx, operatorExtension)
+
+			By("Check `external` DNSProvider has been successfully reconciled")
+			providerKey := client.ObjectKey{Namespace: fmt.Sprintf("shoot--local--%s", name), Name: "external"}
+			waitForExternalProviderReady(ctx, runtimeClient, name, providerKey, 10)
+
+			By("Check overwrite entries quota fails if quota > max quota")
+			checkOverwriteEntriesQuota(ctx, shoot, gardenClientSet.Client(), providerKey, 16, false)
+
+			By("Check overwrite entries quota (allowed)")
+			checkOverwriteEntriesQuota(ctx, shoot, gardenClientSet.Client(), providerKey, 15, true)
 
 			By("Check CRDs with no-cleanup label on shoot cluster")
 			crdList := apiextensionsv1.CustomResourceDefinitionList{}
@@ -176,8 +185,8 @@ var _ = Describe("Shoot-DNS-Service Tests", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Check DNSProvider has been successfully reconciled")
-			waitForProviderReady(ctx, shootClient.Client(), provider, "shoot-dns-e2e-test.kind")
+			By("Check shoot DNSProvider has been successfully reconciled")
+			waitForClientProviderReady(ctx, shootClient.Client(), provider, "shoot-dns-e2e-test.kind")
 
 			By("Create shoot DNS entry")
 			dnsEntry := &dnsv1alpha1.DNSEntry{

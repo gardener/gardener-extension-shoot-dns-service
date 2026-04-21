@@ -18,11 +18,13 @@ import (
 	operatorv1alpha1 "github.com/gardener/gardener/pkg/apis/operator/v1alpha1"
 	"github.com/gardener/gardener/pkg/client/kubernetes"
 	"github.com/gardener/gardener/pkg/logger"
+	kubernetesutils "github.com/gardener/gardener/pkg/utils/kubernetes"
 	. "github.com/gardener/gardener/pkg/utils/test"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubernetesscheme "k8s.io/client-go/kubernetes/scheme"
 	componentbaseconfigv1alpha1 "k8s.io/component-base/config/v1alpha1"
@@ -78,17 +80,6 @@ func waitForShootReconciliationToBeProcessing(ctx context.Context, gardenClient 
 	}).WithPolling(20 * time.Millisecond).Should(Succeed())
 }
 
-func patchExternalProvider(ctx context.Context, providerKey client.ObjectKey) {
-	CEventually(ctx, func(g Gomega) {
-		provider := &dnsv1alpha1.DNSProvider{}
-		g.Expect(runtimeClient.Get(ctx, providerKey, provider)).To(Succeed())
-		patch := client.MergeFrom(provider.DeepCopy())
-		provider.Status.State = "Ready"
-		provider.Status.ObservedGeneration = provider.Generation
-		g.Expect(runtimeClient.SubResource("status").Patch(ctx, provider, patch)).To(Succeed())
-	}).Should(Succeed())
-}
-
 func waitForOperatorExtensionToBeReconciled(ctx context.Context, extension *operatorv1alpha1.Extension) {
 	CEventually(ctx, func(g Gomega) []gardencorev1beta1.Condition {
 		g.Expect(runtimeClient.Get(ctx, client.ObjectKeyFromObject(extension), extension)).To(Succeed())
@@ -114,7 +105,7 @@ func waitForOperatorExtensionToBeReconciled(ctx context.Context, extension *oper
 	})))
 }
 
-func waitForProviderReady(ctx context.Context, shootClient client.Client, provider *dnsv1alpha1.DNSProvider, expectedDomain string) {
+func waitForClientProviderReady(ctx context.Context, shootClient client.Client, provider *dnsv1alpha1.DNSProvider, expectedDomain string) {
 	CEventually(ctx, func(g Gomega) {
 		g.Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(provider), provider)).To(Succeed())
 		g.Expect(provider.Status.State).To(Equal("Ready"))
@@ -122,6 +113,45 @@ func waitForProviderReady(ctx context.Context, shootClient client.Client, provid
 		g.Expect(provider.Status.Zones.Included).To(ContainElement(expectedDomain + "."))
 		g.Expect(provider.Finalizers).To(ContainElement("garden.dns.gardener.cloud/dnsprovider-replication"))
 	}).WithPolling(1 * time.Second).Should(Succeed())
+}
+
+func waitForExternalProviderReady(ctx context.Context, c client.Client, shootName string, key client.ObjectKey, expectedQuota int32) {
+	CEventually(ctx, func(g Gomega) {
+		provider := &dnsv1alpha1.DNSProvider{}
+		g.Expect(c.Get(ctx, key, provider)).To(Succeed())
+		g.Expect(provider.Status.State).To(Equal("Ready"))
+		g.Expect(provider.Status.Domains.Included).To(ContainElement(fmt.Sprintf("%s.local.external.local.gardener.cloud", shootName)))
+		g.Expect(provider.Status.Zones.Included).To(ContainElement(ContainSubstring("local.gardener.cloud")))
+		g.Expect(provider.Finalizers).To(ContainElement("dns.gardener.cloud/compound"))
+		g.Expect(provider.Spec.Quotas).To(Equal(&dnsv1alpha1.Quotas{Entries: new(expectedQuota)}))
+	}).WithPolling(250 * time.Millisecond).Should(Succeed())
+}
+
+func waitForExtensionError(ctx context.Context, namespace string) {
+	CEventually(ctx, func(g Gomega) {
+		ext := &extensionsv1alpha1.Extension{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "shoot-dns-service",
+			},
+		}
+		g.Expect(runtimeClient.Get(ctx, client.ObjectKeyFromObject(ext), ext)).To(Succeed())
+		g.Expect(ext.Status.LastOperation).ToNot(BeNil())
+		g.Expect(ext.Status.LastOperation.Type).To(Equal(gardencorev1beta1.LastOperationTypeReconcile))
+		g.Expect(ext.Status.LastOperation.State).To(Equal(gardencorev1beta1.LastOperationStateError))
+		g.Expect(ext.Status.LastOperation.Description).To(MatchRegexp(`annotated default external provider entries quota \d+ .* exceeds maximum allowed quota \d+`))
+	}).WithPolling(250 * time.Millisecond).Should(Succeed())
+}
+
+func checkOverwriteEntriesQuota(ctx context.Context, shoot *gardencorev1beta1.Shoot, gardenClient client.Client, providerKey client.ObjectKey, quota int32, allowed bool) {
+	Expect(kubernetesutils.SetAnnotationAndUpdate(ctx, gardenClient, shoot, "service.dns.extensions.gardener.cloud/default-external-provider-entries-quota", fmt.Sprintf("%d", quota))).To(Succeed())
+	Expect(kubernetesutils.SetAnnotationAndUpdate(ctx, gardenClient, shoot, "gardener.cloud/operation", "reconcile")).To(Succeed())
+
+	if allowed {
+		waitForExternalProviderReady(ctx, runtimeClient, shoot.Name, providerKey, quota)
+	} else {
+		waitForExtensionError(ctx, providerKey.Namespace)
+	}
 }
 
 func deleteShoot(ctx context.Context, gardenClient client.Client, shoot *gardencorev1beta1.Shoot) {

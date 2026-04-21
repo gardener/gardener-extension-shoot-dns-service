@@ -55,6 +55,8 @@ spec:
             ref: local-skaffold/gardener-extension-shoot-dns-service/charts/shoot-dns-service-admission-application:v0.0.0
     extension:
       values:
+        defaultExternalProviderEntriesQuota: 10
+        defaultExternalProviderEntriesQuotaMax: 15
         image:
           ref: local-skaffold/gardener-extension-shoot-dns-service:v0.0.0
         nextGenerationController:

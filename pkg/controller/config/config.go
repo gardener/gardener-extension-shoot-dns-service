@@ -19,6 +19,8 @@ type DNSServiceConfig struct {
 	RemoteDefaultDomainSecret               *types.NamespacedName
 	ManageDNSProviders                      bool
 	ReplicateDNSProviders                   bool
+	DefaultExternalProviderEntriesQuota     int32
+	DefaultExternalProviderEntriesQuotaMax  int32
 	InternalGCPWorkloadIdentityConfig       config.InternalGCPWorkloadIdentityConfig
 	NextGenerationControllerZoneNameservers map[string]string
 }
