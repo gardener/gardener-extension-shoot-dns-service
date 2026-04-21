@@ -58,6 +58,9 @@ spec:
         {{- if .Values.defaultExternalProviderEntriesQuota }}
         - --default-external-provider-entries-quota={{ .Values.defaultExternalProviderEntriesQuota }}
         {{- end }}
+        {{- if .Values.defaultExternalProviderEntriesQuotaMax }}
+        - --default-external-provider-entries-quota-max={{ .Values.defaultExternalProviderEntriesQuotaMax }}
+        {{- end }}
         {{- if .Values.workloadIdentity.gcp.allowedTokenURLs }}
         {{- range .Values.workloadIdentity.gcp.allowedTokenURLs }}
         - --wi-gcp-allowed-token-url={{ . }}

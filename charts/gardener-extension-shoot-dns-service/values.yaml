@@ -6,9 +6,9 @@ image:
 serviceName: shoot-dns-service
 dnsClass: garden
 
-# defaultExternalProviderEntriesQuota defines the entries quota for the default 'external' DNSProvider
-# 0 means no quota (default)
-#defaultExternalProviderEntriesQuota: 0
+#defaultExternalProviderEntriesQuota: 0      # the DNS entries quota for the 'external' provider when using the default domain (0 = unlimited). Shoots can override this via annotation within limits set by 'defaultExternalProviderEntriesQuotaMax'.
+
+#defaultExternalProviderEntriesQuotaMax: 0   # maximum allowed quota when shoots override via annotation 'service.dns.extensions.gardener.cloud/default-external-provider-entries-quota'. 0 means the default quota is also the maximum (default). Prevents accidentally setting unreasonably high quotas.
 
 dnsProviderReplication:
   enabled: false

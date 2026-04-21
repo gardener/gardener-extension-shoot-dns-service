@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -77,6 +78,8 @@ const (
 	// The label values "true" or "false" specify the default value, if not specified otherwise in the DNSConfig with the field `useNextGenerationController`.
 	// The values "force-true" and "force-false" can be used to override the DNSConfig setting for all shoots in the seed.
 	ShootDNSServiceUseNextGenerationController = "service.dns.extensions.gardener.cloud/use-next-generation-controller"
+	// ShootDNSServiceDefaultExternalProviderEntriesQuotaAnnotation is the annotation key to overwrite the DNSEntries quota for the default external provider.
+	ShootDNSServiceDefaultExternalProviderEntriesQuotaAnnotation = "service.dns.extensions.gardener.cloud/default-external-provider-entries-quota"
 
 	// NextGenerationTargetClass is the target class for the next generation DNS controller.
 	NextGenerationTargetClass = "gardendns-next-gen"
@@ -540,7 +543,26 @@ func (a *actuator) createOrUpdateDNSProviders(exCtx extensionContext) error {
 		providers := map[string]*dnsv1alpha1.DNSProvider{}
 		providers[ExternalDNSProviderName] = nil // remember for deletion
 		if external != nil {
-			providers[ExternalDNSProviderName] = buildDNSProviderWithQuota(external, namespace, ExternalDNSProviderName, "", config.DNSService.DefaultExternalProviderEntriesQuota)
+			quota := config.DNSService.DefaultExternalProviderEntriesQuota
+			// Allow overwriting the default quota up to the maximum quota given by `--default-external-provider-entries-quota-max` via annotation on the shoot, e.g. `service.dns.extensions.gardener.cloud/default-external-provider-entries-quota: "100"`
+			if annotatedValue := exCtx.cluster.Shoot.Annotations[ShootDNSServiceDefaultExternalProviderEntriesQuotaAnnotation]; annotatedValue != "" {
+				parsedQuota, err := strconv.Atoi(annotatedValue)
+				if err != nil {
+					return fmt.Errorf("failed to parse default external provider entries quota %s (shoot annotation %s): %w", annotatedValue, ShootDNSServiceDefaultExternalProviderEntriesQuotaAnnotation, err)
+				}
+				if parsedQuota < 1 {
+					return fmt.Errorf("invalid default external provider entries quota %s (shoot annotation %s)", annotatedValue, ShootDNSServiceDefaultExternalProviderEntriesQuotaAnnotation)
+				}
+				maxQuota := a.config.DefaultExternalProviderEntriesQuotaMax
+				if maxQuota == 0 {
+					maxQuota = quota // restrict to default quota if no maximum quota is configured via flag, to avoid accidentally setting an unreasonably high quota via annotation
+				}
+				if parsedQuota > int(maxQuota) {
+					return fmt.Errorf("annotated default external provider entries quota %d (shoot annotation %s) exceeds maximum allowed quota %d", parsedQuota, ShootDNSServiceDefaultExternalProviderEntriesQuotaAnnotation, maxQuota)
+				}
+				quota = int32(parsedQuota) // #nosec G115 G109 -- safe: parsedQuota <= maxQuota and maxQuota is int32
+			}
+			providers[ExternalDNSProviderName] = buildDNSProviderWithQuota(external, namespace, ExternalDNSProviderName, "", quota)
 		}
 
 		result = a.addAdditionalDNSProviders(providers, exCtx, result, resources)
