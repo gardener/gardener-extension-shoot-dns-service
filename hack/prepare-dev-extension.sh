@@ -56,6 +56,7 @@ spec:
     extension:
       values:
         defaultExternalProviderEntriesQuota: 10
+        defaultExternalProviderEntriesQuotaMax: 15
         image:
           ref: local-skaffold/gardener-extension-shoot-dns-service:v0.0.0
         nextGenerationController:
