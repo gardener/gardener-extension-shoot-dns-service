@@ -11,15 +11,15 @@ import (
 	extensionswebhook "github.com/gardener/gardener/extensions/pkg/webhook"
 	"github.com/gardener/gardener/pkg/apis/core/install"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	mockmanager "github.com/gardener/gardener/third_party/mock/controller-runtime/manager"
+	"github.com/gardener/gardener/pkg/utils/test"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
-	"go.uber.org/mock/gomock"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	admissionmutator "github.com/gardener/gardener-extension-shoot-dns-service/pkg/admission/mutator"
 	serviceinstall "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis/service/install"
@@ -38,8 +38,7 @@ const (
 var _ = Describe("Shoot Mutator", func() {
 	var (
 		scheme *runtime.Scheme
-		ctrl   *gomock.Controller
-		mgr    *mockmanager.MockManager
+		mgr    manager.Manager
 
 		mutator extensionswebhook.Mutator
 		domain  = "foo.domain.com"
@@ -238,9 +237,9 @@ var _ = Describe("Shoot Mutator", func() {
 		install.Install(scheme)
 		serviceinstall.Install(scheme)
 
-		ctrl = gomock.NewController(GinkgoT())
-		mgr = mockmanager.NewMockManager(ctrl)
-		mgr.EXPECT().GetScheme().Return(scheme).Times(3)
+		mgr = test.FakeManager{
+			Scheme: scheme,
+		}
 
 		mutator = admissionmutator.NewShootMutator(mgr)
 	})
