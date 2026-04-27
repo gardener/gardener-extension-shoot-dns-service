@@ -48,9 +48,8 @@ func NewWorkloadIdentityWebhooks() []webhookcmd.NameToFactory {
 			Func: func(mgr manager.Manager) (*extensionswebhook.Webhook, error) {
 				logger.Info("Setting up webhook", "name", validatorName, "providerType", providerType)
 				return extensionswebhook.New(mgr, extensionswebhook.Args{
-					Provider: "shoot-dns-service",
-					Name:     validatorName,
-					Path:     validatorPath,
+					Name: validatorName,
+					Path: validatorPath,
 					Validators: map[extensionswebhook.Validator][]extensionswebhook.Type{
 						NewWorkloadIdentityValidator(DefaultAddOptions.GCPWorkloadIdentityConfig): {{Obj: &securityv1alpha1.WorkloadIdentity{}}},
 					},

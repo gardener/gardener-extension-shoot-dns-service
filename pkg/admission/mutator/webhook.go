@@ -24,9 +24,8 @@ func New(mgr manager.Manager) (*extensionswebhook.Webhook, error) {
 	logger.Info("Setting up webhook", "name", MutatorName)
 
 	return extensionswebhook.New(mgr, extensionswebhook.Args{
-		Provider: "shoot-dns-service",
-		Name:     MutatorName,
-		Path:     MutatorPath,
+		Name: MutatorName,
+		Path: MutatorPath,
 		Mutators: map[extensionswebhook.Mutator][]extensionswebhook.Type{
 			NewShootMutator(mgr): {{Obj: &gardencorev1beta1.Shoot{}}},
 		},

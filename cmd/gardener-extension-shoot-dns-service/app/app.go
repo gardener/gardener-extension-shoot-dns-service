@@ -100,7 +100,7 @@ func (o *Options) run(ctx context.Context) error {
 	o.healthOptions.Completed().ApplyHealthCheckConfig(&healthcheck.DefaultAddOptions.HealthCheckConfig)
 	o.healthControllerOptions.Completed().Apply(&healthcheck.DefaultAddOptions.Controller)
 	o.lifecycleControllerOptions.Completed().Apply(&lifecycle.DefaultAddOptions.Controller)
-	o.reconcileOptions.Completed().Apply(&lifecycle.DefaultAddOptions.IgnoreOperationAnnotation, nil)
+	o.reconcileOptions.Completed().Apply(&lifecycle.DefaultAddOptions.IgnoreOperationAnnotation)
 	o.heartbeatControllerOptions.Completed().Apply(&heartbeat.DefaultAddOptions)
 
 	if err := o.controllerSwitches.Completed().AddToManager(ctx, mgr); err != nil {
