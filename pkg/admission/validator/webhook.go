@@ -26,9 +26,8 @@ func New(mgr manager.Manager) (*extensionswebhook.Webhook, error) {
 	logger.Info("Setting up webhook", "name", ValidatorName)
 
 	return extensionswebhook.New(mgr, extensionswebhook.Args{
-		Provider: "shoot-dns-service",
-		Name:     ValidatorName,
-		Path:     ValidatorPath,
+		Name: ValidatorName,
+		Path: ValidatorPath,
 		Validators: map[extensionswebhook.Validator][]extensionswebhook.Type{
 			NewShootValidator(mgr, DefaultAddOptions.GCPWorkloadIdentityConfig): {{Obj: &core.Shoot{}}},
 		},
