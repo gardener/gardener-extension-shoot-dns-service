@@ -276,7 +276,8 @@ if you hit the limit with the usual means.
 2. For annotated source resources like `Ingress` and `Service`, check the events of the resource
    with `kubectl -n <object-namespace> get events --field-selector involvedObject.name=<object-name>`
 
-The quota limit may be changed by the shoot annotation `service.dns.extensions.gardener.cloud/default-external-provider-entries-quota` within some limits (as configured for the extension with the value for `defaultExternalProviderEntriesQuotaMax`).
+The quota limit may be changed by the shoot annotation `service.dns.extensions.gardener.cloud/default-external-provider-entries-quota`.
+However, the value is bounded by the extension configuration `defaultExternalProviderEntriesQuotaMax`.
 
 ## References
 - [Understanding DNS](https://www.cloudflare.com/en-ca/learning/dns/what-is-dns)
