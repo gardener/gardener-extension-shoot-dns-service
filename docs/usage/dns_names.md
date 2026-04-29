@@ -272,7 +272,7 @@ if you hit the limit with the usual means.
 
 1. For `DNSEntry` resources created on the shoot, check the status of the resource.
    If the quota is exceeded, the status will indicate an error related to quota limits.
-   The message will show something like "provider <provider-name> has reached its entries quota (max=...)".
+   The message will show something like `"provider <provider-name> has reached its entries quota (max=...)"`.
 2. For annotated source resources like `Ingress` and `Service`, check the events of the resource
    with `kubectl -n <object-namespace> get events --field-selector involvedObject.name=<object-name>`
 
