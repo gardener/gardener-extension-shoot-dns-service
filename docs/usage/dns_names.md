@@ -265,6 +265,20 @@ Status of a erroneous `DNSEntry`.
     state: Error
 ```
 
+## Troubleshooting entries quota
+
+If a `DNSProvider` has set the `.spec.quotas.entries=<max-entries>` field, you can check on the shoot cluster
+if you hit the limit with the usual means.
+
+1. For `DNSEntry` resources created on the shoot, check the status of the resource.
+   If the quota is exceeded, the status will indicate an error related to quota limits.
+   The message will show something like "provider <provider-name> has reached its entries quota (max=...)".
+2. For annotated source resources like `Ingress` and `Service`, check the events of the resource
+   with `kubectl -n <object-namespace> get events --field-selector involvedObject.name=<object-name>`
+
+The quota limit may be changed by the shoot annotation `service.dns.extensions.gardener.cloud/default-external-provider-entries-quota`.
+However, the value is bounded by the extension configuration `defaultExternalProviderEntriesQuotaMax`.
+
 ## References
 - [Understanding DNS](https://www.cloudflare.com/en-ca/learning/dns/what-is-dns)
 - [Kubernetes Internal DNS](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/)
