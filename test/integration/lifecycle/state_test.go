@@ -121,7 +121,7 @@ var _ = BeforeSuite(func() {
 				Domain: new(testName + "example.com"),
 			},
 			Kubernetes: gardencorev1beta1.Kubernetes{
-				Version: "1.31.0",
+				Version: "1.32.0",
 			},
 		},
 		Status: gardencorev1beta1.ShootStatus{
