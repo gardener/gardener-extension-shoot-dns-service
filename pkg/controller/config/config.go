@@ -23,5 +23,5 @@ type DNSServiceConfig struct {
 	DefaultExternalProviderEntriesQuotaMax  int32
 	InternalGCPWorkloadIdentityConfig       config.InternalGCPWorkloadIdentityConfig
 	NextGenerationControllerZoneNameservers map[string]string
-	UseNextGenerationController			 bool
+	UseNextGenerationController             bool
 }
