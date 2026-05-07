@@ -59,7 +59,7 @@ func (o *DNSServiceOptions) AddFlags(fs *pflag.FlagSet) {
 		"maximum allowed quota when shoots override via annotation 'service.dns.extensions.gardener.cloud/default-external-provider-entries-quota'. "+
 			"0 means the default quota is also the maximum (default). Prevents accidentally setting unreasonably high quotas.")
 	fs.StringSliceVar(&o.NextGenerationControllerZoneNameservers, "nextgen-zone-to-nameserver", nil, "static mapping from zone to nameserver (for testing), can be specified multiple times, e.g. --nextgen-zone-to-nameserver=example.com=ns1.example.com --nextgen-zone-to-nameserver=example.org=ns1.example.org")
-	fs.BoolVar(&o.UseNextGenerationController, "use-next-generation-controller", false, "enables deployment of the next-generation controller deployment for all shoots")
+	fs.BoolVar(&o.UseNextGenerationController, "use-next-generation-controller", false, "enables deployment of the next-generation controller for all shoots (can still be disabled per shoot via extension providerConfig `useNextGenerationController: false`)")
 	o.GCPWorkloadIdentityOptions.AddFlags(fs)
 }
 

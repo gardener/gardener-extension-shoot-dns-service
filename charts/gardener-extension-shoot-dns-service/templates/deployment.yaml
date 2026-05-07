@@ -48,9 +48,6 @@ spec:
         {{- if .Values.dnsProviderManagement.enabled }}
         - --manage-dns-providers
         {{- end }}
-        {{- if .Values.useNextGenerationController }}
-        - --use-next-generation-controller
-        {{- end }}
         {{- if .Values.dnsProviderReplication.enabled }}
         - --replicate-dns-providers
         {{- end }}
@@ -73,6 +70,9 @@ spec:
         {{- range .Values.workloadIdentity.gcp.allowedServiceAccountImpersonationURLRegExps }}
         - --wi-gcp-allowed-service-account-impersonation-url-regexp={{ . }}
         {{- end }}
+        {{- end }}
+        {{- if .Values.useNextGenerationController }}
+        - --use-next-generation-controller
         {{- end }}
         {{- if .Values.nextGenerationController.zoneToNameserver }}
         {{- range $key, $value := .Values.nextGenerationController.zoneToNameserver }}
