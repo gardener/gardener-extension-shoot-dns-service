@@ -71,6 +71,9 @@ spec:
         - --wi-gcp-allowed-service-account-impersonation-url-regexp={{ . }}
         {{- end }}
         {{- end }}
+        {{- if .Values.useNextGenerationController }}
+        - --use-next-generation-controller
+        {{- end }}
         {{- if .Values.nextGenerationController.zoneToNameserver }}
         {{- range $key, $value := .Values.nextGenerationController.zoneToNameserver }}
         - --nextgen-zone-to-nameserver={{ $key }}={{ $value }}

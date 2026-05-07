@@ -35,6 +35,7 @@ type DNSServiceOptions struct {
 	DefaultExternalProviderEntriesQuotaMax  int32
 	GCPWorkloadIdentityOptions              admissioncmd.GCPWorkloadIdentityOptions
 	NextGenerationControllerZoneNameservers []string
+	UseNextGenerationController             bool
 	config                                  *DNSServiceConfig
 }
 
@@ -58,6 +59,7 @@ func (o *DNSServiceOptions) AddFlags(fs *pflag.FlagSet) {
 		"maximum allowed quota when shoots override via annotation 'service.dns.extensions.gardener.cloud/default-external-provider-entries-quota'. "+
 			"0 means the default quota is also the maximum (default). Prevents accidentally setting unreasonably high quotas.")
 	fs.StringSliceVar(&o.NextGenerationControllerZoneNameservers, "nextgen-zone-to-nameserver", nil, "static mapping from zone to nameserver (for testing), can be specified multiple times, e.g. --nextgen-zone-to-nameserver=example.com=ns1.example.com --nextgen-zone-to-nameserver=example.org=ns1.example.org")
+	fs.BoolVar(&o.UseNextGenerationController, "use-next-generation-controller", false, "enables deployment of the next-generation controller for all shoots (can still be disabled per shoot via extension providerConfig `useNextGenerationController: false`)")
 	o.GCPWorkloadIdentityOptions.AddFlags(fs)
 }
 
@@ -110,6 +112,7 @@ func (o *DNSServiceOptions) Complete() error {
 		DefaultExternalProviderEntriesQuotaMax:  o.DefaultExternalProviderEntriesQuotaMax,
 		InternalGCPWorkloadIdentityConfig:       *gcpGCPWorkloadIdentityConfig,
 		NextGenerationControllerZoneNameservers: zoneNameservers,
+		UseNextGenerationController:             o.UseNextGenerationController,
 	}
 	return nil
 }
@@ -141,6 +144,7 @@ type DNSServiceConfig struct {
 	DefaultExternalProviderEntriesQuotaMax  int32
 	InternalGCPWorkloadIdentityConfig       dnsman2apisconfig.InternalGCPWorkloadIdentityConfig
 	NextGenerationControllerZoneNameservers map[string]string
+	UseNextGenerationController             bool
 }
 
 // Apply applies the DNSServiceOptions to the passed ControllerOptions instance.
@@ -154,6 +158,7 @@ func (c *DNSServiceConfig) Apply(cfg *config.DNSServiceConfig) {
 	cfg.DefaultExternalProviderEntriesQuotaMax = c.DefaultExternalProviderEntriesQuotaMax
 	cfg.InternalGCPWorkloadIdentityConfig = c.InternalGCPWorkloadIdentityConfig
 	cfg.NextGenerationControllerZoneNameservers = c.NextGenerationControllerZoneNameservers
+	cfg.UseNextGenerationController = c.UseNextGenerationController
 }
 
 // HealthConfig contains configuration information about the health check controller.

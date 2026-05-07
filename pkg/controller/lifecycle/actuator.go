@@ -97,14 +97,20 @@ const (
 )
 
 type extensionContext struct {
-	ctx       context.Context
-	log       logr.Logger
-	ex        *extensionsv1alpha1.Extension
-	dnsconfig *apisservice.DNSConfig
-	cluster   *controller.Cluster
+	ctx          context.Context
+	log          logr.Logger
+	ex           *extensionsv1alpha1.Extension
+	dnsconfig    *apisservice.DNSConfig
+	globalConfig config.DNSServiceConfig
+	cluster      *controller.Cluster
 }
 
 func (exCtx *extensionContext) useNextGenerationController() bool {
+	if exCtx.globalConfig.UseNextGenerationController {
+		// if set globally, still allow to disable it in the extension provider config
+		return ptr.Deref(exCtx.dnsconfig.UseNextGenerationController, true)
+	}
+
 	value := ""
 	if exCtx.cluster != nil && exCtx.cluster.Seed != nil {
 		value = exCtx.cluster.Seed.Labels[ShootDNSServiceUseNextGenerationController]
@@ -335,11 +341,12 @@ func (a *actuator) prepareExtensionContext(ctx context.Context, log logr.Logger,
 	}
 
 	return extensionContext{
-		ctx:       ctx,
-		log:       log,
-		ex:        ex,
-		cluster:   cluster,
-		dnsconfig: dnsConfig,
+		ctx:          ctx,
+		log:          log,
+		ex:           ex,
+		cluster:      cluster,
+		dnsconfig:    dnsConfig,
+		globalConfig: a.config,
 	}, nil
 }
 

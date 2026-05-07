@@ -16,6 +16,8 @@ dnsProviderReplication:
 dnsProviderManagement:
   enabled: true
 
+useNextGenerationController: false
+
 gardener:
   version: ""
   garden:
