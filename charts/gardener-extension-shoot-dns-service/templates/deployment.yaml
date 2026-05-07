@@ -48,6 +48,9 @@ spec:
         {{- if .Values.dnsProviderManagement.enabled }}
         - --manage-dns-providers
         {{- end }}
+        {{- if .Values.useNextGenerationController }}
+        - --use-next-generation-controller
+        {{- end }}
         {{- if .Values.dnsProviderReplication.enabled }}
         - --replicate-dns-providers
         {{- end }}
