@@ -960,3 +960,94 @@ func checkValues(values map[string]any, expectedYAML string) {
 	Expect(err).ToNot(HaveOccurred(), "failed to marshal chart values to YAML")
 	Expect(strings.TrimSpace(string(data))).To(Equal(strings.TrimSpace(expectedYAML)), "chart values do not match expected YAML")
 }
+
+var _ = Describe("extensionContext.useNextGenerationController", func() {
+	var (
+		exCtx extensionContext
+	)
+
+	BeforeEach(func() {
+		exCtx = extensionContext{
+			ctx:          context.Background(),
+			log:          GinkgoLogr,
+			dnsconfig:    &apisservice.DNSConfig{},
+			globalConfig: config.DNSServiceConfig{},
+		}
+	})
+
+	DescribeTable("no global config",
+		func(labelValue string, configValue *bool, expected bool) {
+			if labelValue != "" {
+				exCtx.cluster = &extensionscontroller.Cluster{
+					Seed: &gardencorev1beta1.Seed{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								ShootDNSServiceUseNextGenerationController: labelValue,
+							},
+						},
+					},
+				}
+			} else {
+				exCtx.cluster = &extensionscontroller.Cluster{
+					Seed: &gardencorev1beta1.Seed{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{},
+						},
+					},
+				}
+			}
+			exCtx.dnsconfig.UseNextGenerationController = configValue
+			Expect(exCtx.useNextGenerationController()).To(Equal(expected))
+		},
+		Entry("label empty, config nil", "", nil, false),
+		Entry("label empty, config true", "", new(true), true),
+		Entry("label empty, config false", "", new(false), false),
+		Entry("label 'false', config nil", "false", nil, false),
+		Entry("label 'false', config true", "false", new(true), true),
+		Entry("label 'false', config false", "false", new(false), false),
+		Entry("label 'true', config nil", "true", nil, true),
+		Entry("label 'true', config true", "true", new(true), true),
+		Entry("label 'true', config false", "true", new(false), false),
+		Entry("label 'force-false', config nil", "force-false", nil, false),
+		Entry("label 'force-false', config true", "force-false", new(true), false),
+		Entry("label 'force-false', config false", "force-false", new(false), false),
+		Entry("label 'force-true', config nil", "force-true", nil, true),
+		Entry("label 'force-true', config true", "force-true", new(true), true),
+		Entry("label 'force-true', config false", "force-true", new(false), true),
+		Entry("label 'invalid', config nil", "invalid", nil, false),
+		Entry("label 'invalid', config true", "invalid", new(true), true),
+		Entry("label 'invalid', config false", "invalid", new(false), false),
+	)
+
+	DescribeTable("global config with UseNextGenerationController=true",
+		func(configValue *bool, expected bool) {
+			exCtx.globalConfig.UseNextGenerationController = true
+			for _, labelValue := range []string{"", "false", "true", "force-true", "force-false"} {
+				if labelValue != "" {
+					exCtx.cluster = &extensionscontroller.Cluster{
+						Seed: &gardencorev1beta1.Seed{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{
+									ShootDNSServiceUseNextGenerationController: labelValue,
+								},
+							},
+						},
+					}
+				} else {
+					exCtx.cluster = &extensionscontroller.Cluster{
+						Seed: &gardencorev1beta1.Seed{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{},
+							},
+						},
+					}
+				}
+				exCtx.dnsconfig.UseNextGenerationController = configValue
+				Expect(exCtx.useNextGenerationController()).To(Equal(expected), "labelValue="+labelValue)
+			}
+		},
+		Entry("config nil", nil, true),
+		Entry("config true", new(true), true),
+		Entry("config false", new(false), false),
+	)
+})
