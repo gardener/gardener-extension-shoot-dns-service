@@ -78,7 +78,7 @@ build:
     - image: local-skaffold/gardener-extension-shoot-dns-service/charts/extension
       custom:
         buildCommand: |
-          bash {{.EXTENSION_GARDENER_HACK_DIR}}/push-helm.sh charts/gardener-extension-shoot-dns-service .skaffoldImage
+          bash {{.EXTENSION_GARDENER_DEV_SETUP_DIR}}/push-helm.sh charts/gardener-extension-shoot-dns-service .skaffoldImage
         dependencies:
           paths:
             - charts/gardener-extension-shoot-dns-service
@@ -89,7 +89,7 @@ build:
     - image: local-skaffold/gardener-extension-shoot-dns-service/charts/shoot-dns-service-admission-application
       custom:
         buildCommand: |
-          bash {{.EXTENSION_GARDENER_HACK_DIR}}/push-helm.sh charts/gardener-extension-admission-shoot-dns-service/charts/application .skaffoldImage
+          bash {{.EXTENSION_GARDENER_DEV_SETUP_DIR}}/push-helm.sh charts/gardener-extension-admission-shoot-dns-service/charts/application .skaffoldImage
         dependencies:
           paths:
             - charts/gardener-extension-admission-shoot-dns-service/charts/application
@@ -100,7 +100,7 @@ build:
     - image: local-skaffold/gardener-extension-shoot-dns-service/charts/shoot-dns-service-admission-runtime
       custom:
         buildCommand: |
-          bash {{.EXTENSION_GARDENER_HACK_DIR}}/push-helm.sh charts/gardener-extension-admission-shoot-dns-service/charts/runtime .skaffoldImage
+          bash {{.EXTENSION_GARDENER_DEV_SETUP_DIR}}/push-helm.sh charts/gardener-extension-admission-shoot-dns-service/charts/runtime .skaffoldImage
         dependencies:
           paths:
             - charts/gardener-extension-admission-shoot-dns-service/charts/runtime
