@@ -6,7 +6,7 @@ require (
 	github.com/andybalholm/brotli v1.2.1
 	github.com/elastic/crd-ref-docs v0.3.0
 	github.com/gardener/controller-manager-library v0.2.1-0.20260508123052-a693015425a8
-	github.com/gardener/external-dns-management v0.40.0
+	github.com/gardener/external-dns-management v0.41.0
 	github.com/gardener/gardener v1.142.0
 	github.com/gardener/gardener/pkg/apis v1.142.0
 	github.com/go-logr/logr v1.4.3
@@ -53,7 +53,7 @@ require (
 	github.com/VictoriaMetrics/metricsql v0.84.8 // indirect
 	github.com/VictoriaMetrics/operator/api v0.66.1 // indirect
 	github.com/alibabacloud-go/alibabacloud-gateway-spi v0.0.5 // indirect
-	github.com/alibabacloud-go/alidns-20150109/v5 v5.4.0 // indirect
+	github.com/alibabacloud-go/alidns-20150109/v5 v5.4.1 // indirect
 	github.com/alibabacloud-go/darabonba-openapi/v2 v2.1.16 // indirect
 	github.com/alibabacloud-go/debug v1.0.1 // indirect
 	github.com/alibabacloud-go/tea v1.4.0 // indirect
@@ -82,7 +82,7 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/clbanning/mxj/v2 v2.7.0 // indirect
-	github.com/cloudflare/cloudflare-go/v6 v6.9.0 // indirect
+	github.com/cloudflare/cloudflare-go/v6 v6.10.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.7.0 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
@@ -105,9 +105,9 @@ require (
 	github.com/go-openapi/jsonpointer v0.22.5 // indirect
 	github.com/go-openapi/jsonreference v0.21.5 // indirect
 	github.com/go-openapi/loads v0.23.3 // indirect
-	github.com/go-openapi/runtime v0.29.4 // indirect
+	github.com/go-openapi/runtime v0.29.5 // indirect
 	github.com/go-openapi/spec v0.22.4 // indirect
-	github.com/go-openapi/strfmt v0.26.1 // indirect
+	github.com/go-openapi/strfmt v0.26.2 // indirect
 	github.com/go-openapi/swag v0.25.4 // indirect
 	github.com/go-openapi/swag/cmdutils v0.25.4 // indirect
 	github.com/go-openapi/swag/conv v0.26.0 // indirect
@@ -140,7 +140,7 @@ require (
 	github.com/googleapis/enterprise-certificate-proxy v0.3.14 // indirect
 	github.com/googleapis/gax-go/v2 v2.19.0 // indirect
 	github.com/gophercloud/gophercloud/v2 v2.12.0 // indirect
-	github.com/gophercloud/utils/v2 v2.0.0-20260409164906-cd2167a8681a // indirect
+	github.com/gophercloud/utils/v2 v2.0.0-20260424064311-2eeed4ceb3e9 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
