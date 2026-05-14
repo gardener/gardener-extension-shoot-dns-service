@@ -1,4 +1,4 @@
-# [Gardener Extension for DNS services](https://gardener.cloud)
+# Gardener Extension for DNS services
 
 [![REUSE status](https://api.reuse.software/badge/github.com/gardener/gardener-extension-shoot-dns-service)](https://api.reuse.software/info/github.com/gardener/gardener-extension-shoot-dns-service)
 [![Build](https://github.com/gardener/gardener-extension-shoot-dns-service/actions/workflows/non-release.yaml/badge.svg)](https://github.com/gardener/gardener-extension-shoot-dns-service/actions/workflows/non-release.yaml)
