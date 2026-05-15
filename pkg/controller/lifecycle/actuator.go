@@ -1180,7 +1180,7 @@ func GetDefaultDomainQuota(cfg config.DNSServiceConfig, cluster *controller.Clus
 	}
 	// Allow overwriting the default quota up to the maximum quota given by `--default-external-provider-entries-quota-max` via annotation on the shoot, e.g. `service.dns.extensions.gardener.cloud/default-external-provider-entries-quota: "100"`
 	if annotatedValue := cluster.Shoot.Annotations[ShootDNSServiceDefaultExternalProviderEntriesQuotaAnnotation]; annotatedValue != "" {
-		parsedQuota, err := strconv.Atoi(annotatedValue)
+		parsedQuota, err := strconv.ParseInt(annotatedValue, 10, 32)
 		if err != nil {
 			return 0, fmt.Errorf("failed to parse default external provider entries quota %s (shoot annotation %s): %w", annotatedValue, ShootDNSServiceDefaultExternalProviderEntriesQuotaAnnotation, err)
 		}
@@ -1191,10 +1191,10 @@ func GetDefaultDomainQuota(cfg config.DNSServiceConfig, cluster *controller.Clus
 		if maxQuota == 0 {
 			maxQuota = quota // restrict to default quota if no maximum quota is configured via flag, to avoid accidentally setting an unreasonably high quota via annotation
 		}
-		if quota > 0 && parsedQuota > int(maxQuota) {
+		if quota > 0 && parsedQuota > int64(maxQuota) {
 			return 0, fmt.Errorf("annotated default external provider entries quota %d (shoot annotation %s) exceeds maximum allowed quota %d", parsedQuota, ShootDNSServiceDefaultExternalProviderEntriesQuotaAnnotation, maxQuota)
 		}
-		quota = int32(parsedQuota) // #nosec G115 G109 -- safe: parsedQuota <= maxQuota and maxQuota is int32
+		quota = int32(parsedQuota)
 	}
 	return quota, nil
 }
