@@ -550,24 +550,9 @@ func (a *actuator) createOrUpdateDNSProviders(exCtx extensionContext) error {
 		providers := map[string]*dnsv1alpha1.DNSProvider{}
 		providers[ExternalDNSProviderName] = nil // remember for deletion
 		if external != nil {
-			quota := config.DNSService.DefaultExternalProviderEntriesQuota
-			// Allow overwriting the default quota up to the maximum quota given by `--default-external-provider-entries-quota-max` via annotation on the shoot, e.g. `service.dns.extensions.gardener.cloud/default-external-provider-entries-quota: "100"`
-			if annotatedValue := exCtx.cluster.Shoot.Annotations[ShootDNSServiceDefaultExternalProviderEntriesQuotaAnnotation]; annotatedValue != "" {
-				parsedQuota, err := strconv.Atoi(annotatedValue)
-				if err != nil {
-					return fmt.Errorf("failed to parse default external provider entries quota %s (shoot annotation %s): %w", annotatedValue, ShootDNSServiceDefaultExternalProviderEntriesQuotaAnnotation, err)
-				}
-				if parsedQuota < 1 {
-					return fmt.Errorf("invalid default external provider entries quota %s (shoot annotation %s)", annotatedValue, ShootDNSServiceDefaultExternalProviderEntriesQuotaAnnotation)
-				}
-				maxQuota := a.config.DefaultExternalProviderEntriesQuotaMax
-				if maxQuota == 0 {
-					maxQuota = quota // restrict to default quota if no maximum quota is configured via flag, to avoid accidentally setting an unreasonably high quota via annotation
-				}
-				if parsedQuota > int(maxQuota) {
-					return fmt.Errorf("annotated default external provider entries quota %d (shoot annotation %s) exceeds maximum allowed quota %d", parsedQuota, ShootDNSServiceDefaultExternalProviderEntriesQuotaAnnotation, maxQuota)
-				}
-				quota = int32(parsedQuota) // #nosec G115 G109 -- safe: parsedQuota <= maxQuota and maxQuota is int32
+			quota, err := GetDefaultDomainQuota(a.config, exCtx.cluster)
+			if err != nil {
+				return err
 			}
 			providers[ExternalDNSProviderName] = buildDNSProviderWithQuota(external, namespace, ExternalDNSProviderName, "", quota)
 		}
@@ -1181,4 +1166,35 @@ func oneOf(strs ...*string) string {
 		}
 	}
 	return ""
+}
+
+// GetDefaultDomainQuota calculates the DNS entries quota for the default external provider.
+// It returns the configured default quota, which can be overridden via the shoot annotation
+// 'service.dns.extensions.gardener.cloud/default-external-provider-entries-quota'.
+// The annotation value is validated and constrained by DefaultExternalProviderEntriesQuotaMax.
+// Returns 0 if quotas are disabled (DefaultExternalProviderEntriesQuota == 0).
+func GetDefaultDomainQuota(cfg config.DNSServiceConfig, cluster *controller.Cluster) (int32, error) {
+	quota := cfg.DefaultExternalProviderEntriesQuota
+	if quota == 0 {
+		return 0, nil // quotas not enabled
+	}
+	// Allow overwriting the default quota up to the maximum quota given by `--default-external-provider-entries-quota-max` via annotation on the shoot, e.g. `service.dns.extensions.gardener.cloud/default-external-provider-entries-quota: "100"`
+	if annotatedValue := cluster.Shoot.Annotations[ShootDNSServiceDefaultExternalProviderEntriesQuotaAnnotation]; annotatedValue != "" {
+		parsedQuota, err := strconv.Atoi(annotatedValue)
+		if err != nil {
+			return 0, fmt.Errorf("failed to parse default external provider entries quota %s (shoot annotation %s): %w", annotatedValue, ShootDNSServiceDefaultExternalProviderEntriesQuotaAnnotation, err)
+		}
+		if parsedQuota < 1 {
+			return 0, fmt.Errorf("invalid default external provider entries quota %s (shoot annotation %s)", annotatedValue, ShootDNSServiceDefaultExternalProviderEntriesQuotaAnnotation)
+		}
+		maxQuota := cfg.DefaultExternalProviderEntriesQuotaMax
+		if maxQuota == 0 {
+			maxQuota = quota // restrict to default quota if no maximum quota is configured via flag, to avoid accidentally setting an unreasonably high quota via annotation
+		}
+		if quota > 0 && parsedQuota > int(maxQuota) {
+			return 0, fmt.Errorf("annotated default external provider entries quota %d (shoot annotation %s) exceeds maximum allowed quota %d", parsedQuota, ShootDNSServiceDefaultExternalProviderEntriesQuotaAnnotation, maxQuota)
+		}
+		quota = int32(parsedQuota) // #nosec G115 G109 -- safe: parsedQuota <= maxQuota and maxQuota is int32
+	}
+	return quota, nil
 }
