@@ -550,7 +550,7 @@ func (a *actuator) createOrUpdateDNSProviders(exCtx extensionContext) error {
 		providers := map[string]*dnsv1alpha1.DNSProvider{}
 		providers[ExternalDNSProviderName] = nil // remember for deletion
 		if external != nil {
-			quota, err := GetDefaultDomainQuota(a.config, exCtx.cluster)
+			quota, err := getDefaultDomainQuota(a.config, exCtx.cluster)
 			if err != nil {
 				return err
 			}
@@ -1168,12 +1168,12 @@ func oneOf(strs ...*string) string {
 	return ""
 }
 
-// GetDefaultDomainQuota calculates the DNS entries quota for the default external provider.
+// getDefaultDomainQuota calculates the DNS entries quota for the default external provider.
 // It returns the configured default quota, which can be overridden via the shoot annotation
 // 'service.dns.extensions.gardener.cloud/default-external-provider-entries-quota'.
 // The annotation value is validated and constrained by DefaultExternalProviderEntriesQuotaMax.
 // Returns 0 if quotas are disabled (DefaultExternalProviderEntriesQuota == 0).
-func GetDefaultDomainQuota(cfg config.DNSServiceConfig, cluster *controller.Cluster) (int32, error) {
+func getDefaultDomainQuota(cfg config.DNSServiceConfig, cluster *controller.Cluster) (int32, error) {
 	quota := cfg.DefaultExternalProviderEntriesQuota
 	if quota == 0 {
 		return 0, nil // quotas not enabled
@@ -1191,7 +1191,7 @@ func GetDefaultDomainQuota(cfg config.DNSServiceConfig, cluster *controller.Clus
 		if maxQuota == 0 {
 			maxQuota = quota // restrict to default quota if no maximum quota is configured via flag, to avoid accidentally setting an unreasonably high quota via annotation
 		}
-		if quota > 0 && parsedQuota > int64(maxQuota) {
+		if parsedQuota > int64(maxQuota) {
 			return 0, fmt.Errorf("annotated default external provider entries quota %d (shoot annotation %s) exceeds maximum allowed quota %d", parsedQuota, ShootDNSServiceDefaultExternalProviderEntriesQuotaAnnotation, maxQuota)
 		}
 		quota = int32(parsedQuota)

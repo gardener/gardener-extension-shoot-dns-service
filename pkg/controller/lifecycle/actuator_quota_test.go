@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Gardener contributors
+// SPDX-FileCopyrightText: SAP SE or an SAP affiliate company and Gardener contributors
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -14,7 +14,7 @@ import (
 	"github.com/gardener/gardener-extension-shoot-dns-service/pkg/controller/config"
 )
 
-var _ = Describe("GetDefaultDomainQuota", func() {
+var _ = Describe("getDefaultDomainQuota", func() {
 	DescribeTable("should return correct quota",
 		func(defaultQuota, maxQuota int32, annotation *string, expectedQuota int32, expectError bool, errorSubstring string) {
 			// Set up config
@@ -40,7 +40,7 @@ var _ = Describe("GetDefaultDomainQuota", func() {
 			}
 
 			// Call function
-			quota, err := GetDefaultDomainQuota(cfg, cluster)
+			quota, err := getDefaultDomainQuota(cfg, cluster)
 
 			// Verify results
 			if expectError {
