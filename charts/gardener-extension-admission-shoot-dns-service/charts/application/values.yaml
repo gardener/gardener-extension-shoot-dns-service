@@ -1,6 +1,5 @@
 gardener:
   virtualCluster:
-    enabled: true
     serviceAccount: {}
 #     name: gardener-extension-admission-shoot-dns-service
 #     namespace: kube-system

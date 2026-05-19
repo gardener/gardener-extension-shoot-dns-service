@@ -33,11 +33,8 @@ service:
 validateSecrets: true
 
 gardener:
-  virtualCluster:
-    enabled: true
-    serviceAccount: {}
-#     name: ardener-extension-admission-shoot-dns-service
-#     namespace: kube-system
+  virtualCluster: {}
+#   namespace: extension-admission-shoot-dns-service
   runtimeCluster: {}
 #   priorityClassName: gardener-garden-system-400
 
