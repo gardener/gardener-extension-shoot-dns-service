@@ -37,12 +37,8 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         args:
         - --webhook-config-server-port={{ .Values.webhookConfig.serverPort }}
-        {{- if .Values.gardener.virtualCluster.enabled }}
         - --webhook-config-mode=url
         - --webhook-config-url={{ printf "%s.%s" (include "name" .) (.Release.Namespace) }}
-        {{- else }}
-        - --webhook-config-mode=service
-        {{- end}}
         - --webhook-config-namespace={{ .Release.Namespace }}
         {{- if .Values.gardener.virtualCluster.namespace }}
         - --webhook-config-owner-namespace={{ .Values.gardener.virtualCluster.namespace }}
@@ -66,10 +62,6 @@ spec:
         {{- end }}
         {{- end }}
         env:
-        {{- if .Values.gardener.virtualCluster.enabled }}
-        - name: SOURCE_CLUSTER
-          value: enabled
-        {{- end }}
         {{- if not .Values.validateSecrets }}
         - name: DISABLE_SECRET_VALIDATION
           value: "true"
