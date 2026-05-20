@@ -1,0 +1,27 @@
+{{- if .Values.nextGeneration.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/name: {{ template "service.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    prometheus: shoot
+  name: {{ template "service.name" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpoints:
+    - metricRelabelings:
+        - action: keep
+          regex: ^(external_dns_management_.+)$
+          sourceLabels:
+            - __name__
+      port: metrics
+      relabelings:
+        - action: labelmap
+          regex: __meta_kubernetes_service_label_(.+)
+  namespaceSelector: {}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "service.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

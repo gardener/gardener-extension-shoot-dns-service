@@ -3,7 +3,7 @@
 Expand the name of the chart.
 */}}
 {{- define "service.name" -}}
-{{- default .Chart.Name .Values.serviceName | trunc 63 | trimSuffix "-" -}}
+{{- default "shoot-dns-service" .Values.serviceName | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
