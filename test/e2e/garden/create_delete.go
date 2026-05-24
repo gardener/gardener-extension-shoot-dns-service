@@ -52,7 +52,7 @@ var _ = Describe("Shoot-DNS-Service Tests", func() {
 }`),
 		}
 
-		createDelete = func(name string, providerConfig *runtime.RawExtension, subdomain string) {
+		createDelete = func(name string, providerConfig *runtime.RawExtension, subdomain string, nextgen bool) {
 			ctx, cancel := context.WithTimeout(parentCtx, 15*time.Minute)
 			defer cancel()
 
@@ -105,13 +105,13 @@ var _ = Describe("Shoot-DNS-Service Tests", func() {
 
 			By("Check `external` DNSProvider has been successfully reconciled")
 			providerKey := client.ObjectKey{Namespace: fmt.Sprintf("shoot--local--%s", name), Name: "external"}
-			waitForExternalProviderReady(ctx, runtimeClient, name, providerKey, 10)
+			waitForExternalProviderReady(ctx, runtimeClient, name, providerKey, 10, nextgen)
 
 			By("Check overwrite entries quota fails if quota > max quota")
-			checkOverwriteEntriesQuota(ctx, shoot, gardenClientSet.Client(), providerKey, 16, false)
+			checkOverwriteEntriesQuota(ctx, shoot, gardenClientSet.Client(), nextgen, providerKey, 16, false)
 
 			By("Check overwrite entries quota (allowed)")
-			checkOverwriteEntriesQuota(ctx, shoot, gardenClientSet.Client(), providerKey, 15, true)
+			checkOverwriteEntriesQuota(ctx, shoot, gardenClientSet.Client(), nextgen, providerKey, 15, true)
 
 			By("Check CRDs with no-cleanup label on shoot cluster")
 			crdList := apiextensionsv1.CustomResourceDefinitionList{}
@@ -218,10 +218,10 @@ var _ = Describe("Shoot-DNS-Service Tests", func() {
 	)
 
 	It("Create, Delete", Label("simple"), func() {
-		createDelete("local-wl", rawExtension, "legacy")
+		createDelete("local-wl", rawExtension, "legacy", false)
 	})
 
 	It("Create, Delete (NextGeneration)", Label("simple"), func() {
-		createDelete("local-wl-ng", rawExtensionNextGen, "nextgen")
+		createDelete("local-wl-ng", rawExtensionNextGen, "nextgen", true)
 	})
 })
