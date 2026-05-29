@@ -961,6 +961,86 @@ func checkValues(values map[string]any, expectedYAML string) {
 	Expect(strings.TrimSpace(string(data))).To(Equal(strings.TrimSpace(expectedYAML)), "chart values do not match expected YAML")
 }
 
+var _ = Describe("actuator.updateExtensionAnnotation", func() {
+	var (
+		ctx        context.Context
+		seedClient client.Client
+		scheme     *runtime.Scheme
+		a          *actuator
+		ex         *extensionsv1alpha1.Extension
+	)
+
+	BeforeEach(func() {
+		ctx = context.Background()
+		scheme = runtime.NewScheme()
+		Expect(extensionsv1alpha1.AddToScheme(scheme)).To(Succeed())
+		seedClient = fake.NewClientBuilder().WithScheme(scheme).Build()
+		a = &actuator{client: seedClient}
+		ex = &extensionsv1alpha1.Extension{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "shoot-dns-service",
+				Namespace: "shoot--foo--bar",
+			},
+		}
+	})
+
+	DescribeTable("update annotation",
+		func(initialAnnotations map[string]string, useNextGenerationController bool, expectedAnnotations map[string]string, expectPatch bool) {
+			ex.Annotations = initialAnnotations
+			Expect(seedClient.Create(ctx, ex)).To(Succeed())
+			originalResourceVersion := ex.ResourceVersion
+
+			exCtx := extensionContext{
+				ctx:       ctx,
+				log:       GinkgoLogr,
+				ex:        ex,
+				dnsconfig: &apisservice.DNSConfig{UseNextGenerationController: new(useNextGenerationController)},
+				globalConfig: config.DNSServiceConfig{
+					UseNextGenerationController: true,
+				},
+			}
+
+			Expect(a.updateExtensionAnnotation(exCtx)).To(Succeed())
+
+			Expect(ex.Annotations).To(Equal(expectedAnnotations))
+
+			updated := &extensionsv1alpha1.Extension{}
+			Expect(seedClient.Get(ctx, client.ObjectKeyFromObject(ex), updated)).To(Succeed())
+			Expect(updated.Annotations).To(Equal(expectedAnnotations))
+			if expectPatch {
+				Expect(updated.ResourceVersion).ToNot(Equal(originalResourceVersion), "expected patch to have been issued")
+			} else {
+				Expect(updated.ResourceVersion).To(Equal(originalResourceVersion), "expected no patch to have been issued")
+			}
+		},
+		Entry("add annotation when useNextGenerationController=true and annotation missing",
+			map[string]string{"existing": "value"},
+			true,
+			map[string]string{"existing": "value", ShootDNSServiceUseNextGenerationController: "true"},
+			true),
+		Entry("no-op when useNextGenerationController=true and annotation already 'true'",
+			map[string]string{ShootDNSServiceUseNextGenerationController: "true"},
+			true,
+			map[string]string{ShootDNSServiceUseNextGenerationController: "true"},
+			false),
+		Entry("remove annotation when useNextGenerationController=false and annotation is 'true'",
+			map[string]string{ShootDNSServiceUseNextGenerationController: "true", "existing": "value"},
+			false,
+			map[string]string{"existing": "value"},
+			true),
+		Entry("no-op when useNextGenerationController=false and annotation missing",
+			nil,
+			false,
+			nil,
+			false),
+		Entry("no-op when useNextGenerationController=false and annotation has non-'true' value",
+			map[string]string{ShootDNSServiceUseNextGenerationController: "other"},
+			false,
+			map[string]string{ShootDNSServiceUseNextGenerationController: "other"},
+			false),
+	)
+})
+
 var _ = Describe("extensionContext.useNextGenerationController", func() {
 	var (
 		exCtx extensionContext
