@@ -183,6 +183,9 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ex *extension
 	if err := a.createOrUpdateSeedResources(exCtx, controllerModeNormal); err != nil {
 		return err
 	}
+	if err := a.updateExtensionAnnotation(exCtx); err != nil {
+		return err
+	}
 	return a.createOrUpdateDNSProviders(exCtx)
 }
 
@@ -528,6 +531,26 @@ func (a *actuator) ensureStateRefreshed(exCtx extensionContext) error {
 		return err
 	}
 	return handler.Update("refresh")
+}
+
+// updateExtensionAnnotation updates the annotation of the extension with the information if the next generation controller should be used or not.
+// This information is used by the shoot-cert-service to configure the correct dns class on creating DNSEntries for DNS challenges.
+func (a *actuator) updateExtensionAnnotation(exCtx extensionContext) error {
+	annotationState := exCtx.ex.Annotations[ShootDNSServiceUseNextGenerationController] == "true"
+	if exCtx.useNextGenerationController() == annotationState {
+		// nothing to do
+		return nil
+	}
+	patch := client.MergeFrom(exCtx.ex.DeepCopy())
+	if exCtx.useNextGenerationController() {
+		kutil.SetMetaDataAnnotation(exCtx.ex, ShootDNSServiceUseNextGenerationController, "true")
+	} else {
+		delete(exCtx.ex.Annotations, ShootDNSServiceUseNextGenerationController)
+	}
+	if err := a.client.Patch(exCtx.ctx, exCtx.ex, patch); err != nil {
+		return fmt.Errorf("failed to patch extension annotation: %w", err)
+	}
+	return nil
 }
 
 func (a *actuator) createOrUpdateDNSProviders(exCtx extensionContext) error {
