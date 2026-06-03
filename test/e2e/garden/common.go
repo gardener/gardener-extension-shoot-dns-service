@@ -115,18 +115,14 @@ func waitForClientProviderReady(ctx context.Context, shootClient client.Client, 
 	}).WithPolling(1 * time.Second).Should(Succeed())
 }
 
-func waitForExternalProviderReady(ctx context.Context, c client.Client, shootName string, key client.ObjectKey, expectedQuota int32, nextgen bool) {
+func waitForExternalProviderReady(ctx context.Context, c client.Client, shootName string, key client.ObjectKey, expectedQuota int32) {
 	CEventually(ctx, func(g Gomega) {
 		provider := &dnsv1alpha1.DNSProvider{}
 		g.Expect(c.Get(ctx, key, provider)).To(Succeed())
 		g.Expect(provider.Status.State).To(Equal("Ready"))
 		g.Expect(provider.Status.Domains.Included).To(ContainElement(fmt.Sprintf("%s.local.external.local.gardener.cloud", shootName)))
 		g.Expect(provider.Status.Zones.Included).To(ContainElement(ContainSubstring("local.gardener.cloud")))
-		finalizer := "dns.gardener.cloud/compound"
-		if nextgen {
-			finalizer = "gardendns-next-gen.dns.gardener.cloud/compound"
-		}
-		g.Expect(provider.Finalizers).To(ContainElement(finalizer))
+		g.Expect(provider.Finalizers).To(ContainElement("dns.gardener.cloud/compound"))
 		g.Expect(provider.Spec.Quotas).To(Equal(&dnsv1alpha1.Quotas{Entries: new(expectedQuota)}))
 	}).WithPolling(250 * time.Millisecond).Should(Succeed())
 }
@@ -147,12 +143,12 @@ func waitForExtensionError(ctx context.Context, namespace string) {
 	}).WithPolling(250 * time.Millisecond).Should(Succeed())
 }
 
-func checkOverwriteEntriesQuota(ctx context.Context, shoot *gardencorev1beta1.Shoot, gardenClient client.Client, nextgen bool, providerKey client.ObjectKey, quota int32, allowed bool) {
+func checkOverwriteEntriesQuota(ctx context.Context, shoot *gardencorev1beta1.Shoot, gardenClient client.Client, providerKey client.ObjectKey, quota int32, allowed bool) {
 	Expect(kubernetesutils.SetAnnotationAndUpdate(ctx, gardenClient, shoot, "service.dns.extensions.gardener.cloud/default-external-provider-entries-quota", fmt.Sprintf("%d", quota))).To(Succeed())
 	Expect(kubernetesutils.SetAnnotationAndUpdate(ctx, gardenClient, shoot, "gardener.cloud/operation", "reconcile")).To(Succeed())
 
 	if allowed {
-		waitForExternalProviderReady(ctx, runtimeClient, shoot.Name, providerKey, quota, nextgen)
+		waitForExternalProviderReady(ctx, runtimeClient, shoot.Name, providerKey, quota)
 	} else {
 		waitForExtensionError(ctx, providerKey.Namespace)
 	}
