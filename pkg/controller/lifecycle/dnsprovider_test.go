@@ -20,17 +20,16 @@ import (
 	retryfake "github.com/gardener/gardener/pkg/utils/retry/fake"
 	"github.com/gardener/gardener/pkg/utils/test"
 	. "github.com/gardener/gardener/pkg/utils/test/matchers"
-	mockclient "github.com/gardener/gardener/third_party/mock/controller-runtime/client"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"go.uber.org/mock/gomock"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -42,7 +41,6 @@ var _ = Describe("#DNSProvider", func() {
 	)
 
 	var (
-		ctrl      *gomock.Controller
 		ctx       context.Context
 		c         client.Client
 		scheme    *runtime.Scheme
@@ -57,8 +55,6 @@ var _ = Describe("#DNSProvider", func() {
 	)
 
 	BeforeEach(func() {
-		ctrl = gomock.NewController(GinkgoT())
-
 		now = time.Now()
 		fakeOps = &retryfake.Ops{MaxAttempts: 1}
 		resetVars = test.WithVars(
@@ -124,7 +120,6 @@ var _ = Describe("#DNSProvider", func() {
 
 	AfterEach(func() {
 		resetVars()
-		ctrl.Finish()
 	})
 
 	Describe("#Deploy", func() {
@@ -181,12 +176,11 @@ var _ = Describe("#DNSProvider", func() {
 		})
 
 		It("should not return error when it's deleted successfully", func() {
-			mc := mockclient.NewMockClient(ctrl)
-			mc.EXPECT().Delete(ctx, &dnsv1alpha1.DNSProvider{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      dnsProviderName,
-					Namespace: deployNS,
-				}}).Times(1).Return(fmt.Errorf("some random error"))
+			mc := fake.NewClientBuilder().WithScheme(scheme).WithObjects(expected).WithInterceptorFuncs(interceptor.Funcs{
+				Delete: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.DeleteOption) error {
+					return fmt.Errorf("some random error")
+				},
+			}).Build()
 
 			Expect(NewProviderDeployWaiter(log, mc, vals, nil).Destroy(ctx)).To(HaveOccurred())
 		})
@@ -198,19 +192,18 @@ var _ = Describe("#DNSProvider", func() {
 		})
 
 		It("should retry getting object if it does not exist in the cache yet", func() {
-			mc := mockclient.NewMockClient(ctrl)
-			mc.EXPECT().Scheme().Return(scheme).AnyTimes()
-
 			expected.Status.State = "Ready"
-			gomock.InOrder(
-				mc.EXPECT().Get(gomock.Any(), client.ObjectKeyFromObject(expected), gomock.AssignableToTypeOf(expected)).
-					Return(apierrors.NewNotFound(extensionsv1alpha1.Resource("dnsproviders"), expected.Name)),
-				mc.EXPECT().Get(gomock.Any(), client.ObjectKeyFromObject(expected), gomock.AssignableToTypeOf(expected)).
-					DoAndReturn(func(ctx context.Context, key client.ObjectKey, obj *dnsv1alpha1.DNSProvider, opts ...client.GetOption) error {
-						expected.DeepCopyInto(obj)
-						return nil
-					}),
-			)
+
+			callCount := 0
+			mc := fake.NewClientBuilder().WithScheme(scheme).WithObjects(expected).WithInterceptorFuncs(interceptor.Funcs{
+				Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+					callCount++
+					if callCount == 1 {
+						return apierrors.NewNotFound(extensionsv1alpha1.Resource("dnsproviders"), expected.Name)
+					}
+					return c.Get(ctx, key, obj, opts...)
+				},
+			}).Build()
 
 			fakeOps.MaxAttempts = 2
 			defaultDepWaiter = NewProviderDeployWaiter(log, mc, vals, nil)
