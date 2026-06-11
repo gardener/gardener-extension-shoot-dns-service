@@ -1,0 +1,14 @@
+{{- if .Values.nextGeneration.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: {{ template "service.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    dashboard.monitoring.gardener.cloud/shoot: "true"
+  name: {{ template "service.name" . }}-dashboard
+  namespace: {{ .Release.Namespace }}
+data:
+  shoot-dns-service-dashboard.json: |-
+    {{- (.Files.Get "files/shoot-dns-service-dashboard.json") | nindent 6 }}
+{{- end }}
