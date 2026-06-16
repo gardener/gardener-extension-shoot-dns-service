@@ -6,7 +6,7 @@ require (
 	github.com/andybalholm/brotli v1.2.1
 	github.com/elastic/crd-ref-docs v0.3.0
 	github.com/gardener/controller-manager-library v0.2.1-0.20260508123052-a693015425a8
-	github.com/gardener/external-dns-management v0.43.0
+	github.com/gardener/external-dns-management v0.44.0
 	github.com/gardener/gardener v1.144.1
 	github.com/gardener/gardener/pkg/apis v1.144.1
 	github.com/go-logr/logr v1.4.3
@@ -56,7 +56,7 @@ require (
 	github.com/alibabacloud-go/alidns-20150109/v5 v5.4.1 // indirect
 	github.com/alibabacloud-go/darabonba-openapi/v2 v2.2.1 // indirect
 	github.com/alibabacloud-go/debug v1.0.1 // indirect
-	github.com/alibabacloud-go/tea v1.5.0 // indirect
+	github.com/alibabacloud-go/tea v1.5.1 // indirect
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.9 // indirect
 	github.com/aliyun/credentials-go v1.4.6 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
@@ -82,7 +82,7 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/clbanning/mxj/v2 v2.7.0 // indirect
-	github.com/cloudflare/cloudflare-go/v7 v7.4.0 // indirect
+	github.com/cloudflare/cloudflare-go/v7 v7.5.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.7.0 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
@@ -148,7 +148,7 @@ require (
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jellydator/ttlcache/v3 v3.4.0 // indirect
-	github.com/joeig/go-powerdns/v3 v3.21.0 // indirect
+	github.com/joeig/go-powerdns/v3 v3.22.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.13-0.20220915233716-71ac16282d12 // indirect
 	github.com/klauspost/compress v1.18.6 // indirect
