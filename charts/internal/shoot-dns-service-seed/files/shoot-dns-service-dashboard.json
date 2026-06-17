@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1779368017107,
+  "iteration": 1781699823623,
   "links": [],
   "panels": [
     {
@@ -146,7 +146,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.5.47",
+      "pluginVersion": "7.5.49",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -267,7 +267,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.5.47",
+      "pluginVersion": "7.5.49",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -389,7 +389,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.5.47",
+      "pluginVersion": "7.5.49",
       "pointradius": 2,
       "points": true,
       "renderer": "flot",
@@ -489,7 +489,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.5.47",
+      "pluginVersion": "7.5.49",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -532,7 +532,7 @@
           "label": "requests/s",
           "logBase": 1,
           "max": null,
-          "min": null,
+          "min": "0",
           "show": true
         },
         {
@@ -669,7 +669,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.5.47",
+      "pluginVersion": "7.5.49",
       "pointradius": 2,
       "points": true,
       "renderer": "flot",
@@ -735,7 +735,7 @@
           "label": "requests/s",
           "logBase": 1,
           "max": null,
-          "min": null,
+          "min": "0",
           "show": true
         },
         {
@@ -893,7 +893,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-3h",
     "to": "now"
   },
   "timepicker": {
@@ -923,5 +923,5 @@
   "timezone": "browser",
   "title": "Shoot DNS Service Dashboard",
   "uid": "shoot-dns-service",
-  "version": 2
+  "version": 1
 }
