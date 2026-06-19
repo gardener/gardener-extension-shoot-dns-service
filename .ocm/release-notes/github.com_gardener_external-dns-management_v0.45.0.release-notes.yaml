@@ -1,0 +1,26 @@
+ocm:
+  component_name: github.com/gardener/external-dns-management
+  component_version: v0.45.0
+release_notes:
+- audience: user
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: other
+  contents: '[alicloud-dns] Allow `CNAME` record type for weighted routing policy
+    additionally to record types `A` and `AAAA`.'
+  mimetype: text/markdown
+  reference: '[#928](https://github.com/gardener/external-dns-management/pull/928)'
+  type: standard
+- audience: user
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: other
+  contents: '[next-generation] Reintroduce value `all` as alias for wildcard value
+    `*` of the `dns.gardener.cloud/dnsnames` annotation'
+  mimetype: text/markdown
+  reference: '[#929](https://github.com/gardener/external-dns-management/pull/929)'
+  type: standard
