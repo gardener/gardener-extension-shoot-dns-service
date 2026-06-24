@@ -4,10 +4,10 @@ metadata:
   name: {{ template "service.name" . }}
   namespace: {{ .Release.Namespace }}
   labels:
+    app.kubernetes.io/name: {{ template "service.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
     app: {{ template "service.name" . }}
-    chart: {{ template "service.chart" . }}
     release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
     high-availability-config.resources.gardener.cloud/type: controller
 spec:
   revisionHistoryLimit: 2
@@ -28,6 +28,8 @@ spec:
       labels:
         app: {{ template "service.name" . }}
         release: {{ .Release.Name }}
+        app.kubernetes.io/name: {{ template "service.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
         gardener.cloud/role: controlplane
         networking.gardener.cloud/to-dns: allowed
         networking.gardener.cloud/to-runtime-apiserver: allowed
