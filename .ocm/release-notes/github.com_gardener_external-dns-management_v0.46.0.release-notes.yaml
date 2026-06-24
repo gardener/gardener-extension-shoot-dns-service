@@ -1,0 +1,15 @@
+ocm:
+  component_name: github.com/gardener/external-dns-management
+  component_version: v0.46.0
+release_notes:
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: '[next-generation] Fix DNSEntry cleanup when all targets/text are removed
+    from the spec.'
+  mimetype: text/markdown
+  reference: '[#934](https://github.com/gardener/external-dns-management/pull/934)'
+  type: standard
