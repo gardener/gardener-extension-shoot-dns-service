@@ -21,11 +21,9 @@ build:
         dependencies:
           paths:
             - charts
-            - charts/internal
             - cmd/gardener-extension-shoot-dns-service
             - cmd/gardener-extension-shoot-dns-service/app
             - imagevector
-            - imagevector/images.yaml
             - pkg/admission/cmd
             - pkg/admission/mutator
             - pkg/admission/validator

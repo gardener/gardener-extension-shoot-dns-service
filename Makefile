@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 ENSURE_GARDENER_MOD         := $(shell go get github.com/gardener/gardener@$$(go list -m -f "{{.Version}}" github.com/gardener/gardener))
+ENSURE_GARDENER_TOOLS_MOD   := $(shell go get github.com/gardener/gardener/hack/tools@$$(go list -m -f "{{.Version}}" github.com/gardener/gardener/hack/tools))
 GARDENER_HACK_DIR           := $(shell go list -m -f "{{.Dir}}" github.com/gardener/gardener)/hack
 EXTENSION_PREFIX            := gardener-extension
 NAME                        := shoot-dns-service
@@ -147,6 +148,10 @@ test-integration-lifecycle: $(REPORT_COLLECTOR) $(SETUP_ENVTEST)
 .PHONY: test-e2e-local
 test-e2e-local: $(KIND) $(YQ) $(GINKGO)
 	@$(REPO_ROOT)/hack/test-e2e-provider-local.sh --procs=3
+
+.PHONY: demo
+demo: $(KIND) $(YQ)
+	@$(REPO_ROOT)/hack/demo.sh
 
 .PHONY: verify
 verify: check format test test-integration-lifecycle sast
