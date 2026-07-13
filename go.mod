@@ -7,8 +7,8 @@ require (
 	github.com/elastic/crd-ref-docs v0.3.0
 	github.com/gardener/controller-manager-library v0.2.1-0.20260703140944-c0ab44e1854d
 	github.com/gardener/external-dns-management v0.47.0
-	github.com/gardener/gardener v1.145.1
-	github.com/gardener/gardener/pkg/apis v1.145.1
+	github.com/gardener/gardener v1.146.3
+	github.com/gardener/gardener/pkg/apis v1.146.3
 	github.com/go-logr/logr v1.4.3
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/onsi/ginkgo/v2 v2.32.0
