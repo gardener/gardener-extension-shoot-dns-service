@@ -36,7 +36,7 @@ vpa:
   minAllowed:
     memory: 25Mi
   updatePolicy:
-    updateMode: "Recreate"
+    updateMode: "InPlaceOrRecreate"
 
 workloadIdentity:
   gcp:
