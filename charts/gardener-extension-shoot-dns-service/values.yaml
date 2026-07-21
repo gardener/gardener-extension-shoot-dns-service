@@ -43,7 +43,7 @@ vpa:
       memory: 50Mi
     controlledValues: RequestsOnly
   updatePolicy:
-    updateMode: "Recreate"
+    updateMode: "InPlaceOrRecreate"
 
 controllers:
   lifecycle:
@@ -150,7 +150,7 @@ dnsControllerManager:
         memory: 50Mi
       controlledValues: RequestsOnly
     updatePolicy:
-      updateMode: "Recreate"
+      updateMode: "InPlaceOrRecreate"
 
 workloadIdentity:
   gcp:
