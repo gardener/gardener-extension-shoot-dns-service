@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/gardener/gardener/extensions/pkg/controller"
+	v1beta1helper "github.com/gardener/gardener/pkg/api/core/v1beta1/helper"
 	"github.com/gardener/gardener/pkg/extensions"
 	"github.com/gardener/gardener/test/framework"
 	. "github.com/onsi/ginkgo/v2"
@@ -53,7 +54,7 @@ func (f *shootDNSFramework) prepareClientsAndCluster(ctx context.Context) {
 	if err != nil {
 		Fail(fmt.Sprintf("get cluster failed: %s", err))
 	}
-	if !f.cluster.Shoot.Spec.Addons.NginxIngress.Enabled {
+	if !v1beta1helper.NginxIngressEnabled(f.cluster.Shoot.Spec.Addons) {
 		Fail("The test requires .spec.addons.nginxIngress.enabled to be true")
 	}
 	if f.cluster.Shoot.Spec.DNS == nil || f.cluster.Shoot.Spec.DNS.Domain == nil {
