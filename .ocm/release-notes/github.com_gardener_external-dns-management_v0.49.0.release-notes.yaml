@@ -1,0 +1,87 @@
+ocm:
+  component_name: github.com/gardener/external-dns-management
+  component_version: v0.49.0
+release_notes:
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: Fixed unnecessary AWS zone cache invalidation when all DNS changes in
+    a batch fail.
+  mimetype: text/markdown
+  reference: '[#1000](https://github.com/gardener/external-dns-management/pull/1000)'
+  type: standard
+- audience: user
+  author:
+    hostname: github.com
+    type: githubUser
+    username: t-lesniewski-sr
+  category: bugfix
+  contents: Validation of `aws-route53` provider secrets no longer rejects valid `AWS_SESSION_TOKEN`/`sessionToken`
+    values. The maximum accepted length was raised from 512 to 8192 characters, because
+    AWS does not specify a maximum size for STS session tokens.
+  mimetype: text/markdown
+  reference: '[#999](https://github.com/gardener/external-dns-management/pull/999)'
+  type: standard
+- audience: user
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: '[next-generation] Fix incorrect zone exclusion for included subdomains
+    of excluded domains'
+  mimetype: text/markdown
+  reference: '[#985](https://github.com/gardener/external-dns-management/pull/985)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: '[next-generation] Fixed spurious re-reconciliation caused by finalizer
+    being added to`DNSEntry` before changes were applied.'
+  mimetype: text/markdown
+  reference: '[#1000](https://github.com/gardener/external-dns-management/pull/1000)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: '[next-generation] Order DNS change requests when transitioning between
+    plain and routing policy records.'
+  mimetype: text/markdown
+  reference: '[#1003](https://github.com/gardener/external-dns-management/pull/1003)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: DobromirNPeev
+  category: other
+  contents: The update mode of the VerticalPodAutoscaler resources deployed by the
+    external-dns-management is now explicitly set to `InPlaceOrRecreate`, reflecting
+    the actual runtime behavior after the unconditional enablement of the `VPAInPlaceUpdates`
+    feature gate.
+  mimetype: text/markdown
+  reference: '[#991](https://github.com/gardener/external-dns-management/pull/991)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: feature
+  contents: 'Per-entry exponential backoff for persistently failing DNS entries: when
+    a provider update keeps failing, the entry''s hosted zone reconciliation is suppressed
+    for an increasing delay (default: base 30s, factor 2, max 30m, with jitter) instead
+    of retrying at the full zone cadence. The backoff resets immediately on success
+    or when the entry is modified.'
+  mimetype: text/markdown
+  reference: '[#1000](https://github.com/gardener/external-dns-management/pull/1000)'
+  type: standard
