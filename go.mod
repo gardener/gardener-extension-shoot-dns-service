@@ -4,7 +4,7 @@ go 1.26.5
 
 require (
 	github.com/andybalholm/brotli v1.2.2
-	github.com/gardener/controller-manager-library v0.2.1-0.20260810082918-803e32762328
+	github.com/gardener/controller-manager-library v0.2.1-0.20260827075548-72e7f12a4be9
 	github.com/gardener/external-dns-management v0.49.0
 	github.com/gardener/gardener v1.149.3
 	github.com/gardener/gardener/hack/tools v1.149.3
