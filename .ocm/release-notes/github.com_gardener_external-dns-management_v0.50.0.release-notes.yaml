@@ -1,0 +1,25 @@
+ocm:
+  component_name: github.com/gardener/external-dns-management
+  component_version: v0.50.0
+release_notes:
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: '[dnsman-ng] Fix duplicate `CNAME` records by filtering answer section
+    to queried name if recursive resolver is queried.'
+  mimetype: text/markdown
+  reference: '[#1055](https://github.com/gardener/external-dns-management/pull/1055)'
+  type: standard
+- audience: dependency
+  author:
+    hostname: github.com
+    type: githubUser
+    username: marc1404
+  category: other
+  contents: Bumped Go to 1.26.7.
+  mimetype: text/markdown
+  reference: '[#1035](https://github.com/gardener/external-dns-management/pull/1035)'
+  type: standard
