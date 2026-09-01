@@ -6,9 +6,9 @@ require (
 	github.com/andybalholm/brotli v1.2.2
 	github.com/gardener/controller-manager-library v0.2.1-0.20260827075548-72e7f12a4be9
 	github.com/gardener/external-dns-management v0.50.0
-	github.com/gardener/gardener v1.150.0
-	github.com/gardener/gardener/hack/tools v1.150.0
-	github.com/gardener/gardener/pkg/apis v1.150.0
+	github.com/gardener/gardener v1.150.1
+	github.com/gardener/gardener/hack/tools v1.150.1
+	github.com/gardener/gardener/pkg/apis v1.150.1
 	github.com/go-logr/logr v1.4.4
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/onsi/ginkgo/v2 v2.32.0
@@ -95,7 +95,7 @@ require (
 	github.com/fsnotify/fsnotify v1.10.1 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.2 // indirect
 	github.com/gardener/cert-management v0.23.0 // indirect
-	github.com/gardener/etcd-druid/api v0.38.1 // indirect
+	github.com/gardener/etcd-druid/api v0.38.2 // indirect
 	github.com/gardener/machine-controller-manager v0.62.1 // indirect
 	github.com/gardener/pvc-autoscaler v0.3.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
