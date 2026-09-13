@@ -177,6 +177,10 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ex *extension
 		}
 	}
 
+	if err := a.checkControllerMigration(exCtx); err != nil {
+		return err
+	}
+
 	if err := a.createOrUpdateShootResources(exCtx); err != nil {
 		return err
 	}
@@ -247,6 +251,9 @@ func (a *actuator) Delete(ctx context.Context, log logr.Logger, ex *extensionsv1
 	if err != nil {
 		return err
 	}
+	if err := a.checkControllerMigration(exCtx); err != nil {
+		return err
+	}
 	return a.delete(exCtx, false)
 }
 
@@ -254,6 +261,10 @@ func (a *actuator) Delete(ctx context.Context, log logr.Logger, ex *extensionsv1
 func (a *actuator) ForceDelete(ctx context.Context, log logr.Logger, ex *extensionsv1alpha1.Extension) error {
 	exCtx, err := a.prepareExtensionContext(ctx, log, ex)
 	if err != nil {
+		return err
+	}
+
+	if err := a.checkControllerMigration(exCtx); err != nil {
 		return err
 	}
 
@@ -310,6 +321,10 @@ func (a *actuator) Migrate(ctx context.Context, log logr.Logger, ex *extensionsv
 		return err
 	}
 
+	if err := a.checkControllerMigration(exCtx); err != nil {
+		return err
+	}
+
 	// Keep objects for shoot managed resources so that they are not deleted from the shoot during the migration
 	if err := a.managedResourceAccess.SetKeepObjects(ctx, ex.GetNamespace(), ShootResourcesName, true); err != nil {
 		return err
@@ -351,6 +366,92 @@ func (a *actuator) prepareExtensionContext(ctx context.Context, log logr.Logger,
 		dnsconfig:    dnsConfig,
 		globalConfig: a.config,
 	}, nil
+}
+
+func (a *actuator) checkControllerMigration(exCtx extensionContext) error {
+	useNextGeneration := exCtx.useNextGenerationController()
+
+	updateResources := func() error {
+		if err := a.createOrUpdateSeedResources(exCtx, controllerModeNormal); err != nil {
+			return err
+		}
+		if err := a.createOrUpdateShootResources(exCtx); err != nil {
+			return err
+		}
+		return a.updateExtensionAnnotation(exCtx)
+	}
+
+	entries := &dnsv1alpha1.DNSEntryList{}
+	if err := a.client.List(exCtx.ctx, entries, client.InNamespace(exCtx.ex.Namespace)); err != nil {
+		return fmt.Errorf("list entries failed: %w", err)
+	}
+	mismatches := 0
+	for _, entry := range entries.Items {
+		if nextGen := isNextGenClass(entry.Annotations, "resources.gardener.cloud/owners"); nextGen != nil {
+			if *nextGen != useNextGeneration {
+				mismatches++
+			}
+		}
+	}
+	if mismatches > 0 {
+		if err := updateResources(); err != nil {
+			return err
+		}
+		return fmt.Errorf("DNS class check with wrong class for %d DNS entries found", mismatches)
+	}
+
+	providers := &dnsv1alpha1.DNSProviderList{}
+	if err := a.client.List(exCtx.ctx, providers, client.InNamespace(exCtx.ex.Namespace)); err != nil {
+		return fmt.Errorf("list providers failed: %w", err)
+	}
+	for _, provider := range providers.Items {
+		if nextGen := isNextGenClass(provider.Annotations, DNSRealmAnnotation); nextGen != nil {
+			if *nextGen != useNextGeneration {
+				mismatches++
+			}
+		}
+	}
+
+	if mismatches > 0 {
+		if err := updateResources(); err != nil {
+			return err
+		}
+		if err := a.updateDNSProvidersAnnotation(exCtx); err != nil {
+			return err
+		}
+		return fmt.Errorf("DNS class check with wrong class for %d DNS providers found", mismatches)
+	}
+
+	return nil
+}
+
+func (a *actuator) updateDNSProvidersAnnotation(exCtx extensionContext) error {
+	useNextGeneration := exCtx.useNextGenerationController()
+
+	providers := &dnsv1alpha1.DNSProviderList{}
+	if err := a.client.List(exCtx.ctx, providers, client.InNamespace(exCtx.ex.Namespace)); err != nil {
+		return fmt.Errorf("list providers failed: %w", err)
+	}
+	for _, provider := range providers.Items {
+		if nextGen := isNextGenClass(provider.Annotations, "dns.gardener.cloud/realms"); nextGen != nil {
+			if *nextGen != useNextGeneration {
+				patch := client.MergeFrom(provider.DeepCopy())
+				if provider.Annotations == nil {
+					provider.Annotations = map[string]string{}
+				}
+				value := dns.DEFAULT_CLASS
+				if useNextGeneration {
+					value = NextGenerationTargetClass
+				}
+				provider.Annotations[dns.CLASS_ANNOTATION] = value
+				if err := a.client.Patch(exCtx.ctx, &provider, patch); client.IgnoreNotFound(err) != nil {
+					return fmt.Errorf("update DNS provider annotation failed for %s: %w", client.ObjectKeyFromObject(&provider), err)
+				}
+				exCtx.log.Info("updated DNS provider annotation", "provider", client.ObjectKeyFromObject(&provider), "value", value)
+			}
+		}
+	}
+	return nil
 }
 
 func (a *actuator) ignoreDNSEntriesForMigration(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
@@ -1220,4 +1321,20 @@ func getDefaultDomainQuota(cfg config.DNSServiceConfig, cluster *controller.Clus
 		quota = int32(parsedQuota)
 	}
 	return quota, nil
+}
+
+func isNextGenClass(annotations map[string]string, expectedAnnotation ...string) *bool {
+	for _, key := range expectedAnnotation {
+		if _, ok := annotations[key]; !ok {
+			return nil
+		}
+	}
+	value := annotations[dns.CLASS_ANNOTATION]
+	if value == "" || value == dns.DEFAULT_CLASS {
+		return new(false)
+	}
+	if value == NextGenerationTargetClass {
+		return new(true)
+	}
+	return nil
 }
