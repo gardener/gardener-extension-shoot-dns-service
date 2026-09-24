@@ -33,6 +33,7 @@ import (
 	"github.com/gardener/gardener/pkg/utils/retry"
 	"github.com/go-logr/logr"
 	"github.com/hashicorp/go-multierror"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
@@ -94,6 +95,8 @@ const (
 	controllerModeCleaningUp
 	// controllerModeScaledDown is the mode where the shoot-dns-service controller manager is scaled down, e.g. during hibernation.
 	controllerModeScaledDown
+	// controllerModeMigrating is the mode on migrating between legacy and next generation controller.
+	controllerModeMigrating
 )
 
 type extensionContext struct {
@@ -372,7 +375,7 @@ func (a *actuator) checkControllerMigration(exCtx extensionContext) error {
 	useNextGeneration := exCtx.useNextGenerationController()
 
 	updateResources := func() error {
-		if err := a.createOrUpdateSeedResources(exCtx, controllerModeNormal); err != nil {
+		if err := a.createOrUpdateSeedResources(exCtx, controllerModeMigrating); err != nil {
 			return err
 		}
 		if err := a.createOrUpdateShootResources(exCtx); err != nil {
@@ -548,10 +551,12 @@ func (a *actuator) createOrUpdateSeedResources(exCtx extensionContext, mode cont
 		a.config.SeedID = seedID
 	}
 
+	// The default is a single running replica. Only the hibernation-aware and cleanup/scale-down modes deviate.
 	replicas := 1
+	hibernated := a.isHibernated(exCtx.cluster)
 	switch mode {
 	case controllerModeNormal:
-		if a.isHibernated(exCtx.cluster) {
+		if hibernated {
 			replicas = 0
 		}
 	case controllerModeCleaningUp:
@@ -560,6 +565,17 @@ func (a *actuator) createOrUpdateSeedResources(exCtx extensionContext, mode cont
 		}
 	case controllerModeScaledDown:
 		replicas = 0
+	case controllerModeMigrating:
+		// Migrating behaves like the normal mode for a running shoot (a single replica). It only differs
+		// while hibernated: instead of forcing 0, keep the current desired replica count so we do not
+		// inadvertently wake up or scale down the controller while switching classes.
+		if hibernated {
+			currentReplicas, err := a.getCurrentReplicas(exCtx)
+			if err != nil {
+				return fmt.Errorf("failed to get current replicas for shoot-dns-service controller deployment: %w", err)
+			}
+			replicas = int(currentReplicas)
+		}
 	}
 
 	chartValues := map[string]any{
@@ -634,6 +650,14 @@ func (a *actuator) ensureStateRefreshed(exCtx extensionContext) error {
 	return handler.Update("refresh")
 }
 
+func (a *actuator) getCurrentReplicas(exCtx extensionContext) (int32, error) {
+	deploy := &appsv1.Deployment{}
+	if err := a.client.Get(exCtx.ctx, client.ObjectKeyFromObject(exCtx.ex), deploy); client.IgnoreNotFound(err) != nil {
+		return 0, client.IgnoreNotFound(err)
+	}
+	return ptr.Deref(deploy.Spec.Replicas, 0), nil
+}
+
 // updateExtensionAnnotation updates the annotation of the extension with the information if the next generation controller should be used or not.
 // This information is used by the shoot-cert-service to configure the correct dns class on creating DNSEntries for DNS challenges.
 func (a *actuator) updateExtensionAnnotation(exCtx extensionContext) error {
@@ -651,6 +675,49 @@ func (a *actuator) updateExtensionAnnotation(exCtx extensionContext) error {
 	if err := a.client.Patch(exCtx.ctx, exCtx.ex, patch); err != nil {
 		return fmt.Errorf("failed to patch extension annotation: %w", err)
 	}
+	return nil
+}
+
+func (a *actuator) patchDefaultExternalProviderTypeIfNeeded(exCtx extensionContext) error {
+	p, err := a.prepareDefaultExternalDNSProvider(exCtx)
+	if err != nil {
+		return err
+	}
+	if p == nil {
+		return nil
+	}
+	// A resolved provider with an empty type means the external DNSRecord is absent (e.g. while hibernated the
+	// record may not exist yet). In that case we must not patch, or we would blank out the type and secret of an
+	// otherwise healthy DNSProvider.
+	if ptr.Deref(p.Type, "") == "" {
+		return nil
+	}
+	current := &dnsv1alpha1.DNSProvider{}
+	if err := a.client.Get(exCtx.ctx, client.ObjectKey{Namespace: exCtx.ex.Namespace, Name: "external"}, current); err != nil {
+		if k8serr.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to get default external DNSProvider: %w", err)
+	}
+	if ptr.Deref(p.Type, "") == current.Spec.Type {
+		return nil // nothing to do
+	}
+	// Explicit migration step needed when the shoot is hibernated and the seed label changed while the
+	// controller was scaled down (so the normal reconcile path never ran). The two controllers use
+	// different provider types for the default external DNSProvider:
+	// - legacy controller may use type "remote" (remote default domain handling)
+	// - next-generation controller uses the real provider type from the DNSRecord
+	// Patching the type and secret here ensures the newly active controller can reconcile the provider correctly.
+	// Derive the desired spec via the same builder the reconcile path uses (buildDNSProvider with an empty
+	// mappedSecretName) so the SecretRef resolution stays consistent, but only patch type and secret.
+	desired := buildDNSProvider(p, exCtx.ex.Namespace, ExternalDNSProviderName, "")
+	patch := client.MergeFrom(current.DeepCopy())
+	current.Spec.Type = desired.Spec.Type
+	current.Spec.SecretRef = desired.Spec.SecretRef
+	if err := a.client.Patch(exCtx.ctx, current, patch); err != nil {
+		return fmt.Errorf("failed to patch default external DNSProvider type: %w", err)
+	}
+	exCtx.log.Info("Patched external DNSProvider", "type", p.Type, "secretName", current.Spec.SecretRef.Name)
 	return nil
 }
 
@@ -691,6 +758,9 @@ func (a *actuator) createOrUpdateDNSProviders(exCtx extensionContext) error {
 			deployers[name] = dw
 		}
 	} else {
+		if err := a.patchDefaultExternalProviderTypeIfNeeded(exCtx); err != nil {
+			return err
+		}
 		if err := a.deleteManagedDNSEntries(exCtx); err != nil {
 			return err
 		}
