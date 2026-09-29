@@ -1,0 +1,71 @@
+ocm:
+  component_name: github.com/gardener/external-dns-management
+  component_version: v0.52.0
+release_notes:
+- audience: user
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: '[next-generation] External DNSAnnotation annotations take precedence
+    over object annotations'
+  mimetype: text/markdown
+  reference: '[#1097](https://github.com/gardener/external-dns-management/pull/1097)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: rickardsjp
+  category: bugfix
+  contents: The next-generation DNS controller no longer fails to create a TXT record
+    (e.g. an ACME `_acme-challenge` DNS-01 challenge record) when a wildcard CNAME
+    shadows the queried name. A CNAME answer to the pre-write TXT lookup is now treated
+    as "no record present" instead of a hard error, so the record is created and certificate
+    renewals proceed.
+  mimetype: text/markdown
+  reference: '[#1089](https://github.com/gardener/external-dns-management/pull/1089)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: other
+  contents: '[next-generation] Verify AWS `ALIAS` records against target IPs, not
+    just `TXT` bookmark'
+  mimetype: text/markdown
+  reference: '[#1096](https://github.com/gardener/external-dns-management/pull/1096)'
+  type: standard
+- audience: user
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: '[next-generation] Prevent DNS record loss when transitioning a `DNSEntry`
+    from a routing policy to a plain record'
+  mimetype: text/markdown
+  reference: '[#1101](https://github.com/gardener/external-dns-management/pull/1101)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: other
+  contents: '[netlify provider] Support `apiToken` as alias for `NETLIFY_AUTH_TOKEN`'
+  mimetype: text/markdown
+  reference: '[#1093](https://github.com/gardener/external-dns-management/pull/1093)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: Preserve backend DNS record when entry class changes to another controller.
+  mimetype: text/markdown
+  reference: '[#1085](https://github.com/gardener/external-dns-management/pull/1085)'
+  type: standard
