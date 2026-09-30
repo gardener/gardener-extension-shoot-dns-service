@@ -56,9 +56,6 @@ var _ = Describe("Shoot-DNS-Service Tests", func() {
 			ctx, cancel := context.WithTimeout(parentCtx, 15*time.Minute)
 			defer cancel()
 
-			By("Deploy Extension")
-			Expect(execMake(ctx, "extension-up")).To(Succeed())
-
 			By("Get Virtual Garden Client")
 			gardenClientSet, err := kubernetes.NewClientFromSecret(ctx, runtimeClient, v1beta1constants.GardenNamespace, "gardener",
 				kubernetes.WithDisabledCachedClient(),

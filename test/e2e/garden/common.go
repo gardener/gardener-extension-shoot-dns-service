@@ -38,9 +38,23 @@ var (
 	runtimeClient client.Client
 )
 
-var _ = BeforeSuite(func() {
+var _ = SynchronizedBeforeSuite(func() []byte {
+	// Deploy the extension exactly once for the whole suite (on ginkgo node 1 only).
+	// The deployment is identical for all specs; running it per-spec caused concurrent
+	// `make extension-up` invocations across parallel processes to race on the shared
+	// hack/tools/bin binaries, resulting in flaky "Text file busy" (ETXTBSY) failures.
 	Expect(os.Getenv("KUBECONFIG")).NotTo(BeEmpty(), "KUBECONFIG must be set")
 	Expect(os.Getenv("REPO_ROOT")).NotTo(BeEmpty(), "REPO_ROOT must be set")
+
+	logf.SetLogger(logger.MustNewZapLogger(logger.InfoLevel, logger.FormatJSON, zap.WriteTo(GinkgoWriter)))
+
+	By("Deploy Extension")
+	Expect(execMake(context.Background(), "extension-up")).To(Succeed())
+
+	return nil
+}, func(_ []byte) {
+	// Runs on every ginkgo node: initialize the process-local runtime client.
+	Expect(os.Getenv("KUBECONFIG")).NotTo(BeEmpty(), "KUBECONFIG must be set")
 
 	logf.SetLogger(logger.MustNewZapLogger(logger.InfoLevel, logger.FormatJSON, zap.WriteTo(GinkgoWriter)))
 
