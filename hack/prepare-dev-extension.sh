@@ -46,6 +46,8 @@ spec:
         helm:
           ociRepository:
             ref: local-skaffold/gardener-extension-shoot-dns-service/charts/shoot-dns-service-admission-runtime:v0.0.0
+            caBundleSecretRef:
+              name: gardener-local-registry-ca
       values:
         image:
           ref: local-skaffold/gardener-extension-admission-shoot-dns-service:v0.0.0
@@ -53,7 +55,13 @@ spec:
         helm:
           ociRepository:
             ref: local-skaffold/gardener-extension-shoot-dns-service/charts/shoot-dns-service-admission-application:v0.0.0
+            caBundleSecretRef:
+              name: gardener-local-registry-ca
     extension:
+      helm:
+        ociRepository:
+          caBundleSecretRef:
+            name: gardener-local-registry-ca
       values:
         defaultExternalProviderEntriesQuota: 10
         defaultExternalProviderEntriesQuotaMax: 15
