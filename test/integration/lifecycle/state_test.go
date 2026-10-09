@@ -19,7 +19,6 @@ import (
 	resourcesv1alpha1 "github.com/gardener/gardener/pkg/apis/resources/v1alpha1"
 	"github.com/gardener/gardener/pkg/logger"
 	gardenerutils "github.com/gardener/gardener/pkg/utils"
-	. "github.com/gardener/gardener/pkg/utils/test"
 	"github.com/gardener/gardener/test/framework"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
@@ -204,7 +203,7 @@ var _ = Describe("Lifecycle state tests", func() {
 		Expect(c.Create(ctx, ext)).To(Succeed())
 
 		By("wait for 'external' DNSProvider and patch it to Ready")
-		CEventually(ctx, func(g Gomega) error {
+		Eventually(ctx, func(g Gomega) error {
 			provider := &dnsv1alpha1.DNSProvider{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: testName,
@@ -221,7 +220,7 @@ var _ = Describe("Lifecycle state tests", func() {
 		}).Should(Succeed())
 
 		By("waiting for extension last operation to succeed")
-		CEventually(ctx, func() bool {
+		Eventually(ctx, func() bool {
 			Expect(c.Get(ctx, client.ObjectKeyFromObject(ext), ext)).To(Succeed())
 			return ext.Status.LastOperation != nil && ext.Status.LastOperation.State == gardencorev1beta1.LastOperationStateSucceeded
 		}).WithPolling(1 * time.Second).WithTimeout(defaultTimeout).Should(BeTrue())
@@ -242,7 +241,7 @@ var _ = Describe("Lifecycle state tests", func() {
 		Expect(state.Entries).To(HaveLen(0))
 
 		By("start migration")
-		CEventually(ctx, func(g Gomega) error {
+		Eventually(ctx, func(g Gomega) error {
 			patch := client.MergeFrom(ext.DeepCopy())
 			if ext.Annotations == nil {
 				ext.Annotations = map[string]string{}
@@ -252,7 +251,7 @@ var _ = Describe("Lifecycle state tests", func() {
 		}).Should(Succeed())
 
 		By("waiting for extension last operation to succeed")
-		CEventually(ctx, func() bool {
+		Eventually(ctx, func() bool {
 			Expect(c.Get(ctx, client.ObjectKeyFromObject(ext), ext)).To(Succeed())
 			return ext.Status.LastOperation != nil &&
 				ext.Status.LastOperation.State == gardencorev1beta1.LastOperationStateSucceeded &&
@@ -281,7 +280,7 @@ var _ = Describe("Lifecycle state tests", func() {
 
 		By("deleting extension")
 		Expect(c.Delete(ctx, ext)).To(Succeed())
-		CEventually(ctx, func() bool {
+		Eventually(ctx, func() bool {
 			err := c.Get(ctx, client.ObjectKeyFromObject(ext), ext)
 			return err != nil && client.IgnoreNotFound(err) == nil
 		}).WithPolling(1 * time.Second).WithTimeout(defaultTimeout).Should(BeTrue())

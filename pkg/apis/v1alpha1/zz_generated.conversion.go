@@ -12,7 +12,6 @@ package v1alpha1
 import (
 	unsafe "unsafe"
 
-	dnsv1alpha1 "github.com/gardener/external-dns-management/pkg/apis/dns/v1alpha1"
 	apis "github.com/gardener/gardener-extension-shoot-dns-service/pkg/apis"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -49,10 +48,7 @@ func RegisterConversions(s *runtime.Scheme) error {
 }
 
 func autoConvert_v1alpha1_DNSEntry_To_apis_DNSEntry(in *DNSEntry, out *apis.DNSEntry, s conversion.Scope) error {
-	out.Name = in.Name
-	out.Labels = *(*map[string]string)(unsafe.Pointer(&in.Labels))
-	out.Annotations = *(*map[string]string)(unsafe.Pointer(&in.Annotations))
-	out.Spec = (*dnsv1alpha1.DNSEntrySpec)(unsafe.Pointer(in.Spec))
+	*out = *(*apis.DNSEntry)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -62,10 +58,7 @@ func Convert_v1alpha1_DNSEntry_To_apis_DNSEntry(in *DNSEntry, out *apis.DNSEntry
 }
 
 func autoConvert_apis_DNSEntry_To_v1alpha1_DNSEntry(in *apis.DNSEntry, out *DNSEntry, s conversion.Scope) error {
-	out.Name = in.Name
-	out.Labels = *(*map[string]string)(unsafe.Pointer(&in.Labels))
-	out.Annotations = *(*map[string]string)(unsafe.Pointer(&in.Annotations))
-	out.Spec = (*dnsv1alpha1.DNSEntrySpec)(unsafe.Pointer(in.Spec))
+	*out = *(*DNSEntry)(unsafe.Pointer(in))
 	return nil
 }
 

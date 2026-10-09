@@ -19,7 +19,6 @@ import (
 	"github.com/gardener/gardener/pkg/client/kubernetes"
 	"github.com/gardener/gardener/pkg/logger"
 	kubernetesutils "github.com/gardener/gardener/pkg/utils/kubernetes"
-	. "github.com/gardener/gardener/pkg/utils/test"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -75,7 +74,7 @@ var _ = BeforeEach(func() {
 })
 
 func waitForShootToBeReconciled(ctx context.Context, gardenClient client.Client, shoot *gardencorev1beta1.Shoot) {
-	CEventually(ctx, func(g Gomega) gardencorev1beta1.LastOperationState {
+	Eventually(ctx, func(g Gomega) gardencorev1beta1.LastOperationState {
 		g.Expect(gardenClient.Get(ctx, client.ObjectKeyFromObject(shoot), shoot)).To(Succeed())
 		if shoot.Status.LastOperation == nil || shoot.Status.ObservedGeneration != shoot.Generation {
 			return ""
@@ -85,7 +84,7 @@ func waitForShootToBeReconciled(ctx context.Context, gardenClient client.Client,
 }
 
 func waitForShootReconciliationToBeProcessing(ctx context.Context, gardenClient client.Client, shoot *gardencorev1beta1.Shoot, minProgress int32) {
-	CEventually(ctx, func(g Gomega) {
+	Eventually(ctx, func(g Gomega) {
 		g.Expect(gardenClient.Get(ctx, client.ObjectKeyFromObject(shoot), shoot)).To(Succeed())
 		g.Expect(shoot.Status.LastOperation == nil || shoot.Status.ObservedGeneration != shoot.Generation).To(BeFalse(), "shoot reconciliation has not started yet")
 		g.Expect(shoot.Status.LastOperation.Type).To(Or(Equal(gardencorev1beta1.LastOperationTypeCreate), Equal(gardencorev1beta1.LastOperationTypeReconcile)))
@@ -95,7 +94,7 @@ func waitForShootReconciliationToBeProcessing(ctx context.Context, gardenClient 
 }
 
 func waitForOperatorExtensionToBeReconciled(ctx context.Context, extension *operatorv1alpha1.Extension) {
-	CEventually(ctx, func(g Gomega) []gardencorev1beta1.Condition {
+	Eventually(ctx, func(g Gomega) []gardencorev1beta1.Condition {
 		g.Expect(runtimeClient.Get(ctx, client.ObjectKeyFromObject(extension), extension)).To(Succeed())
 		if extension.Status.ObservedGeneration != extension.Generation {
 			return nil
@@ -120,7 +119,7 @@ func waitForOperatorExtensionToBeReconciled(ctx context.Context, extension *oper
 }
 
 func waitForClientProviderReady(ctx context.Context, shootClient client.Client, provider *dnsv1alpha1.DNSProvider, expectedDomain string) {
-	CEventually(ctx, func(g Gomega) {
+	Eventually(ctx, func(g Gomega) {
 		g.Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(provider), provider)).To(Succeed())
 		g.Expect(provider.Status.State).To(Equal("Ready"))
 		g.Expect(provider.Status.Domains.Included).To(ContainElement(expectedDomain))
@@ -130,7 +129,7 @@ func waitForClientProviderReady(ctx context.Context, shootClient client.Client, 
 }
 
 func waitForExternalProviderReady(ctx context.Context, c client.Client, shootName string, key client.ObjectKey, expectedQuota int32) {
-	CEventually(ctx, func(g Gomega) {
+	Eventually(ctx, func(g Gomega) {
 		provider := &dnsv1alpha1.DNSProvider{}
 		g.Expect(c.Get(ctx, key, provider)).To(Succeed())
 		g.Expect(provider.Status.State).To(Equal("Ready"))
@@ -142,7 +141,7 @@ func waitForExternalProviderReady(ctx context.Context, c client.Client, shootNam
 }
 
 func waitForExtensionError(ctx context.Context, namespace string) {
-	CEventually(ctx, func(g Gomega) {
+	Eventually(ctx, func(g Gomega) {
 		ext := &extensionsv1alpha1.Extension{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
@@ -179,7 +178,7 @@ func deleteShoot(ctx context.Context, gardenClient client.Client, shoot *gardenc
 }
 
 func waitForShootToBeDeleted(ctx context.Context, gardenClient client.Client, shoot *gardencorev1beta1.Shoot) {
-	CEventually(ctx, func(g Gomega) bool {
+	Eventually(ctx, func(g Gomega) bool {
 		err := gardenClient.Get(ctx, client.ObjectKeyFromObject(shoot), shoot)
 		if err != nil {
 			return apierrors.IsNotFound(err)
@@ -189,7 +188,7 @@ func waitForShootToBeDeleted(ctx context.Context, gardenClient client.Client, sh
 }
 
 func waitForShootDNSEntryReady(ctx context.Context, shootClient client.Client, dnsEntry *dnsv1alpha1.DNSEntry) {
-	CEventually(ctx, func(g Gomega) string {
+	Eventually(ctx, func(g Gomega) string {
 		g.Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(dnsEntry), dnsEntry)).To(Succeed())
 		g.Expect(dnsEntry.Status.ObservedGeneration).To(Equal(dnsEntry.Generation))
 		g.Expect(dnsEntry.Finalizers).To(ContainElement("garden.dns.gardener.cloud/dnsentry-source"))

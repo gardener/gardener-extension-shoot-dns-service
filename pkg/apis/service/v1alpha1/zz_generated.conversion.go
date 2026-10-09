@@ -94,8 +94,7 @@ func Convert_service_DNSConfig_To_v1alpha1_DNSConfig(in *service.DNSConfig, out 
 }
 
 func autoConvert_v1alpha1_DNSIncludeExclude_To_service_DNSIncludeExclude(in *DNSIncludeExclude, out *service.DNSIncludeExclude, s conversion.Scope) error {
-	out.Include = *(*[]string)(unsafe.Pointer(&in.Include))
-	out.Exclude = *(*[]string)(unsafe.Pointer(&in.Exclude))
+	*out = *(*service.DNSIncludeExclude)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -105,8 +104,7 @@ func Convert_v1alpha1_DNSIncludeExclude_To_service_DNSIncludeExclude(in *DNSIncl
 }
 
 func autoConvert_service_DNSIncludeExclude_To_v1alpha1_DNSIncludeExclude(in *service.DNSIncludeExclude, out *DNSIncludeExclude, s conversion.Scope) error {
-	out.Include = *(*[]string)(unsafe.Pointer(&in.Include))
-	out.Exclude = *(*[]string)(unsafe.Pointer(&in.Exclude))
+	*out = *(*DNSIncludeExclude)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -116,11 +114,7 @@ func Convert_service_DNSIncludeExclude_To_v1alpha1_DNSIncludeExclude(in *service
 }
 
 func autoConvert_v1alpha1_DNSProvider_To_service_DNSProvider(in *DNSProvider, out *service.DNSProvider, s conversion.Scope) error {
-	out.Domains = (*service.DNSIncludeExclude)(unsafe.Pointer(in.Domains))
-	out.SecretName = (*string)(unsafe.Pointer(in.SecretName))
-	out.Credentials = (*string)(unsafe.Pointer(in.Credentials))
-	out.Type = (*string)(unsafe.Pointer(in.Type))
-	out.Zones = (*service.DNSIncludeExclude)(unsafe.Pointer(in.Zones))
+	*out = *(*service.DNSProvider)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -130,11 +124,7 @@ func Convert_v1alpha1_DNSProvider_To_service_DNSProvider(in *DNSProvider, out *s
 }
 
 func autoConvert_service_DNSProvider_To_v1alpha1_DNSProvider(in *service.DNSProvider, out *DNSProvider, s conversion.Scope) error {
-	out.Domains = (*DNSIncludeExclude)(unsafe.Pointer(in.Domains))
-	out.SecretName = (*string)(unsafe.Pointer(in.SecretName))
-	out.Credentials = (*string)(unsafe.Pointer(in.Credentials))
-	out.Type = (*string)(unsafe.Pointer(in.Type))
-	out.Zones = (*DNSIncludeExclude)(unsafe.Pointer(in.Zones))
+	*out = *(*DNSProvider)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -144,7 +134,7 @@ func Convert_service_DNSProvider_To_v1alpha1_DNSProvider(in *service.DNSProvider
 }
 
 func autoConvert_v1alpha1_DNSProviderReplication_To_service_DNSProviderReplication(in *DNSProviderReplication, out *service.DNSProviderReplication, s conversion.Scope) error {
-	out.Enabled = in.Enabled
+	*out = *(*service.DNSProviderReplication)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -154,7 +144,7 @@ func Convert_v1alpha1_DNSProviderReplication_To_service_DNSProviderReplication(i
 }
 
 func autoConvert_service_DNSProviderReplication_To_v1alpha1_DNSProviderReplication(in *service.DNSProviderReplication, out *DNSProviderReplication, s conversion.Scope) error {
-	out.Enabled = in.Enabled
+	*out = *(*DNSProviderReplication)(unsafe.Pointer(in))
 	return nil
 }
 
