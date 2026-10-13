@@ -1,0 +1,60 @@
+ocm:
+  component_name: github.com/gardener/external-dns-management
+  component_version: v0.53.0
+release_notes:
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: 'The Google Cloud DNS provider (next-gen controller) is now self-healing
+    when a Changes.Create call fails with 404: it re-fetches the live record sets
+    and retries, recovering from cases where a wildcard record caused a spurious "not
+    found" error during updates'
+  mimetype: text/markdown
+  reference: '[#1118](https://github.com/gardener/external-dns-management/pull/1118)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: Enable deletion of ALIAS records on AWS GovCloud zones.
+  mimetype: text/markdown
+  reference: '[#1125](https://github.com/gardener/external-dns-management/pull/1125)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: other
+  contents: '[next-generation] Clean up orphan target DNSEntries and DNSProviders
+    on startup'
+  mimetype: text/markdown
+  reference: '[#1108](https://github.com/gardener/external-dns-management/pull/1108)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: '[next-generation] Make OpenStack update/delete self-healing on record-set
+    not-found'
+  mimetype: text/markdown
+  reference: '[#1105](https://github.com/gardener/external-dns-management/pull/1105)'
+  type: standard
+- audience: user
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: feature
+  contents: '[next-generation] Add dnsProviderNamespaceRestriction to next-generation
+    `DNSProvider` replication'
+  mimetype: text/markdown
+  reference: '[#1109](https://github.com/gardener/external-dns-management/pull/1109)'
+  type: standard
