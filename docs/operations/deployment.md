@@ -169,5 +169,10 @@ spec:
         kind: DNSConfig
         dnsProviderReplication:
           enabled: true
+          #namespaceRestrictionEnabled: true 
 ...
 ```
+
+Replicated providers can additionally be restricted to their own namespace via
+`dnsProviderReplication.namespaceRestrictionEnabled` (next-generation controller only). See
+[Restricting replicated providers to their own namespace](../usage/dns_providers.md#restricting-replicated-providers-to-their-own-namespace).

@@ -353,6 +353,7 @@ var _ = Describe("Actuator", func() {
 				checkValues(mmr.values, fmt.Sprintf(`
 dnsProviderReplication:
   enabled: true
+  namespaceRestrictionEnabled: false
 nextGeneration:
   enabled: %t
 serviceName: shoot-dns-service
@@ -380,6 +381,7 @@ creatorLabelValue: shoot--foo--bar-78897def-5208-4feb-b0f0-015950ead-32l64aynh25
 dnsClass: source-class
 dnsProviderReplication:
   enabled: true
+  namespaceRestrictionEnabled: false
 genericTokenKubeconfigSecretName: generic-token-kubeconfig
 images:
   dns-controller-manager: '...'

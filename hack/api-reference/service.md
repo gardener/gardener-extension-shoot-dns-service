@@ -248,6 +248,18 @@ boolean
 <p>Enabled if true, the replication of DNSProviders from shoot cluster to the control plane is enabled</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>namespaceRestrictionEnabled</code></br>
+<em>
+boolean
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NamespaceRestrictionEnabled restricts replicated DNSProviders to their own namespace: a DNSEntry may only<br />use a replicated DNSProvider in the same namespace, and a source DNSProvider whose secretRef points at a<br />foreign namespace is rejected. This isolates DNS management per namespace for multi-tenant, single-cluster<br />setups. Only takes effect if replication is enabled (see Enabled).<br />Note: Only supported for the next-generation controller; ignored otherwise.</p>
+</td>
+</tr>
 
 </tbody>
 </table>

@@ -55,6 +55,9 @@ controllers:
     sourceClusterID: {{ .Values.shootId }}
     {{ if .Values.dnsProviderReplication.enabled }}
     dnsProviderReplication: true
+    {{ if .Values.dnsProviderReplication.namespaceRestrictionEnabled }}
+    dnsProviderNamespaceRestriction: true
+    {{ end }}
     {{ end }}
 leaderElection:
   leaderElect: true
