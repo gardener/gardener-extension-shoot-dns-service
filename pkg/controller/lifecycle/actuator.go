@@ -587,7 +587,8 @@ func (a *actuator) createOrUpdateSeedResources(exCtx extensionContext, mode cont
 		"seedId":                           seedID,
 		"dnsClass":                         a.config.DNSClass,
 		"dnsProviderReplication": map[string]any{
-			"enabled": a.replicateDNSProviders(exCtx.dnsconfig),
+			"enabled":                     a.replicateDNSProviders(exCtx.dnsconfig),
+			"namespaceRestrictionEnabled": a.dnsProvidersNamespaceRestrictionEnabled(exCtx),
 		},
 		"nextGeneration": map[string]any{
 			"enabled":                           exCtx.useNextGenerationController(),
@@ -1043,6 +1044,14 @@ func (a *actuator) replicateDNSProviders(dnsconfig *apisservice.DNSConfig) bool 
 	return a.config.ReplicateDNSProviders
 }
 
+func (a *actuator) dnsProvidersNamespaceRestrictionEnabled(exCtx extensionContext) bool {
+	replication := exCtx.dnsconfig.DNSProviderReplication
+	if !exCtx.useNextGenerationController() || replication == nil {
+		return false
+	}
+	return ptr.Deref(replication.NamespaceRestrictionEnabled, false) && a.replicateDNSProviders(exCtx.dnsconfig)
+}
+
 func (a *actuator) deleteSeedResources(exCtx extensionContext, migrate, force bool) error {
 	namespace := exCtx.ex.Namespace
 	exCtx.log.Info("Component is being deleted", "component", service.ExtensionServiceName, "namespace", namespace)
@@ -1250,7 +1259,8 @@ func (a *actuator) createOrUpdateShootResources(exCtx extensionContext) error {
 	chartValues := map[string]any{
 		"serviceName": service.ServiceName,
 		"dnsProviderReplication": map[string]any{
-			"enabled": a.replicateDNSProviders(exCtx.dnsconfig),
+			"enabled":                     a.replicateDNSProviders(exCtx.dnsconfig),
+			"namespaceRestrictionEnabled": a.dnsProvidersNamespaceRestrictionEnabled(exCtx),
 		},
 		"nextGeneration": map[string]any{
 			"enabled": exCtx.useNextGenerationController(),
