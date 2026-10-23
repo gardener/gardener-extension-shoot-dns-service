@@ -17,6 +17,7 @@ import (
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	resourcesv1alpha1 "github.com/gardener/gardener/pkg/apis/resources/v1alpha1"
+	extensionscrds "github.com/gardener/gardener/pkg/component/extensions/crds"
 	"github.com/gardener/gardener/pkg/logger"
 	gardenerutils "github.com/gardener/gardener/pkg/utils"
 	"github.com/gardener/gardener/test/framework"
@@ -72,10 +73,11 @@ var (
 
 	testName string
 
-	namespace *corev1.Namespace
-	entries   []*dnsv1alpha1.DNSEntry
-	shoot     *gardencorev1beta1.Shoot
-	cluster   *extensionsv1alpha1.Cluster
+	namespace  *corev1.Namespace
+	entries    []*dnsv1alpha1.DNSEntry
+	dnsRecord  *extensionsv1alpha1.DNSRecord
+	shoot      *gardencorev1beta1.Shoot
+	cluster    *extensionsv1alpha1.Cluster
 )
 
 var _ = BeforeSuite(func() {
@@ -99,7 +101,7 @@ var _ = BeforeSuite(func() {
 		framework.RunCleanupActions()
 
 		By("tearing down shoot environment")
-		teardownShootEnvironment(ctx, c, namespace, entries, cluster)
+		teardownShootEnvironment(ctx, c, namespace, entries, dnsRecord, cluster)
 
 		By("stopping test environment")
 		Expect(testEnv.Stop()).To(Succeed())
@@ -115,6 +117,9 @@ var _ = BeforeSuite(func() {
 		},
 	}
 	shoot = &gardencorev1beta1.Shoot{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testName,
+		},
 		Spec: gardencorev1beta1.ShootSpec{
 			DNS: &gardencorev1beta1.DNS{
 				Domain: new(testName + "example.com"),
@@ -138,6 +143,24 @@ var _ = BeforeSuite(func() {
 		},
 	}
 	entries = createDNSEntries(*shoot.Status.ClusterIdentity, testName, *entryCount)
+	dnsRecord = &extensionsv1alpha1.DNSRecord{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName + "-external",
+			Namespace: testName,
+		},
+		Spec: extensionsv1alpha1.DNSRecordSpec{
+			DefaultSpec: extensionsv1alpha1.DefaultSpec{
+				Type: "aws-route53",
+			},
+			SecretRef: corev1.SecretReference{
+				Name:      "dnsrecord-external-credentials",
+				Namespace: testName,
+			},
+			Name:       "api." + testName + ".example.com",
+			RecordType: extensionsv1alpha1.DNSRecordTypeA,
+			Values:     []string{"1.2.3.4"},
+		},
+	}
 
 	By("starting test environment")
 	testEnv = &envtest.Environment{
@@ -182,8 +205,13 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(c).NotTo(BeNil())
 
+	By("installing DNSRecord CRD")
+	extensionCRD, err := extensionscrds.NewCRD(c, true, false)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(extensionCRD.Deploy(ctx)).To(Succeed())
+
 	By("setting up shoot environment")
-	setupShootEnvironment(ctx, c, namespace, entries, cluster)
+	setupShootEnvironment(ctx, c, namespace, entries, dnsRecord, cluster)
 })
 
 var _ = Describe("Lifecycle state tests", func() {
@@ -287,7 +315,7 @@ var _ = Describe("Lifecycle state tests", func() {
 	})
 })
 
-func setupShootEnvironment(ctx context.Context, c client.Client, namespace *corev1.Namespace, entries []*dnsv1alpha1.DNSEntry, cluster *extensionsv1alpha1.Cluster) {
+func setupShootEnvironment(ctx context.Context, c client.Client, namespace *corev1.Namespace, entries []*dnsv1alpha1.DNSEntry, dnsRecord *extensionsv1alpha1.DNSRecord, cluster *extensionsv1alpha1.Cluster) {
 	Expect(c.Create(ctx, namespace)).To(Succeed())
 	for _, entry := range entries {
 		status := *entry.Status.DeepCopy()
@@ -296,11 +324,13 @@ func setupShootEnvironment(ctx context.Context, c client.Client, namespace *core
 		entry.Status.ObservedGeneration = entry.Generation
 		Expect(c.SubResource("status").Update(ctx, entry)).To(Succeed())
 	}
+	Expect(c.Create(ctx, dnsRecord)).To(Succeed())
 	Expect(c.Create(ctx, cluster)).To(Succeed())
 }
 
-func teardownShootEnvironment(ctx context.Context, c client.Client, namespace *corev1.Namespace, entries []*dnsv1alpha1.DNSEntry, cluster *extensionsv1alpha1.Cluster) {
+func teardownShootEnvironment(ctx context.Context, c client.Client, namespace *corev1.Namespace, entries []*dnsv1alpha1.DNSEntry, dnsRecord *extensionsv1alpha1.DNSRecord, cluster *extensionsv1alpha1.Cluster) {
 	Expect(client.IgnoreNotFound(c.Delete(ctx, cluster))).To(Succeed())
+	Expect(client.IgnoreNotFound(c.Delete(ctx, dnsRecord))).To(Succeed())
 	for _, entry := range entries {
 		Expect(client.IgnoreNotFound(c.Delete(ctx, entry))).To(Succeed())
 	}
