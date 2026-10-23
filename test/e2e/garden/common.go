@@ -128,6 +128,21 @@ func waitForClientProviderReady(ctx context.Context, shootClient client.Client, 
 	}).WithPolling(1 * time.Second).Should(Succeed())
 }
 
+func waitForClientProviderInvalid(ctx context.Context, shootClient client.Client, provider *dnsv1alpha1.DNSProvider, expectedMessage string) {
+	Eventually(ctx, func(g Gomega) {
+		g.Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(provider), provider)).To(Succeed())
+		g.Expect(provider.Status.State).To(Equal("Invalid"))
+		g.Expect(provider.Status.Message).To(PointTo(ContainSubstring(expectedMessage)))
+	}).WithPolling(1 * time.Second).WithTimeout(30 * time.Second).Should(Succeed())
+}
+
+func waitForClientProviderNoStatus(ctx context.Context, shootClient client.Client, provider *dnsv1alpha1.DNSProvider) {
+	Consistently(ctx, func(g Gomega) {
+		g.Expect(shootClient.Get(ctx, client.ObjectKeyFromObject(provider), provider)).To(Succeed())
+		g.Expect(provider.Status.State).To(Equal(""))
+	}).Within(3 * time.Second).WithPolling(1 * time.Second).Should(Succeed())
+}
+
 func waitForExternalProviderReady(ctx context.Context, c client.Client, shootName string, key client.ObjectKey, expectedQuota int32) {
 	Eventually(ctx, func(g Gomega) {
 		provider := &dnsv1alpha1.DNSProvider{}
