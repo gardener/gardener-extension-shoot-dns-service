@@ -1,0 +1,172 @@
+ocm:
+  component_name: github.com/gardener/external-dns-management
+  component_version: v0.54.0
+release_notes:
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: '[aws-route53] validate properties even when providerConfig is present.'
+  mimetype: text/markdown
+  reference: '[#1174](https://github.com/gardener/external-dns-management/pull/1174)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: other
+  contents: Validate and allow configuring the Google service account `token_uri`
+  mimetype: text/markdown
+  reference: '[#1164](https://github.com/gardener/external-dns-management/pull/1164)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: '[next-generation] Release DNS accounts on provider delete and credential
+    rotation.'
+  mimetype: text/markdown
+  reference: '[#1171](https://github.com/gardener/external-dns-management/pull/1171)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: other
+  contents: '[powerdns,infoblox,rfc2136]: Sanitize provider errors'
+  mimetype: text/markdown
+  reference: '[#1167](https://github.com/gardener/external-dns-management/pull/1167)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: other
+  contents: 'fix(remote): nil-guard ChangeRequest in UnmarshalChangeRequest'
+  mimetype: text/markdown
+  reference: '[#1168](https://github.com/gardener/external-dns-management/pull/1168)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: other
+  contents: 'fix(openstack): sanitize Keystone authentication error '
+  mimetype: text/markdown
+  reference: '[#1166](https://github.com/gardener/external-dns-management/pull/1166)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: breaking
+  contents: '`aws-route53` providers can only use `AWS_USE_CREDENTIALS_CHAIN` when
+    the operator has enabled it via the environment variable `ALLOW_AWS_CREDENTIALS_CHAIN=true`
+    on the dns-controller-manager. Otherwise the provider is rejected during validation.
+    This is typically only relevant for stand alone deployments.'
+  mimetype: text/markdown
+  reference: '[#1155](https://github.com/gardener/external-dns-management/pull/1155)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: '[next-generation] fix: nil-guard SecretRef in Secret watch map func of
+    source controller'
+  mimetype: text/markdown
+  reference: '[#1161](https://github.com/gardener/external-dns-management/pull/1161)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: other
+  contents: '[next-generation] Cap dnscache TTL'
+  mimetype: text/markdown
+  reference: '[#1172](https://github.com/gardener/external-dns-management/pull/1172)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: other
+  contents: 'feat(legacy): Add `disable-provider-types` option to legacy controller'
+  mimetype: text/markdown
+  reference: '[#1186](https://github.com/gardener/external-dns-management/pull/1186)'
+  type: standard
+- audience: user
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: '[next-generation] Fix: re-reconcile conflicting DNSAnnotations after
+    active one is deleted'
+  mimetype: text/markdown
+  reference: '[#1183](https://github.com/gardener/external-dns-management/pull/1183)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: '[next-generation] fix(dnsentry): normalize DNS name case before suffix
+    matching'
+  mimetype: text/markdown
+  reference: '[#1163](https://github.com/gardener/external-dns-management/pull/1163)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: 'fix(alicloud): use comma-ok type assertion in isSDKErrorWithCode'
+  mimetype: text/markdown
+  reference: '[#1173](https://github.com/gardener/external-dns-management/pull/1173)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: '[next-generation] fix: evict stale annotation state entries'
+  mimetype: text/markdown
+  reference: '[#1165](https://github.com/gardener/external-dns-management/pull/1165)'
+  type: standard
+- audience: user
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: breaking
+  contents: '`DNSEntries` with `spec.reference` set is not supported anymore. It now
+    fails reconciliation instead of inheriting attributes from the referenced entry.'
+  mimetype: text/markdown
+  reference: '[#1162](https://github.com/gardener/external-dns-management/pull/1162)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: other
+  contents: '[powerdns] use dedicated http client per provider.'
+  mimetype: text/markdown
+  reference: '[#1143](https://github.com/gardener/external-dns-management/pull/1143)'
+  type: standard
