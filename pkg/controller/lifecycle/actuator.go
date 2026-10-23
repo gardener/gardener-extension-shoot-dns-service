@@ -610,6 +610,9 @@ func (a *actuator) createOrUpdateSeedResources(exCtx extensionContext, mode cont
 		if env := a.buildNextGenerationEnv(); env != nil {
 			chartValues["env"] = env
 		}
+		if len(a.config.DisableProviderTypes) > 0 {
+			chartValues["disableProviderTypes"] = a.config.DisableProviderTypes
+		}
 	}
 
 	if err := gutil.NewShootAccessSecret(service.ShootAccessSecretName, namespace).Reconcile(exCtx.ctx, a.client); err != nil {

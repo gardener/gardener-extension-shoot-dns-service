@@ -71,6 +71,9 @@ spec:
         - --remote-access-server-secret-name={{ .Release.Namespace }}/dns-controller-manager-remoteaccess-server
         {{- end }}
         {{- end }}
+        {{- if .Values.disableProviderTypes }}
+        - --disable-provider-types={{ .Values.disableProviderTypes }}
+        {{- end }}
         ### start generated configuration
         {{- if .Values.dnsControllerManager.configuration.acceptedMaintainers }}
         - --accepted-maintainers={{ .Values.dnsControllerManager.configuration.acceptedMaintainers }}

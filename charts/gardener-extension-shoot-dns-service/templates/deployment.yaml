@@ -79,6 +79,9 @@ spec:
         - --nextgen-zone-to-nameserver={{ $key }}={{ $value }}
         {{- end }}
         {{- end }}
+        {{- if .Values.disableProviderTypes }}
+        - --disable-provider-types={{ .Values.disableProviderTypes }}
+        {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
         env:

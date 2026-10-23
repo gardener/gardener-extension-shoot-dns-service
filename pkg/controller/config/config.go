@@ -24,4 +24,5 @@ type DNSServiceConfig struct {
 	InternalGCPWorkloadIdentityConfig       config.InternalGCPWorkloadIdentityConfig
 	NextGenerationControllerZoneNameservers map[string]string
 	UseNextGenerationController             bool
+	DisableProviderTypes                    []string
 }
