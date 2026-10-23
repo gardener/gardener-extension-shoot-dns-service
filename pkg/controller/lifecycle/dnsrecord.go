@@ -17,8 +17,11 @@ import (
 // If the DNSRecord resource is not found, it returns nil.
 func GetSecretRefFromDNSRecordExternal(ctx context.Context, c client.Client, namespace, shootName string) (*corev1.SecretReference, string, *string, error) {
 	dns := &extensionsv1alpha1.DNSRecord{}
-	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: shootName + "-external"}, dns); client.IgnoreNotFound(err) != nil && !meta.IsNoMatchError(err) {
-		return nil, "", nil, err
+	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: shootName + "-external"}, dns); err != nil {
+		if client.IgnoreNotFound(err) != nil && !meta.IsNoMatchError(err) {
+			return nil, "", nil, err
+		}
+		return nil, "", nil, nil // not found or no matching CRD: no provider yet
 	}
 
 	return &dns.Spec.SecretRef, dns.Spec.Type, dns.Spec.Zone, nil
