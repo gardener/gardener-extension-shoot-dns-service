@@ -73,11 +73,11 @@ var (
 
 	testName string
 
-	namespace  *corev1.Namespace
-	entries    []*dnsv1alpha1.DNSEntry
-	dnsRecord  *extensionsv1alpha1.DNSRecord
-	shoot      *gardencorev1beta1.Shoot
-	cluster    *extensionsv1alpha1.Cluster
+	namespace *corev1.Namespace
+	entries   []*dnsv1alpha1.DNSEntry
+	dnsRecord *extensionsv1alpha1.DNSRecord
+	shoot     *gardencorev1beta1.Shoot
+	cluster   *extensionsv1alpha1.Cluster
 )
 
 var _ = BeforeSuite(func() {
