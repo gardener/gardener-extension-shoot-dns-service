@@ -50,3 +50,12 @@ workloadIdentity:
 #env:
 #- name: DNSMAN_NAMESERVER_EXAMPLE_COM
 #  value: 1.2.3.4:53
+
+#disableProviderTypes:
+#- local
+#- mock-inmemory
+#- gdch-dns
+#- infoblox-dns
+#- rfc2136
+#- netlify-dns
+#- powerdns

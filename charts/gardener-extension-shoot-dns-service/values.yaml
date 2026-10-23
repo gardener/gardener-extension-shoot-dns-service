@@ -73,6 +73,8 @@ remoteDefaultDomainSecret:
 #    tls.crt: LS0tLS1...
 #    tls.key: LS0tLS1...
 
+#disableProviderTypes: local,gdch-dns,infoblox-dns,rfc2136,netlify-dns,powerdns
+
 dnsControllerManager:
   deploy: true
   image:

@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -36,6 +37,7 @@ type DNSServiceOptions struct {
 	GCPWorkloadIdentityOptions              admissioncmd.GCPWorkloadIdentityOptions
 	NextGenerationControllerZoneNameservers []string
 	UseNextGenerationController             bool
+	DisableProviderTypes                    string
 	config                                  *DNSServiceConfig
 }
 
@@ -60,6 +62,7 @@ func (o *DNSServiceOptions) AddFlags(fs *pflag.FlagSet) {
 			"0 means the default quota is also the maximum (default). Prevents accidentally setting unreasonably high quotas.")
 	fs.StringSliceVar(&o.NextGenerationControllerZoneNameservers, "nextgen-zone-to-nameserver", nil, "static mapping from zone to nameserver (for testing), can be specified multiple times, e.g. --nextgen-zone-to-nameserver=example.com=ns1.example.com --nextgen-zone-to-nameserver=example.org=ns1.example.org")
 	fs.BoolVar(&o.UseNextGenerationController, "use-next-generation-controller", false, "enables deployment of the next-generation controller for all shoots (can still be disabled per shoot via extension providerConfig `useNextGenerationController: false`)")
+	fs.StringVar(&o.DisableProviderTypes, "disable-provider-types", "", "comma separated list of provider types to disable")
 	o.GCPWorkloadIdentityOptions.AddFlags(fs)
 }
 
@@ -113,6 +116,7 @@ func (o *DNSServiceOptions) Complete() error {
 		InternalGCPWorkloadIdentityConfig:       *gcpGCPWorkloadIdentityConfig,
 		NextGenerationControllerZoneNameservers: zoneNameservers,
 		UseNextGenerationController:             o.UseNextGenerationController,
+		DisableProviderTypes:                    slices.DeleteFunc(strings.Split(o.DisableProviderTypes, ","), func(s string) bool { return s == "" }),
 	}
 	return nil
 }
@@ -145,6 +149,7 @@ type DNSServiceConfig struct {
 	InternalGCPWorkloadIdentityConfig       dnsman2apisconfig.InternalGCPWorkloadIdentityConfig
 	NextGenerationControllerZoneNameservers map[string]string
 	UseNextGenerationController             bool
+	DisableProviderTypes                    []string
 }
 
 // Apply applies the DNSServiceOptions to the passed ControllerOptions instance.
@@ -159,6 +164,7 @@ func (c *DNSServiceConfig) Apply(cfg *config.DNSServiceConfig) {
 	cfg.InternalGCPWorkloadIdentityConfig = c.InternalGCPWorkloadIdentityConfig
 	cfg.NextGenerationControllerZoneNameservers = c.NextGenerationControllerZoneNameservers
 	cfg.UseNextGenerationController = c.UseNextGenerationController
+	cfg.DisableProviderTypes = c.DisableProviderTypes
 }
 
 // HealthConfig contains configuration information about the health check controller.

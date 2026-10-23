@@ -65,6 +65,7 @@ spec:
       values:
         defaultExternalProviderEntriesQuota: 10
         defaultExternalProviderEntriesQuotaMax: 15
+        disableProviderTypes: gdch-dns,infoblox-dns,powerdns
         image:
           ref: local-skaffold/gardener-extension-shoot-dns-service:v0.0.0
         nextGenerationController:
