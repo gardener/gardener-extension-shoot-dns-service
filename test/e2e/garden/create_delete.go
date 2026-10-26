@@ -185,6 +185,47 @@ var _ = Describe("Shoot-DNS-Service Tests", func() {
 			By("Check shoot DNSProvider has been successfully reconciled")
 			waitForClientProviderReady(ctx, shootClient.Client(), provider, "shoot-dns-e2e-test.kind")
 
+			By("Check shoot DNSProvider with disabled provider type is not becoming ready")
+			provider2Secret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "default",
+					Name:      "powerdns-secret",
+				},
+			}
+			_, err = controllerutil.CreateOrUpdate(ctx, shootClient.Client(), provider2Secret, func() error {
+				provider2Secret.Data = map[string][]byte{
+					"apiKey": []byte("aaaaaaaaabbbbbbbbccccc"),
+					"server": []byte("https://my-powerdns-server.com"),
+				}
+				provider2Secret.Type = "powerdns"
+				return nil
+			})
+			Expect(err).NotTo(HaveOccurred())
+			provider2 := &dnsv1alpha1.DNSProvider{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "default",
+					Name:      "powerdns",
+				},
+			}
+			_, err = controllerutil.CreateOrUpdate(ctx, shootClient.Client(), provider2, func() error {
+				if provider2.Annotations == nil {
+					provider2.Annotations = map[string]string{}
+				}
+				provider2.Annotations["dns.gardener.cloud/class"] = "garden"
+				provider2.Spec.Type = "powerdns"
+				provider2.Spec.SecretRef = &corev1.SecretReference{
+					Name: "powerdns-secret",
+				}
+				return nil
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			if subdomain == "nextgen" {
+				waitForClientProviderInvalid(ctx, shootClient.Client(), provider2, "provider type \"powerdns\" not found in registry")
+			} else {
+				waitForClientProviderNoStatus(ctx, shootClient.Client(), provider2)
+			}
+
 			By("Create shoot DNS entry")
 			dnsEntry := &dnsv1alpha1.DNSEntry{
 				ObjectMeta: metav1.ObjectMeta{

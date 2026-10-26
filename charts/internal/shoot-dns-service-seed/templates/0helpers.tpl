@@ -30,6 +30,12 @@ controllers:
   dnsProvider:
     namespace: {{ .Release.Namespace }}
     migrationMode: true
+    {{- if .Values.disableProviderTypes }}
+    disabledProviderTypes:
+    {{- range .Values.disableProviderTypes }}
+    - {{ . }}
+    {{- end }}
+    {{- end }}
     {{- if (or .Values.workloadIdentity.gcp.allowedTokenURLs .Values.workloadIdentity.gcp.allowedServiceAccountImpersonationURLRegExps) }}
     gcpWorkloadIdentityConfig:
       {{- if .Values.workloadIdentity.gcp.allowedTokenURLs }}
