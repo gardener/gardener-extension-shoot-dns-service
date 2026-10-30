@@ -8,7 +8,7 @@ require (
 	github.com/gardener/external-dns-management v0.54.0
 	github.com/gardener/gardener v1.154.0
 	github.com/gardener/gardener/hack/tools v1.154.0
-	github.com/gardener/gardener/pkg/apis v1.154.0
+	github.com/gardener/gardener/pkg/apis v1.154.1
 	github.com/go-logr/logr v1.4.4
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/onsi/ginkgo/v2 v2.33.0
