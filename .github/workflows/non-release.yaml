@@ -1,6 +1,9 @@
 name: Build
 on:
   push:
+    branches:
+      - master
+      - 'release-v*'
   pull_request_target:
     types:
       - labeled
@@ -11,7 +14,7 @@ jobs:
     # - head-update (push to local branch)
     # - pullrequest-label `ok-to-test` was added
     # (the latter label is hardcoded in gardener/cc-utils's trusted-checkout action)
-    if: ${{ github.event.action != 'labeled' || (github.event.label.name == vars.DEFAULT_LABEL_OK_TO_TEST && vars.DEFAULT_LABEL_OK_TO_TEST != '') }}
+    if: ${{ github.repository == 'gardener/gardener-extension-shoot-dns-service' && (github.event.action != 'labeled' || (github.event.label.name == vars.DEFAULT_LABEL_OK_TO_TEST && vars.DEFAULT_LABEL_OK_TO_TEST != '')) }}
     uses: ./.github/workflows/build.yaml
     with:
       mode: snapshot
@@ -23,6 +26,7 @@ jobs:
       pull-requests: write
 
   component-descriptor:
+    if: ${{ github.repository == 'gardener/gardener-extension-shoot-dns-service' && (github.event.action != 'labeled' || (github.event.label.name == vars.DEFAULT_LABEL_OK_TO_TEST && vars.DEFAULT_LABEL_OK_TO_TEST != '')) }}
     uses: gardener/cc-utils/.github/workflows/post-build.yaml@v1
     needs:
       - build
