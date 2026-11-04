@@ -8,9 +8,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 
 	"github.com/andybalholm/brotli"
 )
+
+// maxDecompressedStateSize caps decompressed Extension state to prevent OOM.
+const maxDecompressedStateSize = 10 * 1024 * 1024 // 10 MB
 
 type compressedEntriesState struct {
 	CompressedState []byte `json:"compressedState"`
@@ -62,8 +66,11 @@ func DecompressEntriesState(stateCompressed []byte) ([]byte, error) {
 
 	reader := brotli.NewReader(bytes.NewReader(entriesState.CompressedState))
 	var state bytes.Buffer
-	if _, err := state.ReadFrom(reader); err != nil {
+	if _, err := state.ReadFrom(io.LimitReader(reader, maxDecompressedStateSize+1)); err != nil {
 		return nil, fmt.Errorf("failed reading machine state data for decompression: %w", err)
+	}
+	if state.Len() > maxDecompressedStateSize {
+		return nil, fmt.Errorf("decompressed entries state exceeds maximum allowed size of %d bytes", maxDecompressedStateSize)
 	}
 
 	return state.Bytes(), nil
