@@ -23,7 +23,7 @@ spec:
               dns.gardener.cloud/allowed: "true"
   podSelector:
     matchLabels:
-      networking.gardener.cloud/to-dns: allowed
+      app: {{ template "service.name" . }}
   policyTypes:
     - Egress
 {{- end }}
