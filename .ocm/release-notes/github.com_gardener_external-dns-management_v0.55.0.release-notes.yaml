@@ -1,0 +1,67 @@
+ocm:
+  component_name: github.com/gardener/external-dns-management
+  component_version: v0.55.0
+release_notes:
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: '[next-generation] Use direct API if shadowing by wildcard entry detected.'
+  mimetype: text/markdown
+  reference: '[#1222](https://github.com/gardener/external-dns-management/pull/1222)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: other
+  contents: 'Fix: calculate forwarded domains between same-visibility private zones'
+  mimetype: text/markdown
+  reference: '[#1208](https://github.com/gardener/external-dns-management/pull/1208)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: '[next-generation] Retry Route53 `Create` as `Upsert` action when record
+    exists but differs'
+  mimetype: text/markdown
+  reference: '[#1214](https://github.com/gardener/external-dns-management/pull/1214)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: MartinWeindel
+  category: bugfix
+  contents: '[next-generation] Fix domain fallback for excluded forwarded child zone'
+  mimetype: text/markdown
+  reference: '[#1209](https://github.com/gardener/external-dns-management/pull/1209)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: Vincinator
+  category: bugfix
+  contents: Fixed a nil-pointer panic in GCP workload-identity DNSProvider validation
+    on an unparseable `token_url` or `service_account_impersonation_url`.
+  mimetype: text/markdown
+  reference: '[#1191](https://github.com/gardener/external-dns-management/pull/1191)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: RaphaelFakhri
+  category: bugfix
+  contents: The Istio gateway source now re-triggers all gateways that share a target
+    service or ingress, so that their DNS entries follow load balancer address changes.
+  mimetype: text/markdown
+  reference: '[#1213](https://github.com/gardener/external-dns-management/pull/1213)'
+  type: standard
