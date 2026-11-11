@@ -62,9 +62,6 @@ spec:
         {{- if .Values.dnsControllerManager.remoteaccess.enabled }}
         - --remote-access-port={{ .Values.dnsControllerManager.remoteaccess.port }}
         - --remote-access-cacert=/certs/ca/ca.crt
-        {{- if .Values.dnsControllerManager.remoteaccess.certs.ca.key }}
-        - --remote-access-cakey=/certs/ca/ca.key
-        {{- end }}
         {{- if .Values.dnsControllerManager.remoteaccess.certs.server.secretName }}
         - --remote-access-server-secret-name={{ .Release.Namespace }}/{{ .Values.dnsControllerManager.remoteaccess.certs.server.secretName }}
         {{- else }}
