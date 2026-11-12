@@ -27,7 +27,14 @@ func New(mgr manager.Manager) (*extensionswebhook.Webhook, error) {
 		Name: MutatorName,
 		Path: MutatorPath,
 		Mutators: map[extensionswebhook.Mutator][]extensionswebhook.Type{
-			NewShootMutator(mgr): {{Obj: &gardencorev1beta1.Shoot{}}},
+			NewShootMutator(mgr): {
+				// .spec.dns often gets set already when .spec.seedName gets set - this happens via the shoots/binding
+				// subresource, so let's react on it.
+				{Obj: &gardencorev1beta1.Shoot{}, Subresource: new("binding")},
+				// This resource is kept in case the shoot-dns-service extension was disabled in the shoot spec and gets
+				// enabled later - in this case, we also want the webhook to react.
+				{Obj: &gardencorev1beta1.Shoot{}},
+			},
 		},
 		Target: extensionswebhook.TargetSeed,
 		ObjectSelector: &metav1.LabelSelector{
