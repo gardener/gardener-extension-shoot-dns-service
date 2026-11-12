@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/gardener/gardener/extensions/pkg/controller"
-	v1beta1helper "github.com/gardener/gardener/pkg/api/core/v1beta1/helper"
+	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/gardener/gardener/pkg/extensions"
 	"github.com/gardener/gardener/test/framework"
 	. "github.com/onsi/ginkgo/v2"
@@ -49,13 +49,29 @@ func (f *shootDNSFramework) prepareClientsAndCluster(ctx context.Context) {
 		Fail(fmt.Sprintf("addShoot failed: %s", err))
 	}
 
+	traefikEnabled := false
+	for _, ext := range f.Shoot.Spec.Extensions {
+		if ext.Type == "shoot-traefik" && (ext.Disabled == nil || !*ext.Disabled) {
+			traefikEnabled = true
+			break
+		}
+	}
+	if !traefikEnabled {
+		if err := f.UpdateShoot(ctx, func(shoot *gardencorev1beta1.Shoot) error {
+			shoot.Spec.Extensions = append(shoot.Spec.Extensions, gardencorev1beta1.Extension{
+				Type: "shoot-traefik",
+			})
+			return nil
+		}); err != nil {
+			Fail(fmt.Sprintf("failed to enable shoot-traefik extension: %s", err))
+		}
+		f.Logger.Info("enabled shoot-traefik extension")
+	}
+
 	var err error
 	f.cluster, err = controller.GetCluster(context.Background(), f.SeedClient.Client(), f.technicalShootId())
 	if err != nil {
 		Fail(fmt.Sprintf("get cluster failed: %s", err))
-	}
-	if !v1beta1helper.NginxIngressEnabled(f.cluster.Shoot.Spec.Addons) {
-		Fail("The test requires .spec.addons.nginxIngress.enabled to be true")
 	}
 	if f.cluster.Shoot.Spec.DNS == nil || f.cluster.Shoot.Spec.DNS.Domain == nil {
 		Fail("The test requires .spec.dns.domain to be set")
