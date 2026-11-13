@@ -46,6 +46,11 @@ workloadIdentity:
     allowedServiceAccountImpersonationURLRegExps: []
     # - ^https://iamcredentials\.googleapis\.com/v1/projects/-/serviceAccounts/.+:generateAccessToken$
 
+#providerConfig:
+#  openstackDesignate:
+#    allowedAuthURLs:
+#      - https://identity-3.example.com/v3
+
 # Example for setting a static known nameserver for a zone, e.g. for testing purposes.
 #env:
 #- name: DNSMAN_NAMESERVER_EXAMPLE_COM

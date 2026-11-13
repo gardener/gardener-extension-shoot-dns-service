@@ -37,18 +37,26 @@ controllers:
     {{- end }}
     {{- end }}
     {{- if (or .Values.workloadIdentity.gcp.allowedTokenURLs .Values.workloadIdentity.gcp.allowedServiceAccountImpersonationURLRegExps) }}
-    gcpWorkloadIdentityConfig:
-      {{- if .Values.workloadIdentity.gcp.allowedTokenURLs }}
-      allowedTokenURLs:
-      {{- range .Values.workloadIdentity.gcp.allowedTokenURLs }}
+    gcpConfig:
+      workloadIdentityConfig:
+        {{- if .Values.workloadIdentity.gcp.allowedTokenURLs }}
+        allowedTokenURLs:
+        {{- range .Values.workloadIdentity.gcp.allowedTokenURLs }}
+        - {{ . }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.workloadIdentity.gcp.allowedServiceAccountImpersonationURLRegExps }}
+        allowedServiceAccountImpersonationURLRegExps:
+        {{- range .Values.workloadIdentity.gcp.allowedServiceAccountImpersonationURLRegExps }}
+        - {{ . }}
+        {{- end }}
+        {{- end }}
+    {{- end }}
+    {{- if (and .Values.providerConfig .Values.providerConfig.openstackDesignate .Values.providerConfig.openstackDesignate.allowedAuthURLs) }}
+    openStackConfig:
+      allowedAuthURLs:
+      {{- range .Values.providerConfig.openstackDesignate.allowedAuthURLs }}
       - {{ . }}
-      {{- end }}
-      {{- end }}
-      {{- if .Values.workloadIdentity.gcp.allowedServiceAccountImpersonationURLRegExps }}
-      allowedServiceAccountImpersonationURLRegExps:
-      {{- range .Values.workloadIdentity.gcp.allowedServiceAccountImpersonationURLRegExps }}
-      - {{ . }}
-      {{- end }}
       {{- end }}
     {{- end }}
   source:
