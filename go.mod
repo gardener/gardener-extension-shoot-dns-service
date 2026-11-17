@@ -4,7 +4,7 @@ go 1.26.8
 
 require (
 	github.com/andybalholm/brotli v1.2.7
-	github.com/gardener/controller-manager-library v0.2.1-0.20261116085430-bc918e543d81
+	github.com/gardener/controller-manager-library v0.2.1-0.20261116095852-c84251f6958d
 	github.com/gardener/external-dns-management v0.55.0
 	github.com/gardener/gardener v1.155.1
 	github.com/gardener/gardener/hack/tools v1.155.1
@@ -21,7 +21,7 @@ require (
 	k8s.io/client-go v0.37.2
 	k8s.io/component-base v0.37.2
 	k8s.io/utils v0.0.0-20261023123148-ca04ba58ecab
-	sigs.k8s.io/controller-runtime v0.25.2
+	sigs.k8s.io/controller-runtime v0.25.3
 	sigs.k8s.io/yaml v1.6.0
 )
 
@@ -251,7 +251,7 @@ require (
 	golang.org/x/mod v0.42.0 // indirect
 	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/oauth2 v0.37.0 // indirect
-	golang.org/x/sync v0.24.0 // indirect
+	golang.org/x/sync v0.25.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/term v0.47.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
