@@ -7,7 +7,7 @@ require (
 	github.com/gardener/controller-manager-library v0.2.1-0.20261116095852-c84251f6958d
 	github.com/gardener/external-dns-management v0.55.0
 	github.com/gardener/gardener v1.155.1
-	github.com/gardener/gardener/hack/tools v1.155.1
+	github.com/gardener/gardener/hack/tools v1.155.2
 	github.com/gardener/gardener/pkg/apis v1.155.1
 	github.com/go-logr/logr v1.4.4
 	github.com/hashicorp/go-multierror v1.1.1
